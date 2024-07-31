@@ -1,0 +1,50 @@
+package io.scriptor.expression;
+
+import io.scriptor.environment.Environment;
+import io.scriptor.environment.Value;
+import io.scriptor.parser.SourceLocation;
+import io.scriptor.type.Type;
+
+public class DefineExpression extends Expression {
+
+    private final Type type;
+    private final String id;
+    private final Expression init;
+
+    public DefineExpression(final SourceLocation location, final Type type, final String id) {
+        this(location, type, id, null);
+    }
+
+    public DefineExpression(final SourceLocation location, final Type type, final String id, final Expression init) {
+        super(location, null);
+        this.type = type;
+        this.id = id;
+        this.init = init;
+    }
+
+    public Type getType() {
+        return type;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public Expression getInit() {
+        return init;
+    }
+
+    @Override
+    public Value eval(final Environment env) {
+        final var value = init == null ? null : init.eval(env);
+        env.createSymbol(type, id, value);
+        return null;
+    }
+
+    @Override
+    public String toString() {
+        if (init == null)
+            return "def %s %s".formatted(type, id);
+        return "def %s %s = %s".formatted(type, id, init);
+    }
+}

@@ -1,0 +1,26 @@
+package io.scriptor;
+
+import io.scriptor.parser.SourceLocation;
+
+public class QScriptException extends RuntimeException {
+
+    public QScriptException() {
+        super();
+    }
+
+    public QScriptException(final Throwable cause) {
+        super(cause);
+    }
+
+    public QScriptException(final String format, final Object... args) {
+        super(format.formatted(args));
+    }
+
+    public QScriptException(final SourceLocation location, final String format, final Object... args) {
+        super("@%s: %s".formatted(location, format.formatted(args)));
+    }
+
+    public QScriptException(final Throwable cause, final String format, final Object... args) {
+        super(format.formatted(args), cause);
+    }
+}
