@@ -32,11 +32,11 @@ public class FunctionExpression extends Expression {
 
     @Override
     public Value eval(final Environment env) {
-        final var functionType = (FunctionType) getPromise();
+        final var functionType = (FunctionType) getType();
         return new FunctionValue(functionType, (global, args) -> {
             final var subenv = new Environment(env);
             for (int i = 0; i < argnames.length; ++i)
-                subenv.createSymbol(args[i].getType(), argnames[i], args[i]);
+                subenv.defineSymbol(args[i].getType(), argnames[i], args[i]);
             subenv.setVarargs(Arrays.copyOfRange(args, argnames.length, args.length));
             for (final var expression : compound) {
                 final var value = expression.eval(subenv);

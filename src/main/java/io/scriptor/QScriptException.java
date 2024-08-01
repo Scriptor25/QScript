@@ -17,7 +17,7 @@ public class QScriptException extends RuntimeException {
     }
 
     public QScriptException(final SourceLocation location, final String format, final Object... args) {
-        super("@%s: %s".formatted(location, format.formatted(args)));
+        super("at %s: %s".formatted(location, format.formatted(args)));
     }
 
     public QScriptException(final Throwable cause, final String format, final Object... args) {

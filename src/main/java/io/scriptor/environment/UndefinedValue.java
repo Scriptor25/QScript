@@ -1,5 +1,6 @@
 package io.scriptor.environment;
 
+import io.scriptor.QScriptException;
 import io.scriptor.type.Type;
 
 public class UndefinedValue extends Value {
@@ -15,11 +16,27 @@ public class UndefinedValue extends Value {
 
     @Override
     public <T> T getJava() {
-        throw new UnsupportedOperationException();
+        throw new QScriptException();
     }
 
     @Override
     public String toString() {
         return "undefined";
+    }
+
+    @Override
+    public int hashCode() {
+        return 0;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (o == null)
+            return false;
+        if (o == this)
+            return true;
+        if (o instanceof UndefinedValue)
+            return true;
+        return false;
     }
 }

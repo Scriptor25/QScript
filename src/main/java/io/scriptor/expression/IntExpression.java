@@ -8,20 +8,20 @@ import io.scriptor.type.Type;
 
 public class IntExpression extends Expression {
 
-    private final int value;
+    private final long value;
 
-    public IntExpression(final SourceLocation location, final Type promise, final int value) {
-        super(location, promise);
+    public IntExpression(final SourceLocation location, final long value) {
+        super(location, Type.get("i64"));
         this.value = value;
     }
 
     @Override
     public Value eval(final Environment env) {
-        return new ConstValue<>(Type.get("i32"), value);
+        return new ConstValue<>(Type.get("i64"), value);
     }
 
     @Override
     public String toString() {
-        return Integer.toString(value);
+        return Long.toString(value);
     }
 }

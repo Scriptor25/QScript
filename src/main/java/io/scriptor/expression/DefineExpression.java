@@ -36,8 +36,11 @@ public class DefineExpression extends Expression {
 
     @Override
     public Value eval(final Environment env) {
-        final var value = init == null ? null : init.eval(env);
-        env.createSymbol(type, id, value);
+        if (init == null && type.isFunction()) {
+            env.declareSymbol(type, id);
+        } else {
+            env.defineSymbol(type, id, init.eval(env));
+        }
         return null;
     }
 

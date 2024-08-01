@@ -1,5 +1,6 @@
 package io.scriptor.environment;
 
+import io.scriptor.QScriptException;
 import io.scriptor.type.Type;
 
 public class ConstValue<E> extends Value {
@@ -21,7 +22,7 @@ public class ConstValue<E> extends Value {
             return new ConstValue<>(type, 0.0);
         if (type.isPointer())
             return new ConstValue<>(type, 0L);
-        throw new UnsupportedOperationException();
+        throw new QScriptException();
     }
 
     public static ConstValue<?> fromJava(final Object object) {
@@ -39,7 +40,7 @@ public class ConstValue<E> extends Value {
             return new ConstValue<>(Type.get("f32"), f);
         if (object instanceof Double d)
             return new ConstValue<>(Type.get("f64"), d);
-        throw new UnsupportedOperationException();
+        throw new QScriptException();
     }
 
     private final E java;
@@ -55,7 +56,7 @@ public class ConstValue<E> extends Value {
             return b;
         if (java instanceof Number n)
             return n.doubleValue() != 0.0;
-        throw new UnsupportedOperationException();
+        throw new QScriptException();
     }
 
     @Override
@@ -67,5 +68,21 @@ public class ConstValue<E> extends Value {
     @Override
     public String toString() {
         return java.toString();
+    }
+
+    @Override
+    public int hashCode() {
+        return java.hashCode();
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (o == null)
+            return false;
+        if (o == this)
+            return true;
+        if (o instanceof ConstValue v)
+            return java.equals(v.java);
+        return false;
     }
 }

@@ -3,6 +3,7 @@ package io.scriptor.expression;
 import io.scriptor.QScriptException;
 import io.scriptor.environment.ConstValue;
 import io.scriptor.environment.Environment;
+import io.scriptor.environment.Operation;
 import io.scriptor.environment.Value;
 import io.scriptor.parser.SourceLocation;
 
@@ -55,7 +56,7 @@ public class UnaryExpression extends Expression {
             }
         }
 
-        throw new UnsupportedOperationException();
+        throw new QScriptException();
     }
 
     @Override

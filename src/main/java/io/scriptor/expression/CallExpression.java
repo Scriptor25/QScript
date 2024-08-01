@@ -34,11 +34,11 @@ public class CallExpression extends Expression {
 
     @Override
     public Value eval(final Environment env) {
-        final var vcallee = callee.eval(env);
-        final var vargs = new Value[args.length];
-        for (int i = 0; i < vargs.length; ++i)
-            vargs[i] = args[i].eval(env);
-        return env.call(vcallee, vargs);
+        final var callee = this.callee.eval(env);
+        final var args = new Value[this.args.length];
+        for (int i = 0; i < args.length; ++i)
+            args[i] = this.args[i].eval(env);
+        return env.call(callee, args);
     }
 
     @Override

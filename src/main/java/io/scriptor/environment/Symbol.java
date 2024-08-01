@@ -1,6 +1,5 @@
 package io.scriptor.environment;
 
-import io.scriptor.QScriptException;
 import io.scriptor.type.Type;
 
 public class Symbol {
@@ -21,9 +20,9 @@ public class Symbol {
         return value;
     }
 
-    public Value setValue(final Value value) {
+    public Value setValue(Value value) {
         if (type != value.getType())
-            throw new QScriptException("cannot assign value of type %s to type %s", value.getType(), type);
+            value = Operation.cast(value, type);
         return this.value = value;
     }
 }

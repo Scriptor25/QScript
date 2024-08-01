@@ -25,7 +25,7 @@ public class Main {
         final var global = new Environment();
 
         final var type = FunctionType.get(Type.get("void"), true, PointerType.get(Type.get("i8")));
-        global.createSymbol(type, "printf", new FunctionValue(type, Main::printf));
+        global.defineSymbol(type, "printf", new FunctionValue(type, Main::printf));
 
         if (args.length == 0) {
             final var session = new ShellSession(global, System.in, System.out, System.err);

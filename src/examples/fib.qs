@@ -1,4 +1,4 @@
-#def void(i8*, ?) printf#
+def void(i8*, ?) printf
 
 def i32(i32) fib = $(n) {
     def i32 a = 0

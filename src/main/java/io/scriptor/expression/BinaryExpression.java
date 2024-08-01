@@ -2,6 +2,7 @@ package io.scriptor.expression;
 
 import io.scriptor.QScriptException;
 import io.scriptor.environment.Environment;
+import io.scriptor.environment.Operation;
 import io.scriptor.environment.Value;
 import io.scriptor.parser.SourceLocation;
 
@@ -39,8 +40,13 @@ public class BinaryExpression extends Expression {
         if (operator.equals("="))
             return Operation.assign(env, lhs, rhs.eval(env));
 
-        final var left = lhs.eval(env);
-        final var right = rhs.eval(env);
+        var left = lhs.eval(env);
+        var right = rhs.eval(env);
+
+        if (left.getType() != right.getType()) {
+            left = Operation.higherOrderCast(left, right.getType());
+            right = Operation.higherOrderCast(right, left.getType());
+        }
 
         switch (operator) {
             case "<=" -> {

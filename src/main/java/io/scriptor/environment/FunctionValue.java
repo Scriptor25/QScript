@@ -21,10 +21,10 @@ public class FunctionValue extends Value {
         this.function = function;
     }
 
-    public Value call(final Environment env, final Value... args) {
+    public Value call(final Environment global, final Value... args) {
         if (function == null)
             return new UndefinedValue(((FunctionType) getType()).getResult());
-        return function.call(env, args);
+        return function.call(global, args);
     }
 
     @Override
@@ -41,5 +41,21 @@ public class FunctionValue extends Value {
     @Override
     public String toString() {
         return function.toString();
+    }
+
+    @Override
+    public int hashCode() {
+        return function.hashCode();
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (o == null)
+            return false;
+        if (o == this)
+            return true;
+        if (o instanceof FunctionValue v)
+            return function.equals(v.function);
+        return false;
     }
 }

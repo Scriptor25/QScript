@@ -1,5 +1,6 @@
 package io.scriptor.environment;
 
+import io.scriptor.QScriptException;
 import io.scriptor.type.Type;
 
 public abstract class Value {
@@ -11,7 +12,7 @@ public abstract class Value {
         if (type.isFunction())
             return FunctionValue.getDefault(type);
 
-        return new UndefinedValue(type);
+        throw new QScriptException("no default value for %s", type);
     }
 
     private final Type type;
@@ -43,4 +44,8 @@ public abstract class Value {
     public abstract <T> T getJava();
 
     public abstract String toString();
+
+    public abstract int hashCode();
+
+    public abstract boolean equals(final Object o);
 }

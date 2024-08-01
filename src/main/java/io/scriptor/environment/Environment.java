@@ -33,15 +33,16 @@ public class Environment {
         return varargs[i];
     }
 
-    public void createSymbol(final Type type, final String id, Value value) {
-        if (symbols.containsKey(id))
+    public Symbol declareSymbol(final Type type, final String id) {
+        return symbols.computeIfAbsent(id, key -> new Symbol(type, new UndefinedValue(type)));
+    }
+
+    public void defineSymbol(final Type type, final String id, final Value value) {
+        final var symbol = declareSymbol(type, id);
+        if (!(symbol.getValue() instanceof UndefinedValue))
             throw new QScriptException("symbol '%s' aready defined", id);
 
-        if (value == null)
-            value = Value.getDefault(type);
-
-        final var symbol = new Symbol(type, value);
-        symbols.put(id, symbol);
+        symbol.setValue(value != null ? value : Value.getDefault(type));
     }
 
     public Symbol getSymbol(final String id) {
@@ -55,7 +56,16 @@ public class Environment {
 
     public Value call(final Value callee, final Value... args) {
         if (!callee.getType().isFunction())
-            throw new QScriptException("cannot call on non-function value of type %s", callee.getType());
+            throw new QScriptException("cannot make call non-function value of type %s", callee.getType());
+
+        final var type = (FunctionType) callee.getType();
+        if (type.hasVararg() && type.getArgCount() > args.length)
+            throw new QScriptException();
+        if (!type.hasVararg() && type.getArgCount() != args.length)
+            throw new QScriptException();
+        for (int i = 0; i < type.getArgCount(); ++i)
+            if (type.getArg(i) != args[i].getType())
+                args[i] = Operation.cast(args[i], type.getArg(i));
 
         return ((FunctionValue) callee).call(global, args);
     }

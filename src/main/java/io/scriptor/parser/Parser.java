@@ -14,11 +14,13 @@ import io.scriptor.expression.CallExpression;
 import io.scriptor.expression.CompoundExpression;
 import io.scriptor.expression.DefineExpression;
 import io.scriptor.expression.Expression;
+import io.scriptor.expression.FloatExpression;
 import io.scriptor.expression.FunctionExpression;
 import io.scriptor.expression.IDExpression;
 import io.scriptor.expression.IntExpression;
 import io.scriptor.expression.ReturnExpression;
 import io.scriptor.expression.StringExpression;
+import io.scriptor.expression.SwitchExpression;
 import io.scriptor.expression.UnaryExpression;
 import io.scriptor.expression.WhileExpression;
 import io.scriptor.type.FunctionType;
@@ -408,7 +410,7 @@ public class Parser {
         return base;
     }
 
-    private Expression nextExpression(final Type promise) throws IOException {
+    private Expression nextExpression(final Type expected) throws IOException {
         if (at("def"))
             return nextDefine();
 
@@ -418,10 +420,13 @@ public class Parser {
         if (at("return"))
             return nextReturn();
 
+        if (at("switch"))
+            return nextSwitch(expected);
+
         if (at("{"))
             return nextCompound();
 
-        return nextBinary(promise);
+        return nextBinary(expected);
     }
 
     private DefineExpression nextDefine() throws IOException {
@@ -433,10 +438,7 @@ public class Parser {
         if (!nextIfAt("="))
             return new DefineExpression(loc, type, id);
 
-        currentResult = type.isFunction() ? ((FunctionType) type).getResult() : null;
         final var init = nextExpression(type);
-        currentResult = null;
-
         return new DefineExpression(loc, type, id, init);
     }
 
@@ -453,7 +455,26 @@ public class Parser {
         final var loc = expect("return").location();
 
         final var expression = nextExpression(currentResult);
-        return new ReturnExpression(loc, expression);
+        return new ReturnExpression(loc, currentResult, expression);
+    }
+
+    private SwitchExpression nextSwitch(final Type expected) throws IOException {
+        final var loc = expect("switch").location();
+
+        final var switcheroo = nextExpression(null);
+
+        final Map<Expression, Expression> caseroos = new HashMap<>();
+        while (!nextIfAt("default")) {
+            final var caseroo = nextExpression(switcheroo.getType());
+            expect(":");
+            final var expression = nextExpression(expected);
+            caseroos.put(caseroo, expression);
+        }
+
+        expect(":");
+        final var defaulteroo = nextExpression(expected);
+
+        return new SwitchExpression(loc, expected, switcheroo, caseroos, defaulteroo);
     }
 
     private CompoundExpression nextCompound() throws IOException {
@@ -467,28 +488,28 @@ public class Parser {
         return new CompoundExpression(loc, expressions.toArray(Expression[]::new));
     }
 
-    private Expression nextBinary(final Type promise) throws IOException {
-        return nextBinary(promise, nextCall(promise), 0);
+    private Expression nextBinary(final Type expected) throws IOException {
+        return nextBinary(expected, nextCall(expected), 0);
     }
 
-    private Expression nextBinary(final Type promise, Expression lhs, final int minPrecedence) throws IOException {
+    private Expression nextBinary(final Type expected, Expression lhs, final int minPrecedence) throws IOException {
         while (at(TokenType.OPERATOR) && PRECEDENCES.get(token.value()) >= minPrecedence) {
             final var tk = skip();
             final var loc = tk.location();
             final var operator = tk.value();
             final var precedence = PRECEDENCES.get(operator);
-            var rhs = nextCall(promise);
+            var rhs = nextCall(expected);
             while (at(TokenType.OPERATOR) && PRECEDENCES.get(token.value()) > precedence) {
                 final var laPrecedence = PRECEDENCES.get(token.value());
-                rhs = nextBinary(promise, rhs, precedence + (laPrecedence > precedence ? 1 : 0));
+                rhs = nextBinary(expected, rhs, precedence + (laPrecedence > precedence ? 1 : 0));
             }
             lhs = new BinaryExpression(loc, operator, lhs, rhs);
         }
         return lhs;
     }
 
-    private Expression nextCall(final Type promise) throws IOException {
-        var expr = nextUnary(promise);
+    private Expression nextCall(final Type expected) throws IOException {
+        var expr = nextUnary(expected);
 
         while (at("(")) {
             final var loc = skip().location();
@@ -501,14 +522,14 @@ public class Parser {
                     expect(",");
             }
 
-            expr = new CallExpression(loc, promise, expr, args.toArray(Expression[]::new));
+            expr = new CallExpression(loc, expected, expr, args.toArray(Expression[]::new));
         }
 
         return expr;
     }
 
-    private Expression nextUnary(final Type promise) throws IOException {
-        var expr = nextPrimary(promise);
+    private Expression nextUnary(final Type expected) throws IOException {
+        var expr = nextPrimary(expected);
 
         if (at("++") || at("--")) {
             final var tk = skip();
@@ -520,7 +541,7 @@ public class Parser {
         return expr;
     }
 
-    private Expression nextPrimary(final Type promise) throws IOException {
+    private Expression nextPrimary(final Type expected) throws IOException {
         if (atEOF())
             throw new QScriptException(new SourceLocation(file, row, column), "reached eof");
 
@@ -535,24 +556,30 @@ public class Parser {
                 if (!at(")"))
                     expect(",");
             }
+            final var bkpResult = currentResult;
+            currentResult = ((FunctionType) expected).getResult();
             final var compound = nextCompound();
-            return new FunctionExpression(loc, promise, argnames.toArray(String[]::new), compound);
+            currentResult = bkpResult;
+            return new FunctionExpression(loc, expected, argnames.toArray(String[]::new), compound);
         }
 
         if (nextIfAt("(")) {
-            final var expression = nextExpression(promise);
+            final var expression = nextExpression(expected);
             expect(")");
             return expression;
         }
 
         if (at(TokenType.ID))
-            return new IDExpression(loc, promise, skip().value());
+            return new IDExpression(loc, expected, skip().value());
 
         if (at(TokenType.INT))
-            return new IntExpression(loc, promise, Integer.valueOf(skip().value()));
+            return new IntExpression(loc,  Long.valueOf(skip().value()));
+
+        if (at(TokenType.FLOAT))
+            return new FloatExpression(loc,  Double.valueOf(skip().value()));
 
         if (at(TokenType.STRING))
-            return new StringExpression(loc, promise, skip().value());
+            return new StringExpression(loc, PointerType.get(Type.get("i8")), skip().value());
 
         throw new QScriptException(loc, "unhandled token '%s' (%s)", token.value(), token.type());
     }
