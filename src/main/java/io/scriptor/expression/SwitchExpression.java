@@ -1,5 +1,7 @@
 package io.scriptor.expression;
 
+import static io.scriptor.QScriptException.rtassert;
+
 import java.util.Arrays;
 import java.util.Map;
 
@@ -11,40 +13,54 @@ import io.scriptor.type.Type;
 
 public class SwitchExpression extends Expression {
 
+    public static SwitchExpression create(
+            final SourceLocation location,
+            final Type type,
+            final Expression switcher,
+            final Map<Expression, Expression> cases,
+            final Expression defaultCase) {
+        rtassert(location != null);
+        rtassert(type != null);
+        rtassert(switcher != null);
+        rtassert(cases != null);
+        rtassert(defaultCase != null);
+        return new SwitchExpression(location, type, switcher, cases, defaultCase);
+    }
+
     private static record Case(Value index, Expression value) {
     }
 
-    private final Expression switcheroo;
-    private final Case[] caseroos;
-    private final Expression defaulteroo;
+    private final Expression switcher;
+    private final Case[] cases;
+    private final Expression defaultCase;
 
-    public SwitchExpression(
+    private SwitchExpression(
             final SourceLocation location,
             final Type type,
-            final Expression switcheroo,
-            final Map<Expression, Expression> caseroos,
-            final Expression defaulteroo) {
+            final Expression switcher,
+            final Map<Expression, Expression> cases,
+            final Expression defaultCase) {
         super(location, type);
-        this.switcheroo = switcheroo;
-        this.caseroos = new Case[caseroos.size()];
+        this.switcher = switcher;
+        this.cases = new Case[cases.size()];
         int i = 0;
-        for (final var entry : caseroos.entrySet())
-            this.caseroos[i++] = new Case(
+        for (final var entry : cases.entrySet())
+            this.cases[i++] = new Case(
                     entry.getKey().eval(null),
                     entry.getValue());
-        this.defaulteroo = defaulteroo;
+        this.defaultCase = defaultCase;
     }
 
     @Override
     public Value eval(final Environment env) {
-        final var switcheroo = this.switcheroo.eval(env);
-        final var caseroo = Arrays.stream(caseroos)
-                .filter(c -> c.index().getNumber().longValue() == switcheroo.getNumber().longValue())
+        final var s = switcher.eval(env);
+        final var opt = Arrays.stream(cases)
+                .filter(c -> c.index().getNumber().longValue() == s.getNumber().longValue())
                 .findFirst();
-        if (caseroo.isEmpty())
-            return defaulteroo.eval(env);
+        if (opt.isEmpty())
+            return defaultCase.eval(env);
         return Operation.cast(
-                caseroo
+                opt
                         .get()
                         .value()
                         .eval(env),
@@ -56,10 +72,10 @@ public class SwitchExpression extends Expression {
         final var indent = CompoundExpression.indent();
 
         final var builder = new StringBuilder();
-        for (final var entry : caseroos)
-            builder.append(indent).append(entry.index()).append(": ").append(entry.value()).append('\n');
+        for (final var c : cases)
+            builder.append(indent).append(c.index()).append(": ").append(c.value()).append('\n');
 
         CompoundExpression.unindent();
-        return "switch %s%n%s%sdefault: %s".formatted(switcheroo, builder, indent, defaulteroo);
+        return "switch %s%n%s%sdefault: %s".formatted(switcher, builder, indent, defaultCase);
     }
 }

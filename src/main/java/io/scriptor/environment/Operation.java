@@ -1,5 +1,7 @@
 package io.scriptor.environment;
 
+import static io.scriptor.QScriptException.rtassert;
+
 import io.scriptor.QScriptException;
 import io.scriptor.expression.Expression;
 import io.scriptor.expression.IDExpression;
@@ -8,7 +10,9 @@ import io.scriptor.type.Type;
 public class Operation {
 
     public static Value cast(final Value value, final Type type) {
+        rtassert(value != null);
         final var vtype = value.getType();
+        rtassert(vtype != null);
         if (vtype == type)
             return value;
         if (type.isInt())
@@ -43,22 +47,20 @@ public class Operation {
     }
 
     public static Value topcast(final Value value, final Type type) {
-        throw new QScriptException();
+        return new ConstValue<>(type, value.getNumber().longValue());
     }
 
     public static void check(final Value lhs, final Value rhs) {
-        if (lhs == null)
-            throw new QScriptException();
-        if (rhs == null)
-            throw new QScriptException();
-        if (lhs.getType() != rhs.getType())
-            throw new QScriptException();
+        rtassert(lhs != null);
+        rtassert(rhs != null);
+        rtassert(lhs.getType() != null);
+        rtassert(rhs.getType() != null);
+        rtassert(lhs.getType() == rhs.getType());
     }
 
     public static Value assign(final Environment env, final Expression assignee, final Value value) {
         if (assignee instanceof IDExpression e)
             return env.getSymbol(e.toString()).setValue(value);
-
         throw new QScriptException();
     }
 
@@ -278,6 +280,28 @@ public class Operation {
             return new ConstValue<>(type, lhs.getNumber().floatValue() % rhs.getNumber().floatValue());
         if (type == Type.getFlt64())
             return new ConstValue<>(type, lhs.getNumber().doubleValue() % rhs.getNumber().doubleValue());
+
+        throw new QScriptException();
+    }
+
+    public static Value inc(final Value value) {
+        rtassert(value != null);
+        final var type = value.getType();
+        rtassert(type != null);
+
+        if (type.isInt() || type.isFloat())
+            return add(value, new ConstValue<>(type, 1));
+
+        throw new QScriptException();
+    }
+
+    public static Value dec(final Value value) {
+        rtassert(value != null);
+        final var type = value.getType();
+        rtassert(type != null);
+
+        if (type.isInt() || type.isFloat())
+            return sub(value, new ConstValue<>(type, 1));
 
         throw new QScriptException();
     }

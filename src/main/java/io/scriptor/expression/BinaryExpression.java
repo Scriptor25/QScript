@@ -1,5 +1,7 @@
 package io.scriptor.expression;
 
+import static io.scriptor.QScriptException.rtassert;
+
 import io.scriptor.QScriptException;
 import io.scriptor.environment.Environment;
 import io.scriptor.environment.Operation;
@@ -9,16 +11,31 @@ import io.scriptor.type.Type;
 
 public class BinaryExpression extends Expression {
 
-    private final String operator;
-    private final Expression lhs;
-    private final Expression rhs;
-
-    public BinaryExpression(
+    public static BinaryExpression create(
             final SourceLocation location,
             final String operator,
             final Expression lhs,
             final Expression rhs) {
-        super(location, Type.getHigherOrder(lhs.getType(), rhs.getType()));
+        rtassert(location != null);
+        rtassert(operator != null);
+        rtassert(lhs != null);
+        rtassert(rhs != null);
+        final var type = Type.getHigherOrder(lhs.getType(), rhs.getType());
+        rtassert(type != null);
+        return new BinaryExpression(location, type, operator, lhs, rhs);
+    }
+
+    private final String operator;
+    private final Expression lhs;
+    private final Expression rhs;
+
+    private BinaryExpression(
+            final SourceLocation location,
+            final Type type,
+            final String operator,
+            final Expression lhs,
+            final Expression rhs) {
+        super(location, type);
         this.operator = operator;
         this.lhs = lhs;
         this.rhs = rhs;

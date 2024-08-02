@@ -1,5 +1,7 @@
 package io.scriptor.expression;
 
+import static io.scriptor.QScriptException.rtassert;
+
 import java.util.Arrays;
 
 import io.scriptor.QScriptException;
@@ -13,10 +15,22 @@ import io.scriptor.type.Type;
 
 public class FunctionExpression extends Expression {
 
+    public static FunctionExpression create(
+            final SourceLocation location,
+            final Type type,
+            final String[] argnames,
+            final Expression[] expressions) {
+        rtassert(location != null);
+        rtassert(type != null);
+        rtassert(argnames != null);
+        rtassert(expressions != null);
+        return new FunctionExpression(location, type, argnames, expressions);
+    }
+
     private final String[] argnames;
     private final Expression[] expressions;
 
-    public FunctionExpression(
+    private FunctionExpression(
             final SourceLocation location,
             final Type type,
             final String[] argnames,

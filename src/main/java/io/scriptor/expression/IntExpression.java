@@ -1,5 +1,7 @@
 package io.scriptor.expression;
 
+import static io.scriptor.QScriptException.rtassert;
+
 import io.scriptor.environment.ConstValue;
 import io.scriptor.environment.Environment;
 import io.scriptor.environment.Value;
@@ -8,9 +10,14 @@ import io.scriptor.type.Type;
 
 public class IntExpression extends Expression {
 
+    public static IntExpression create(final SourceLocation location, final long value) {
+        rtassert(location != null);
+        return new IntExpression(location, value);
+    }
+
     private final long value;
 
-    public IntExpression(final SourceLocation location, final long value) {
+    private IntExpression(final SourceLocation location, final long value) {
         super(location, Type.getInt64());
         this.value = value;
     }

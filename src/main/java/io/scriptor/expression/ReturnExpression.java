@@ -1,17 +1,38 @@
 package io.scriptor.expression;
 
+import static io.scriptor.QScriptException.rtassert;
+
 import io.scriptor.environment.Environment;
 import io.scriptor.environment.Operation;
+import io.scriptor.environment.UndefinedValue;
 import io.scriptor.environment.Value;
 import io.scriptor.parser.SourceLocation;
 import io.scriptor.type.Type;
 
 public class ReturnExpression extends Expression {
 
+    public static ReturnExpression create(
+            final SourceLocation location,
+            final Type result,
+            final Expression expression) {
+        rtassert(location != null);
+        rtassert(result != null);
+        rtassert(expression != null);
+        return new ReturnExpression(location, result, expression);
+    }
+
+    public static ReturnExpression create(
+            final SourceLocation location,
+            final Type result) {
+        rtassert(location != null);
+        rtassert(result != null);
+        return new ReturnExpression(location, result, null);
+    }
+
     private final Type result;
     private final Expression expression;
 
-    public ReturnExpression(
+    private ReturnExpression(
             final SourceLocation location,
             final Type result,
             final Expression expression) {
@@ -22,9 +43,9 @@ public class ReturnExpression extends Expression {
 
     @Override
     public Value eval(final Environment env) {
-        var value = expression.eval(env);
-        value = Operation.cast(value, result);
-        return value.setReturn(true);
+        if (expression == null)
+            return new UndefinedValue(result).setReturn(true);
+        return Operation.cast(expression.eval(env), result).setReturn(true);
     }
 
     @Override

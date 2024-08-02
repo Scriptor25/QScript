@@ -1,7 +1,8 @@
 package io.scriptor.expression;
 
+import static io.scriptor.QScriptException.rtassert;
+
 import io.scriptor.QScriptException;
-import io.scriptor.environment.ConstValue;
 import io.scriptor.environment.Environment;
 import io.scriptor.environment.Operation;
 import io.scriptor.environment.Value;
@@ -9,28 +10,20 @@ import io.scriptor.parser.SourceLocation;
 
 public class UnaryExpression extends Expression {
 
-    public static Value inc(final Value value) {
-        final var type = value.getType();
-
-        if (type.isInt() || type.isFloat())
-            return Operation.add(value, new ConstValue<>(type, 1));
-
-        throw new QScriptException();
-    }
-
-    public static Value dec(final Value value) {
-        final var type = value.getType();
-
-        if (type.isInt() || type.isFloat())
-            return Operation.sub(value, new ConstValue<>(type, 1));
-
-        throw new QScriptException();
+    public static UnaryExpression create(
+            final SourceLocation location,
+            final String operator,
+            final Expression operand) {
+        rtassert(location != null);
+        rtassert(operator != null);
+        rtassert(operand != null);
+        return new UnaryExpression(location, operator, operand);
     }
 
     private final String operator;
     private final Expression operand;
 
-    public UnaryExpression(
+    private UnaryExpression(
             final SourceLocation location,
             final String operator,
             final Expression operand) {
@@ -44,13 +37,13 @@ public class UnaryExpression extends Expression {
         final var value = operand.eval(env);
         switch (operator) {
             case "++" -> {
-                final var result = inc(value);
+                final var result = Operation.inc(value);
                 Operation.assign(env, operand, result);
                 return value;
             }
 
             case "--" -> {
-                final var result = dec(value);
+                final var result = Operation.dec(value);
                 Operation.assign(env, operand, result);
                 return value;
             }

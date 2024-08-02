@@ -1,5 +1,7 @@
 package io.scriptor.expression;
 
+import static io.scriptor.QScriptException.rtassert;
+
 import io.scriptor.environment.EnvState;
 import io.scriptor.environment.Environment;
 import io.scriptor.environment.Value;
@@ -8,15 +10,37 @@ import io.scriptor.type.Type;
 
 public class DefineExpression extends Expression {
 
+    public static DefineExpression create(
+            final SourceLocation location,
+            final EnvState state,
+            final Type type,
+            final String id) {
+        rtassert(location != null);
+        rtassert(state != null);
+        rtassert(type != null);
+        rtassert(id != null);
+        return new DefineExpression(location, state, type, id, null);
+    }
+
+    public static DefineExpression create(
+            final SourceLocation location,
+            final EnvState state,
+            final Type type,
+            final String id,
+            final Expression init) {
+        rtassert(location != null);
+        rtassert(state != null);
+        rtassert(type != null);
+        rtassert(id != null);
+        rtassert(init != null);
+        return new DefineExpression(location, state, type, id, init);
+    }
+
     private final Type type;
     private final String id;
     private final Expression init;
 
-    public DefineExpression(final SourceLocation location, final EnvState state, final Type type, final String id) {
-        this(location, state, type, id, null);
-    }
-
-    public DefineExpression(
+    private DefineExpression(
             final SourceLocation location,
             final EnvState state,
             final Type type,

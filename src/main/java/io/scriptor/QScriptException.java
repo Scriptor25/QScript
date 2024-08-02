@@ -23,4 +23,9 @@ public class QScriptException extends RuntimeException {
     public QScriptException(final Throwable cause, final String format, final Object... args) {
         super(format.formatted(args), cause);
     }
+
+    public static void rtassert(final boolean check) {
+        if (!check)
+            throw new QScriptException();
+    }
 }

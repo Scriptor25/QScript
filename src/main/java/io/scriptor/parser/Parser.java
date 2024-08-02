@@ -444,10 +444,10 @@ public class Parser {
         stack.peek().declareSymbol(type, id);
 
         if (!nextIfAt("="))
-            return new DefineExpression(loc, stack.peek(), type, id);
+            return DefineExpression.create(loc, stack.peek(), type, id);
 
         final var init = nextExpression(type);
-        return new DefineExpression(loc, stack.peek(), type, id, init);
+        return DefineExpression.create(loc, stack.peek(), type, id, init);
     }
 
     private Expression nextWhile() throws IOException {
@@ -456,14 +456,17 @@ public class Parser {
         final var condition = nextExpression(Type.getInt1());
         final var loop = nextExpression(null);
 
-        return new WhileExpression(loc, condition, loop);
+        return WhileExpression.create(loc, condition, loop);
     }
 
     private ReturnExpression nextReturn() throws IOException {
         final var loc = expect("return").location();
 
+        if (nextIfAt("void"))
+            return ReturnExpression.create(loc, currentResult);
+
         final var expression = nextExpression(currentResult);
-        return new ReturnExpression(loc, currentResult, expression);
+        return ReturnExpression.create(loc, currentResult, expression);
     }
 
     private SwitchExpression nextSwitch(final Type expected) throws IOException {
@@ -486,22 +489,21 @@ public class Parser {
         expect(":");
         final var defaulteroo = nextExpression(expected);
 
-        return new SwitchExpression(loc, expected, switcheroo, caseroos, defaulteroo);
+        return SwitchExpression.create(loc, expected, switcheroo, caseroos, defaulteroo);
     }
 
     private CompoundExpression nextCompound() throws IOException {
         final var loc = expect("{").location();
+        final List<Expression> expressions = new ArrayList<>();
 
         stack.push(new EnvState(stack.peek()));
-
-        final List<Expression> expressions = new ArrayList<>();
         while (!nextIfAt("}")) {
             final var expression = nextExpression(null);
             expressions.add(expression);
         }
-
         stack.pop();
-        return new CompoundExpression(loc, expressions.toArray(Expression[]::new));
+
+        return CompoundExpression.create(loc, expressions.toArray(Expression[]::new));
     }
 
     private Expression nextBinary(final Type expected) throws IOException {
@@ -519,7 +521,7 @@ public class Parser {
                 final var laPrecedence = PRECEDENCES.get(token.value());
                 rhs = nextBinary(expected, rhs, precedence + (laPrecedence > precedence ? 1 : 0));
             }
-            lhs = new BinaryExpression(loc, operator, lhs, rhs);
+            lhs = BinaryExpression.create(loc, operator, lhs, rhs);
         }
         return lhs;
     }
@@ -544,7 +546,7 @@ public class Parser {
                     expect(",");
             }
 
-            expr = new CallExpression(loc, expected, expr, args.toArray(Expression[]::new));
+            expr = CallExpression.create(loc, calleeType.getResult(), expr, args.toArray(Expression[]::new));
         }
 
         return expr;
@@ -557,7 +559,7 @@ public class Parser {
             final var tk = skip();
             final var loc = tk.location();
             final var operator = tk.value();
-            expr = new UnaryExpression(loc, operator, expr);
+            expr = UnaryExpression.create(loc, operator, expr);
         }
 
         return expr;
@@ -596,7 +598,7 @@ public class Parser {
 
             stack.pop();
 
-            return new FunctionExpression(
+            return FunctionExpression.create(
                     loc,
                     type,
                     argnames.toArray(String[]::new),
@@ -611,17 +613,17 @@ public class Parser {
 
         if (at(TokenType.ID)) {
             final var id = skip().value();
-            return new IDExpression(loc, stack.peek(), id);
+            return IDExpression.create(loc, stack.peek(), id);
         }
 
         if (at(TokenType.INT))
-            return new IntExpression(loc, Long.valueOf(skip().value()));
+            return IntExpression.create(loc, Long.valueOf(skip().value()));
 
         if (at(TokenType.FLOAT))
-            return new FloatExpression(loc, Double.valueOf(skip().value()));
+            return FloatExpression.create(loc, Double.valueOf(skip().value()));
 
         if (at(TokenType.STRING))
-            return new StringExpression(loc, skip().value());
+            return StringExpression.create(loc, skip().value());
 
         throw new QScriptException(loc, "unhandled token '%s' (%s)", token.value(), token.type());
     }

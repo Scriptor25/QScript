@@ -1,16 +1,34 @@
 package io.scriptor.expression;
 
+import static io.scriptor.QScriptException.rtassert;
+
 import io.scriptor.environment.Environment;
 import io.scriptor.environment.Value;
 import io.scriptor.parser.SourceLocation;
+import io.scriptor.type.FunctionType;
 import io.scriptor.type.Type;
 
 public class CallExpression extends Expression {
 
+    public static CallExpression create(
+            final SourceLocation location,
+            final Type result,
+            final Expression callee,
+            final Expression[] args) {
+        rtassert(location != null);
+        rtassert(result != null);
+        rtassert(callee != null);
+        rtassert(args != null);
+        final var type = (FunctionType) callee.getType();
+        rtassert(type != null);
+        rtassert((type.hasVararg() && type.getArgCount() <= args.length) || type.getArgCount() == args.length);
+        return new CallExpression(location, result, callee, args);
+    }
+
     private final Expression callee;
     private final Expression[] args;
 
-    public CallExpression(
+    private CallExpression(
             final SourceLocation location,
             final Type result,
             final Expression callee,

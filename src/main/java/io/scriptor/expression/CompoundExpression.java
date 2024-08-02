@@ -1,10 +1,18 @@
 package io.scriptor.expression;
 
+import static io.scriptor.QScriptException.rtassert;
+
 import io.scriptor.environment.Environment;
 import io.scriptor.environment.Value;
 import io.scriptor.parser.SourceLocation;
 
 public class CompoundExpression extends Expression {
+
+    public static CompoundExpression create(final SourceLocation location, final Expression[] expressions) {
+        rtassert(location != null);
+        rtassert(expressions != null);
+        return new CompoundExpression(location, expressions);
+    }
 
     private static int depth = 0;
 
@@ -27,7 +35,7 @@ public class CompoundExpression extends Expression {
 
     private final Expression[] expressions;
 
-    public CompoundExpression(final SourceLocation location, final Expression[] expressions) {
+    private CompoundExpression(final SourceLocation location, final Expression[] expressions) {
         super(location, null);
         this.expressions = expressions;
     }
