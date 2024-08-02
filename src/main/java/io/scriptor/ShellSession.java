@@ -8,6 +8,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 
 import io.scriptor.environment.Environment;
+import io.scriptor.environment.UndefinedValue;
 import io.scriptor.expression.Expression;
 import io.scriptor.parser.Parser;
 
@@ -50,7 +51,7 @@ public class ShellSession implements AutoCloseable {
 
     private void callback(final Expression expression) {
         final var value = expression.eval(global);
-        if (value != null)
+        if (!(value == null || value instanceof UndefinedValue))
             out.println(value);
     }
 

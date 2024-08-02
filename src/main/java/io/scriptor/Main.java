@@ -45,19 +45,19 @@ public class Main {
         final var global = new Environment();
         {
             final var type = FunctionType.get(Type.getVoid(), true, Type.getInt8Ptr());
-            global.defineSymbol(type, "printf", new FunctionValue(type, Main::printf));
+            global.defineSymbol(type, "printf", new FunctionValue(null, type, Main::printf));
         }
         {
             final var type = FunctionType.get(Type.getVoid(), false, Type.getInt8Ptr());
-            global.defineSymbol(type, "puts", new FunctionValue(type, Main::puts));
+            global.defineSymbol(type, "puts", new FunctionValue(null, type, Main::puts));
         }
         {
             final var type = FunctionType.get(Type.getInt8Ptr(), true, Type.getInt8Ptr());
-            global.defineSymbol(type, "format", new FunctionValue(type, Main::format));
+            global.defineSymbol(type, "format", new FunctionValue(null, type, Main::format));
         }
         {
             final var type = FunctionType.get(Type.getVoid(), false, Type.getInt32());
-            global.defineSymbol(type, "exit", new FunctionValue(type, Main::exit));
+            global.defineSymbol(type, "exit", new FunctionValue(null, type, Main::exit));
         }
 
         if (args.length == 0) {

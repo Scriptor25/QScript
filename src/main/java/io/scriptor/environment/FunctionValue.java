@@ -1,5 +1,6 @@
 package io.scriptor.environment;
 
+import io.scriptor.expression.Expression;
 import io.scriptor.type.FunctionType;
 import io.scriptor.type.Type;
 
@@ -11,13 +12,15 @@ public class FunctionValue extends Value {
     }
 
     public static FunctionValue getDefault(final Type type) {
-        return new FunctionValue(type, null);
+        return new FunctionValue(null, type, null);
     }
 
+    private final Expression source;
     private final IFunction function;
 
-    public FunctionValue(final Type type, final IFunction function) {
+    public FunctionValue(final Expression source, final Type type, final IFunction function) {
         super(type);
+        this.source = source;
         this.function = function;
     }
 
@@ -40,7 +43,11 @@ public class FunctionValue extends Value {
 
     @Override
     public String toString() {
-        return function.toString();
+        if (function == null)
+            return "undefined";
+        if (source == null)
+            return "native";
+        return source.toString();
     }
 
     @Override

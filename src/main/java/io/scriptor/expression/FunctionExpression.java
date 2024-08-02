@@ -47,7 +47,7 @@ public class FunctionExpression extends Expression {
     @Override
     public Value eval(final Environment env) {
         final var functionType = (FunctionType) getType();
-        return new FunctionValue(functionType, (global, args) -> {
+        return new FunctionValue(this, functionType, (global, args) -> {
             final var subenv = new Environment(env);
             for (int i = 0; i < argnames.length; ++i)
                 subenv.defineSymbol(args[i].getType(), argnames[i], args[i]);
