@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
+import java.util.Vector;
 
 import io.scriptor.QScriptException;
 import io.scriptor.environment.EnvState;
@@ -20,11 +21,13 @@ import io.scriptor.expression.Expression;
 import io.scriptor.expression.FloatExpression;
 import io.scriptor.expression.FunctionExpression;
 import io.scriptor.expression.IDExpression;
+import io.scriptor.expression.IncludeExpression;
 import io.scriptor.expression.IntExpression;
 import io.scriptor.expression.ReturnExpression;
 import io.scriptor.expression.StringExpression;
 import io.scriptor.expression.SwitchExpression;
 import io.scriptor.expression.UnaryExpression;
+import io.scriptor.expression.UseExpression;
 import io.scriptor.expression.WhileExpression;
 import io.scriptor.type.FunctionType;
 import io.scriptor.type.PointerType;
@@ -130,7 +133,21 @@ public class Parser {
             final File file,
             final ICallback callback)
             throws IOException {
-        final var parser = new Parser(stream, file);
+        parse(global.getState(), new Vector<>(), stream, file, callback);
+    }
+
+    public static void parse(
+            final EnvState state,
+            final List<File> parsed,
+            final InputStream stream,
+            final File file,
+            final ICallback callback)
+            throws IOException {
+        if (parsed.contains(file))
+            return;
+        parsed.add(file);
+
+        final var parser = new Parser(state, parsed, stream, file, callback);
 
         parser.next();
         while (!parser.atEOF()) {
@@ -141,8 +158,10 @@ public class Parser {
         stream.close();
     }
 
+    private final List<File> parsed;
     private final InputStream stream;
     private final File file;
+    private final ICallback callback;
 
     private Token token;
     private int chr = -1;
@@ -152,10 +171,17 @@ public class Parser {
     private final Stack<EnvState> stack = new Stack<>();
     private Type currentResult;
 
-    private Parser(final InputStream stream, final File file) {
+    private Parser(
+            final EnvState state,
+            final List<File> parsed,
+            final InputStream stream,
+            final File file,
+            final ICallback callback) {
+        this.parsed = parsed;
         this.stream = stream;
         this.file = file;
-        stack.push(new EnvState());
+        this.callback = callback;
+        stack.push(state);
     }
 
     private int get() throws IOException {
@@ -417,6 +443,12 @@ public class Parser {
     }
 
     private Expression nextExpression(final Type expected) throws IOException {
+        if (at("use"))
+            return nextUse();
+
+        if (at("include"))
+            return nextInclude();
+
         if (at("def"))
             return nextDefine();
 
@@ -450,6 +482,24 @@ public class Parser {
         return DefineExpression.create(loc, stack.peek(), type, id, init);
     }
 
+    private UseExpression nextUse() throws IOException {
+        final var loc = expect("use").location();
+        final var id = expect(TokenType.ID).value();
+        expect("as");
+        final var type = nextType();
+        final var expr = UseExpression.create(loc, id, type);
+        expr.use();
+        return expr;
+    }
+
+    private IncludeExpression nextInclude() throws IOException {
+        final var loc = expect("include").location();
+        final var filename = expect(TokenType.STRING).value();
+        final var expr = IncludeExpression.create(loc, filename);
+        expr.use(stack.peek(), parsed, file == null ? null : file.getParentFile(), callback);
+        return expr;
+    }
+
     private Expression nextWhile() throws IOException {
         final var loc = expect("while").location();
 
@@ -472,24 +522,30 @@ public class Parser {
     private SwitchExpression nextSwitch(final Type expected) throws IOException {
         final var loc = expect("switch").location();
 
-        final var switcheroo = nextExpression(Type.getInt64());
-        if (!switcheroo.getType().isInt())
-            throw new QScriptException();
+        final var switcher = nextExpression(Type.getInt64());
+        if (!switcher.getType().isInt())
+            throw new QScriptException(
+                    switcher.getLocation(),
+                    "switch must be of type integer, but is of type %s",
+                    switcher.getType());
 
-        final Map<Expression, Expression> caseroos = new HashMap<>();
+        final Map<Expression, Expression> cases = new HashMap<>();
         while (!nextIfAt("default")) {
-            final var caseroo = nextExpression(switcheroo.getType());
-            if (!caseroo.getType().isInt())
-                throw new QScriptException();
+            final var c = nextExpression(switcher.getType());
+            if (!c.getType().isInt())
+                throw new QScriptException(
+                        c.getLocation(),
+                        "case must be of type integer, but is of type %s",
+                        c.getType());
             expect(":");
             final var expression = nextExpression(expected);
-            caseroos.put(caseroo, expression);
+            cases.put(c, expression);
         }
 
         expect(":");
-        final var defaulteroo = nextExpression(expected);
+        final var defaultCase = nextExpression(expected);
 
-        return SwitchExpression.create(loc, expected, switcheroo, caseroos, defaulteroo);
+        return SwitchExpression.create(loc, expected, switcher, cases, defaultCase);
     }
 
     private CompoundExpression nextCompound() throws IOException {
@@ -532,11 +588,7 @@ public class Parser {
         while (at("(")) {
             final var loc = skip().location();
 
-            final FunctionType calleeType;
-            if (expr instanceof IDExpression e) {
-                calleeType = (FunctionType) stack.peek().getSymbol(e.toString()).getType();
-            } else
-                throw new QScriptException();
+            final FunctionType calleeType = (FunctionType) expr.getType();
 
             final List<Expression> args = new ArrayList<>();
             while (!nextIfAt(")")) {
@@ -559,7 +611,7 @@ public class Parser {
             final var tk = skip();
             final var loc = tk.location();
             final var operator = tk.value();
-            expr = UnaryExpression.create(loc, operator, expr);
+            expr = UnaryExpression.createR(loc, operator, expr);
         }
 
         return expr;
@@ -624,6 +676,12 @@ public class Parser {
 
         if (at(TokenType.STRING))
             return StringExpression.create(loc, skip().value());
+
+        if (at(TokenType.OPERATOR)) {
+            final var operator = skip().value();
+            final var operand = nextExpression(expected);
+            return UnaryExpression.createL(loc, operator, operand);
+        }
 
         throw new QScriptException(loc, "unhandled token '%s' (%s)", token.value(), token.type());
     }

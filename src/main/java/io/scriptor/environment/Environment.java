@@ -55,13 +55,16 @@ public class Environment {
 
     public Value call(final Value callee, final Value... args) {
         if (!callee.getType().isFunction())
-            throw new QScriptException("cannot make call non-function value of type %s", callee.getType());
+            throw new QScriptException("cannot create call on non-function value of type %s", callee.getType());
+
+        if (callee instanceof UndefinedValue)
+            throw new QScriptException("cannot create call on undefined function");
 
         final var type = (FunctionType) callee.getType();
         if (type.hasVararg() && type.getArgCount() > args.length)
-            throw new QScriptException();
+            throw new QScriptException("not enough arguments");
         if (!type.hasVararg() && type.getArgCount() != args.length)
-            throw new QScriptException();
+            throw new QScriptException("wrong number of arguments");
         for (int i = 0; i < type.getArgCount(); ++i)
             if (type.getArg(i) != args[i].getType())
                 args[i] = Operation.cast(args[i], type.getArg(i));
@@ -79,5 +82,12 @@ public class Environment {
         for (int i = args.length; i < vargs.length; ++i)
             vargs[i] = new UndefinedValue(type.getArg(i));
         return call(callee, vargs).getJava();
+    }
+
+    public EnvState getState() {
+        final var state = new EnvState();
+        for (final var entry : symbols.entrySet())
+            state.declareSymbol(entry.getValue().getType(), entry.getKey());
+        return state;
     }
 }

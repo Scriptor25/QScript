@@ -1,5 +1,7 @@
 package io.scriptor.type;
 
+import static io.scriptor.QScriptException.rtassert;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,7 +27,15 @@ public class Type {
         new Type("f64", IS_FLOAT, 64);
     }
 
+    public static void use(final String id, final Type type) {
+        rtassert(id != null);
+        rtassert(type != null);
+        TYPES.put(id, type);
+    }
+
     public static Type get(final String id) {
+        rtassert(id != null);
+        rtassert(TYPES.containsKey(id));
         return TYPES.get(id);
     }
 
@@ -70,6 +80,9 @@ public class Type {
     }
 
     public static Type getHigherOrder(final Type a, final Type b) {
+        rtassert(a != null);
+        rtassert(b != null);
+
         if (a == b)
             return a;
 
@@ -109,12 +122,16 @@ public class Type {
                 return b;
         }
 
-        throw new QScriptException();
+        throw new QScriptException("cannot determine higher order type of %s and %s", a, b);
     }
 
     protected static <T extends Type> T create(final String id, final T type) {
         TYPES.put(id, type);
         return type;
+    }
+
+    protected static Type getUnsafe(final String id) {
+        return TYPES.get(id);
     }
 
     private final String id;

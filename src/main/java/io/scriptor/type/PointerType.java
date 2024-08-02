@@ -4,7 +4,7 @@ public class PointerType extends Type {
 
     public static PointerType get(final Type base) {
         final var id = base.getId() + '*';
-        final var type = Type.get(id);
+        final var type = Type.getUnsafe(id);
         if (type != null)
             return (PointerType) type;
         return Type.create(id, new PointerType(id, base));

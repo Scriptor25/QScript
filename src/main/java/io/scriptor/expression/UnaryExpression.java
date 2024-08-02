@@ -10,24 +10,37 @@ import io.scriptor.parser.SourceLocation;
 
 public class UnaryExpression extends Expression {
 
-    public static UnaryExpression create(
+    public static UnaryExpression createR(
             final SourceLocation location,
             final String operator,
             final Expression operand) {
         rtassert(location != null);
         rtassert(operator != null);
         rtassert(operand != null);
-        return new UnaryExpression(location, operator, operand);
+        return new UnaryExpression(location, true, operator, operand);
     }
 
+    public static UnaryExpression createL(
+            final SourceLocation location,
+            final String operator,
+            final Expression operand) {
+        rtassert(location != null);
+        rtassert(operator != null);
+        rtassert(operand != null);
+        return new UnaryExpression(location, false, operator, operand);
+    }
+
+    private final boolean right;
     private final String operator;
     private final Expression operand;
 
     private UnaryExpression(
             final SourceLocation location,
+            final boolean right,
             final String operator,
             final Expression operand) {
         super(location, operand.getType());
+        this.right = right;
         this.operator = operator;
         this.operand = operand;
     }
@@ -39,21 +52,31 @@ public class UnaryExpression extends Expression {
             case "++" -> {
                 final var result = Operation.inc(value);
                 Operation.assign(env, operand, result);
-                return value;
+                if (right)
+                    return value;
+                return result;
             }
 
             case "--" -> {
                 final var result = Operation.dec(value);
                 Operation.assign(env, operand, result);
-                return value;
+                if (right)
+                    return value;
+                return result;
             }
-        }
 
-        throw new QScriptException();
+            case "-" -> {
+                return Operation.neg(value);
+            }
+
+            default -> throw new QScriptException(getLocation(), "no such operator '%s%s'", value.getType(), operator);
+        }
     }
 
     @Override
     public String toString() {
-        return "%s%s".formatted(operand, operator);
+        if (right)
+            return "%s%s".formatted(operand, operator);
+        return "%s%s".formatted(operator, operand);
     }
 }

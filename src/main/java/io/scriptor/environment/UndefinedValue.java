@@ -1,6 +1,5 @@
 package io.scriptor.environment;
 
-import io.scriptor.QScriptException;
 import io.scriptor.type.Type;
 
 public class UndefinedValue extends Value {
@@ -16,7 +15,7 @@ public class UndefinedValue extends Value {
 
     @Override
     public <T> T getJava() {
-        throw new QScriptException();
+        throw null;
     }
 
     @Override

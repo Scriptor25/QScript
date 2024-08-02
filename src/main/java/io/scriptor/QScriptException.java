@@ -26,6 +26,6 @@ public class QScriptException extends RuntimeException {
 
     public static void rtassert(final boolean check) {
         if (!check)
-            throw new QScriptException();
+            throw new QScriptException("assertion failed");
     }
 }

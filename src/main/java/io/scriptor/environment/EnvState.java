@@ -29,9 +29,9 @@ public class EnvState {
 
     public Symbol getSymbol(final String id) {
         if (!symbols.containsKey(id)) {
-            if (parent == null)
-                throw new QScriptException();
-            return parent.getSymbol(id);
+            if (parent != null)
+                return parent.getSymbol(id);
+            throw new QScriptException("undefined symbol '%s'", id);
         }
         return symbols.get(id);
     }

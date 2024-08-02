@@ -26,7 +26,7 @@ public class FunctionType extends Type {
 
     public static FunctionType get(final Type result, final boolean vararg, final Type... args) {
         final var id = makeId(result, vararg, args);
-        final var type = Type.get(id);
+        final var type = Type.getUnsafe(id);
         if (type != null)
             return (FunctionType) type;
         return Type.create(id, new FunctionType(id, result, vararg, args));

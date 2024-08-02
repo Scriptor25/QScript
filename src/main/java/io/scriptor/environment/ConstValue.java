@@ -22,7 +22,7 @@ public class ConstValue<E> extends Value {
             return new ConstValue<>(type, 0.0);
         if (type.isPointer())
             return new ConstValue<>(type, 0L);
-        throw new QScriptException();
+        throw new QScriptException("no default value for %s", type);
     }
 
     public static ConstValue<?> fromJava(final Object object) {
@@ -40,7 +40,7 @@ public class ConstValue<E> extends Value {
             return new ConstValue<>(Type.getFlt32(), f);
         if (object instanceof Double d)
             return new ConstValue<>(Type.getFlt64(), d);
-        throw new QScriptException();
+        throw new QScriptException("no conversion from java value %s", object);
     }
 
     private final E java;
@@ -56,7 +56,7 @@ public class ConstValue<E> extends Value {
             return b;
         if (java instanceof Number n)
             return n.doubleValue() != 0.0;
-        throw new QScriptException();
+        throw new QScriptException("value %s does not have a boolean version");
     }
 
     @Override

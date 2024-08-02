@@ -43,7 +43,7 @@ public class ShellSession implements AutoCloseable {
             try {
                 Parser.parse(global, new StringStream(line), null, this::callback);
             } catch (QScriptException e) {
-                err.println(e);
+                err.println(e.getMessage());
             }
         }
     }
