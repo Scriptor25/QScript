@@ -11,13 +11,13 @@ public class FloatExpression extends Expression {
     private final double value;
 
     public FloatExpression(final SourceLocation location, final double value) {
-        super(location, Type.get("f64"));
+        super(location, Type.getFlt64());
         this.value = value;
     }
 
     @Override
     public Value eval(final Environment env) {
-        return new ConstValue<>(Type.get("f64"), value);
+        return new ConstValue<>(Type.getFlt64(), value);
     }
 
     @Override

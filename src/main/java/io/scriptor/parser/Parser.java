@@ -453,7 +453,7 @@ public class Parser {
     private Expression nextWhile() throws IOException {
         final var loc = expect("while").location();
 
-        final var condition = nextExpression(Type.get("i1"));
+        final var condition = nextExpression(Type.getInt1());
         final var loop = nextExpression(null);
 
         return new WhileExpression(loc, condition, loop);
@@ -469,7 +469,7 @@ public class Parser {
     private SwitchExpression nextSwitch(final Type expected) throws IOException {
         final var loc = expect("switch").location();
 
-        final var switcheroo = nextExpression(Type.get("i64"));
+        final var switcheroo = nextExpression(Type.getInt64());
         if (!switcheroo.getType().isInt())
             throw new QScriptException();
 

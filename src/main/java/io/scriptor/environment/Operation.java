@@ -21,23 +21,23 @@ public class Operation {
     }
 
     public static Value toicast(final Value value, final Type type) {
-        if (type == Type.get("i1"))
+        if (type == Type.getInt1())
             return new ConstValue<>(type, value.getBoolean());
-        if (type == Type.get("i8"))
+        if (type == Type.getInt8())
             return new ConstValue<>(type, value.getNumber().byteValue());
-        if (type == Type.get("i16"))
+        if (type == Type.getInt16())
             return new ConstValue<>(type, value.getNumber().shortValue());
-        if (type == Type.get("i32"))
+        if (type == Type.getInt32())
             return new ConstValue<>(type, value.getNumber().intValue());
-        if (type == Type.get("i64"))
+        if (type == Type.getInt64())
             return new ConstValue<>(type, value.getNumber().longValue());
         throw new QScriptException();
     }
 
     public static Value tofcast(final Value value, final Type type) {
-        if (type == Type.get("f32"))
+        if (type == Type.getFlt32())
             return new ConstValue<>(type, value.getNumber().floatValue());
-        if (type == Type.get("f64"))
+        if (type == Type.getFlt64())
             return new ConstValue<>(type, value.getNumber().doubleValue());
         throw new QScriptException();
     }
@@ -66,17 +66,17 @@ public class Operation {
         check(lhs, rhs);
         final var type = lhs.getType();
 
-        if (type == Type.get("i8"))
+        if (type == Type.getInt8())
             return new ConstValue<>(type, lhs.getNumber().byteValue() < rhs.getNumber().byteValue());
-        if (type == Type.get("i16"))
+        if (type == Type.getInt16())
             return new ConstValue<>(type, lhs.getNumber().shortValue() < rhs.getNumber().shortValue());
-        if (type == Type.get("i32"))
+        if (type == Type.getInt32())
             return new ConstValue<>(type, lhs.getNumber().intValue() < rhs.getNumber().intValue());
-        if (type == Type.get("i64"))
+        if (type == Type.getInt64())
             return new ConstValue<>(type, lhs.getNumber().longValue() < rhs.getNumber().byteValue());
-        if (type == Type.get("f32"))
+        if (type == Type.getFlt32())
             return new ConstValue<>(type, lhs.getNumber().floatValue() < rhs.getNumber().floatValue());
-        if (type == Type.get("f64"))
+        if (type == Type.getFlt64())
             return new ConstValue<>(type, lhs.getNumber().doubleValue() < rhs.getNumber().doubleValue());
 
         throw new QScriptException();
@@ -86,17 +86,17 @@ public class Operation {
         check(lhs, rhs);
         final var type = lhs.getType();
 
-        if (type == Type.get("i8"))
+        if (type == Type.getInt8())
             return new ConstValue<>(type, lhs.getNumber().byteValue() > rhs.getNumber().byteValue());
-        if (type == Type.get("i16"))
+        if (type == Type.getInt16())
             return new ConstValue<>(type, lhs.getNumber().shortValue() > rhs.getNumber().shortValue());
-        if (type == Type.get("i32"))
+        if (type == Type.getInt32())
             return new ConstValue<>(type, lhs.getNumber().intValue() > rhs.getNumber().intValue());
-        if (type == Type.get("i64"))
+        if (type == Type.getInt64())
             return new ConstValue<>(type, lhs.getNumber().longValue() > rhs.getNumber().byteValue());
-        if (type == Type.get("f32"))
+        if (type == Type.getFlt32())
             return new ConstValue<>(type, lhs.getNumber().floatValue() > rhs.getNumber().floatValue());
-        if (type == Type.get("f64"))
+        if (type == Type.getFlt64())
             return new ConstValue<>(type, lhs.getNumber().doubleValue() > rhs.getNumber().doubleValue());
 
         throw new QScriptException();
@@ -106,17 +106,17 @@ public class Operation {
         check(lhs, rhs);
         final var type = lhs.getType();
 
-        if (type == Type.get("i8"))
+        if (type == Type.getInt8())
             return new ConstValue<>(type, lhs.getNumber().byteValue() <= rhs.getNumber().byteValue());
-        if (type == Type.get("i16"))
+        if (type == Type.getInt16())
             return new ConstValue<>(type, lhs.getNumber().shortValue() <= rhs.getNumber().shortValue());
-        if (type == Type.get("i32"))
+        if (type == Type.getInt32())
             return new ConstValue<>(type, lhs.getNumber().intValue() <= rhs.getNumber().intValue());
-        if (type == Type.get("i64"))
+        if (type == Type.getInt64())
             return new ConstValue<>(type, lhs.getNumber().longValue() <= rhs.getNumber().byteValue());
-        if (type == Type.get("f32"))
+        if (type == Type.getFlt32())
             return new ConstValue<>(type, lhs.getNumber().floatValue() <= rhs.getNumber().floatValue());
-        if (type == Type.get("f64"))
+        if (type == Type.getFlt64())
             return new ConstValue<>(type, lhs.getNumber().doubleValue() <= rhs.getNumber().doubleValue());
 
         throw new QScriptException();
@@ -126,17 +126,17 @@ public class Operation {
         check(lhs, rhs);
         final var type = lhs.getType();
 
-        if (type == Type.get("i8"))
+        if (type == Type.getInt8())
             return new ConstValue<>(type, lhs.getNumber().byteValue() >= rhs.getNumber().byteValue());
-        if (type == Type.get("i16"))
+        if (type == Type.getInt16())
             return new ConstValue<>(type, lhs.getNumber().shortValue() >= rhs.getNumber().shortValue());
-        if (type == Type.get("i32"))
+        if (type == Type.getInt32())
             return new ConstValue<>(type, lhs.getNumber().intValue() >= rhs.getNumber().intValue());
-        if (type == Type.get("i64"))
+        if (type == Type.getInt64())
             return new ConstValue<>(type, lhs.getNumber().longValue() >= rhs.getNumber().byteValue());
-        if (type == Type.get("f32"))
+        if (type == Type.getFlt32())
             return new ConstValue<>(type, lhs.getNumber().floatValue() >= rhs.getNumber().floatValue());
-        if (type == Type.get("f64"))
+        if (type == Type.getFlt64())
             return new ConstValue<>(type, lhs.getNumber().doubleValue() >= rhs.getNumber().doubleValue());
 
         throw new QScriptException();
@@ -146,17 +146,17 @@ public class Operation {
         check(lhs, rhs);
         final var type = lhs.getType();
 
-        if (type == Type.get("i8"))
+        if (type == Type.getInt8())
             return new ConstValue<>(type, lhs.getNumber().byteValue() == rhs.getNumber().byteValue());
-        if (type == Type.get("i16"))
+        if (type == Type.getInt16())
             return new ConstValue<>(type, lhs.getNumber().shortValue() == rhs.getNumber().shortValue());
-        if (type == Type.get("i32"))
+        if (type == Type.getInt32())
             return new ConstValue<>(type, lhs.getNumber().intValue() == rhs.getNumber().intValue());
-        if (type == Type.get("i64"))
+        if (type == Type.getInt64())
             return new ConstValue<>(type, lhs.getNumber().longValue() == rhs.getNumber().byteValue());
-        if (type == Type.get("f32"))
+        if (type == Type.getFlt32())
             return new ConstValue<>(type, lhs.getNumber().floatValue() == rhs.getNumber().floatValue());
-        if (type == Type.get("f64"))
+        if (type == Type.getFlt64())
             return new ConstValue<>(type, lhs.getNumber().doubleValue() == rhs.getNumber().doubleValue());
 
         throw new QScriptException();
@@ -166,17 +166,17 @@ public class Operation {
         check(lhs, rhs);
         final var type = lhs.getType();
 
-        if (type == Type.get("i8"))
+        if (type == Type.getInt8())
             return new ConstValue<>(type, lhs.getNumber().byteValue() != rhs.getNumber().byteValue());
-        if (type == Type.get("i16"))
+        if (type == Type.getInt16())
             return new ConstValue<>(type, lhs.getNumber().shortValue() != rhs.getNumber().shortValue());
-        if (type == Type.get("i32"))
+        if (type == Type.getInt32())
             return new ConstValue<>(type, lhs.getNumber().intValue() != rhs.getNumber().intValue());
-        if (type == Type.get("i64"))
+        if (type == Type.getInt64())
             return new ConstValue<>(type, lhs.getNumber().longValue() != rhs.getNumber().byteValue());
-        if (type == Type.get("f32"))
+        if (type == Type.getFlt32())
             return new ConstValue<>(type, lhs.getNumber().floatValue() != rhs.getNumber().floatValue());
-        if (type == Type.get("f64"))
+        if (type == Type.getFlt64())
             return new ConstValue<>(type, lhs.getNumber().doubleValue() != rhs.getNumber().doubleValue());
 
         throw new QScriptException();
@@ -186,17 +186,17 @@ public class Operation {
         check(lhs, rhs);
         final var type = lhs.getType();
 
-        if (type == Type.get("i8"))
+        if (type == Type.getInt8())
             return new ConstValue<>(type, lhs.getNumber().byteValue() + rhs.getNumber().byteValue());
-        if (type == Type.get("i16"))
+        if (type == Type.getInt16())
             return new ConstValue<>(type, lhs.getNumber().shortValue() + rhs.getNumber().shortValue());
-        if (type == Type.get("i32"))
+        if (type == Type.getInt32())
             return new ConstValue<>(type, lhs.getNumber().intValue() + rhs.getNumber().intValue());
-        if (type == Type.get("i64"))
+        if (type == Type.getInt64())
             return new ConstValue<>(type, lhs.getNumber().longValue() + rhs.getNumber().byteValue());
-        if (type == Type.get("f32"))
+        if (type == Type.getFlt32())
             return new ConstValue<>(type, lhs.getNumber().floatValue() + rhs.getNumber().floatValue());
-        if (type == Type.get("f64"))
+        if (type == Type.getFlt64())
             return new ConstValue<>(type, lhs.getNumber().doubleValue() + rhs.getNumber().doubleValue());
 
         throw new QScriptException();
@@ -206,17 +206,17 @@ public class Operation {
         check(lhs, rhs);
         final var type = lhs.getType();
 
-        if (type == Type.get("i8"))
+        if (type == Type.getInt8())
             return new ConstValue<>(type, lhs.getNumber().byteValue() - rhs.getNumber().byteValue());
-        if (type == Type.get("i16"))
+        if (type == Type.getInt16())
             return new ConstValue<>(type, lhs.getNumber().shortValue() - rhs.getNumber().shortValue());
-        if (type == Type.get("i32"))
+        if (type == Type.getInt32())
             return new ConstValue<>(type, lhs.getNumber().intValue() - rhs.getNumber().intValue());
-        if (type == Type.get("i64"))
+        if (type == Type.getInt64())
             return new ConstValue<>(type, lhs.getNumber().longValue() - rhs.getNumber().byteValue());
-        if (type == Type.get("f32"))
+        if (type == Type.getFlt32())
             return new ConstValue<>(type, lhs.getNumber().floatValue() - rhs.getNumber().floatValue());
-        if (type == Type.get("f64"))
+        if (type == Type.getFlt64())
             return new ConstValue<>(type, lhs.getNumber().doubleValue() - rhs.getNumber().doubleValue());
 
         throw new QScriptException();
@@ -226,17 +226,17 @@ public class Operation {
         check(lhs, rhs);
         final var type = lhs.getType();
 
-        if (type == Type.get("i8"))
+        if (type == Type.getInt8())
             return new ConstValue<>(type, lhs.getNumber().byteValue() * rhs.getNumber().byteValue());
-        if (type == Type.get("i16"))
+        if (type == Type.getInt16())
             return new ConstValue<>(type, lhs.getNumber().shortValue() * rhs.getNumber().shortValue());
-        if (type == Type.get("i32"))
+        if (type == Type.getInt32())
             return new ConstValue<>(type, lhs.getNumber().intValue() * rhs.getNumber().intValue());
-        if (type == Type.get("i64"))
+        if (type == Type.getInt64())
             return new ConstValue<>(type, lhs.getNumber().longValue() * rhs.getNumber().byteValue());
-        if (type == Type.get("f32"))
+        if (type == Type.getFlt32())
             return new ConstValue<>(type, lhs.getNumber().floatValue() * rhs.getNumber().floatValue());
-        if (type == Type.get("f64"))
+        if (type == Type.getFlt64())
             return new ConstValue<>(type, lhs.getNumber().doubleValue() * rhs.getNumber().doubleValue());
 
         throw new QScriptException();
@@ -246,17 +246,17 @@ public class Operation {
         check(lhs, rhs);
         final var type = lhs.getType();
 
-        if (type == Type.get("i8"))
+        if (type == Type.getInt8())
             return new ConstValue<>(type, lhs.getNumber().byteValue() / rhs.getNumber().byteValue());
-        if (type == Type.get("i16"))
+        if (type == Type.getInt16())
             return new ConstValue<>(type, lhs.getNumber().shortValue() / rhs.getNumber().shortValue());
-        if (type == Type.get("i32"))
+        if (type == Type.getInt32())
             return new ConstValue<>(type, lhs.getNumber().intValue() / rhs.getNumber().intValue());
-        if (type == Type.get("i64"))
+        if (type == Type.getInt64())
             return new ConstValue<>(type, lhs.getNumber().longValue() / rhs.getNumber().byteValue());
-        if (type == Type.get("f32"))
+        if (type == Type.getFlt32())
             return new ConstValue<>(type, lhs.getNumber().floatValue() / rhs.getNumber().floatValue());
-        if (type == Type.get("f64"))
+        if (type == Type.getFlt64())
             return new ConstValue<>(type, lhs.getNumber().doubleValue() / rhs.getNumber().doubleValue());
 
         throw new QScriptException();
@@ -266,17 +266,17 @@ public class Operation {
         check(lhs, rhs);
         final var type = lhs.getType();
 
-        if (type == Type.get("i8"))
+        if (type == Type.getInt8())
             return new ConstValue<>(type, lhs.getNumber().byteValue() % rhs.getNumber().byteValue());
-        if (type == Type.get("i16"))
+        if (type == Type.getInt16())
             return new ConstValue<>(type, lhs.getNumber().shortValue() % rhs.getNumber().shortValue());
-        if (type == Type.get("i32"))
+        if (type == Type.getInt32())
             return new ConstValue<>(type, lhs.getNumber().intValue() % rhs.getNumber().intValue());
-        if (type == Type.get("i64"))
+        if (type == Type.getInt64())
             return new ConstValue<>(type, lhs.getNumber().longValue() % rhs.getNumber().byteValue());
-        if (type == Type.get("f32"))
+        if (type == Type.getFlt32())
             return new ConstValue<>(type, lhs.getNumber().floatValue() % rhs.getNumber().floatValue());
-        if (type == Type.get("f64"))
+        if (type == Type.getFlt64())
             return new ConstValue<>(type, lhs.getNumber().doubleValue() % rhs.getNumber().doubleValue());
 
         throw new QScriptException();

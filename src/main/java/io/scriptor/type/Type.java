@@ -29,6 +29,46 @@ public class Type {
         return TYPES.get(id);
     }
 
+    public static Type getVoid() {
+        return get("void");
+    }
+
+    public static Type getInt1() {
+        return get("i1");
+    }
+
+    public static Type getInt8() {
+        return get("i8");
+    }
+
+    public static Type getInt16() {
+        return get("i16");
+    }
+
+    public static Type getInt32() {
+        return get("i32");
+    }
+
+    public static Type getInt64() {
+        return get("i64");
+    }
+
+    public static Type getFlt32() {
+        return get("f32");
+    }
+
+    public static Type getFlt64() {
+        return get("f64");
+    }
+
+    public static Type getVoidPtr() {
+        return PointerType.get(getVoid());
+    }
+
+    public static Type getInt8Ptr() {
+        return PointerType.get(getInt8());
+    }
+
     public static Type getHigherOrder(final Type a, final Type b) {
         if (a == b)
             return a;
