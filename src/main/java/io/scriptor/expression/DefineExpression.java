@@ -1,5 +1,6 @@
 package io.scriptor.expression;
 
+import io.scriptor.environment.EnvState;
 import io.scriptor.environment.Environment;
 import io.scriptor.environment.Value;
 import io.scriptor.parser.SourceLocation;
@@ -11,36 +12,29 @@ public class DefineExpression extends Expression {
     private final String id;
     private final Expression init;
 
-    public DefineExpression(final SourceLocation location, final Type type, final String id) {
-        this(location, type, id, null);
+    public DefineExpression(final SourceLocation location, final EnvState state, final Type type, final String id) {
+        this(location, state, type, id, null);
     }
 
-    public DefineExpression(final SourceLocation location, final Type type, final String id, final Expression init) {
+    public DefineExpression(
+            final SourceLocation location,
+            final EnvState state,
+            final Type type,
+            final String id,
+            final Expression init) {
         super(location, null);
         this.type = type;
         this.id = id;
         this.init = init;
-    }
-
-    public Type getType() {
-        return type;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public Expression getInit() {
-        return init;
+        state.declareSymbol(type, id);
     }
 
     @Override
     public Value eval(final Environment env) {
-        if (init == null && type.isFunction()) {
+        if (init != null)
+            env.defineSymbol(type, id, init == null ? Value.getDefault(type) : init.eval(env));
+        else if (type.isFunction())
             env.declareSymbol(type, id);
-        } else {
-            env.defineSymbol(type, id, init.eval(env));
-        }
         return null;
     }
 

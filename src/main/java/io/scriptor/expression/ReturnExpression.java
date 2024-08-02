@@ -11,8 +11,11 @@ public class ReturnExpression extends Expression {
     private final Type result;
     private final Expression expression;
 
-    public ReturnExpression(final SourceLocation location, final Type result, final Expression expression) {
-        super(location, null);
+    public ReturnExpression(
+            final SourceLocation location,
+            final Type result,
+            final Expression expression) {
+        super(location, result);
         this.result = result;
         this.expression = expression;
     }

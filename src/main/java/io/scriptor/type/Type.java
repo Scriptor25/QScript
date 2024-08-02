@@ -3,6 +3,8 @@ package io.scriptor.type;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.scriptor.QScriptException;
+
 public class Type {
 
     protected static final int IS_VOID = 1;
@@ -25,6 +27,49 @@ public class Type {
 
     public static Type get(final String id) {
         return TYPES.get(id);
+    }
+
+    public static Type getHigherOrder(final Type a, final Type b) {
+        if (a == b)
+            return a;
+
+        if (a.isInt()) {
+            if (b.isInt()) {
+                if (a.getSize() >= b.getSize())
+                    return a;
+                return b;
+            }
+
+            if (b.isFloat())
+                return b;
+
+            if (b.isPointer())
+                return a;
+        }
+
+        if (a.isFloat()) {
+            if (b.isInt())
+                return a;
+
+            if (b.isFloat()) {
+                if (a.getSize() >= b.getSize())
+                    return a;
+                return b;
+            }
+
+            if (b.isPointer())
+                return a;
+        }
+
+        if (a.isPointer()) {
+            if (b.isInt())
+                return b;
+
+            if (b.isFloat())
+                return b;
+        }
+
+        throw new QScriptException();
     }
 
     protected static <T extends Type> T create(final String id, final T type) {

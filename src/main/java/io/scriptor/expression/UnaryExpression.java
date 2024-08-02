@@ -34,7 +34,7 @@ public class UnaryExpression extends Expression {
             final SourceLocation location,
             final String operator,
             final Expression operand) {
-        super(location, null);
+        super(location, operand.getType());
         this.operator = operator;
         this.operand = operand;
     }

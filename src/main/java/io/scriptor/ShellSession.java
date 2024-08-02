@@ -13,17 +13,18 @@ import io.scriptor.parser.Parser;
 
 public class ShellSession implements AutoCloseable {
 
-    private final Environment env;
+    private final Environment global;
     private final BufferedReader reader;
     private final PrintStream out;
     private final PrintStream err;
 
-    public ShellSession(final Environment env, final InputStream in, final OutputStream out, final OutputStream err) {
-        this(env, in, new PrintStream(out), new PrintStream(err));
+    public ShellSession(final Environment global, final InputStream in, final OutputStream out,
+            final OutputStream err) {
+        this(global, in, new PrintStream(out), new PrintStream(err));
     }
 
-    public ShellSession(final Environment env, final InputStream in, final PrintStream out, final PrintStream err) {
-        this.env = env;
+    public ShellSession(final Environment global, final InputStream in, final PrintStream out, final PrintStream err) {
+        this.global = global;
         reader = new BufferedReader(new InputStreamReader(in));
         this.out = out;
         this.err = err;
@@ -40,7 +41,7 @@ public class ShellSession implements AutoCloseable {
                 continue;
 
             try {
-                Parser.parse(new StringStream(line), null, this::callback);
+                Parser.parse(global, new StringStream(line), null, this::callback);
             } catch (QScriptException e) {
                 err.println(e);
             }
@@ -48,7 +49,7 @@ public class ShellSession implements AutoCloseable {
     }
 
     private void callback(final Expression expression) {
-        final var value = expression.eval(env);
+        final var value = expression.eval(global);
         if (value != null)
             out.println(value);
     }

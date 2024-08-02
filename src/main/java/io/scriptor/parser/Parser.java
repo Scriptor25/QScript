@@ -7,8 +7,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 
 import io.scriptor.QScriptException;
+import io.scriptor.environment.EnvState;
+import io.scriptor.environment.Environment;
 import io.scriptor.expression.BinaryExpression;
 import io.scriptor.expression.CallExpression;
 import io.scriptor.expression.CompoundExpression;
@@ -122,6 +125,7 @@ public class Parser {
     }
 
     public static void parse(
+            final Environment global,
             final InputStream stream,
             final File file,
             final ICallback callback)
@@ -145,11 +149,13 @@ public class Parser {
     private int row = 1;
     private int column = 0;
 
+    private final Stack<EnvState> stack = new Stack<>();
     private Type currentResult;
 
     private Parser(final InputStream stream, final File file) {
         this.stream = stream;
         this.file = file;
+        stack.push(new EnvState());
     }
 
     private int get() throws IOException {
@@ -435,17 +441,19 @@ public class Parser {
         final var type = nextType();
         final var id = expect(TokenType.ID).value();
 
+        stack.peek().declareSymbol(type, id);
+
         if (!nextIfAt("="))
-            return new DefineExpression(loc, type, id);
+            return new DefineExpression(loc, stack.peek(), type, id);
 
         final var init = nextExpression(type);
-        return new DefineExpression(loc, type, id, init);
+        return new DefineExpression(loc, stack.peek(), type, id, init);
     }
 
     private Expression nextWhile() throws IOException {
         final var loc = expect("while").location();
 
-        final var condition = nextExpression(null);
+        final var condition = nextExpression(Type.get("i1"));
         final var loop = nextExpression(null);
 
         return new WhileExpression(loc, condition, loop);
@@ -461,11 +469,15 @@ public class Parser {
     private SwitchExpression nextSwitch(final Type expected) throws IOException {
         final var loc = expect("switch").location();
 
-        final var switcheroo = nextExpression(null);
+        final var switcheroo = nextExpression(Type.get("i64"));
+        if (!switcheroo.getType().isInt())
+            throw new QScriptException();
 
         final Map<Expression, Expression> caseroos = new HashMap<>();
         while (!nextIfAt("default")) {
             final var caseroo = nextExpression(switcheroo.getType());
+            if (!caseroo.getType().isInt())
+                throw new QScriptException();
             expect(":");
             final var expression = nextExpression(expected);
             caseroos.put(caseroo, expression);
@@ -480,11 +492,15 @@ public class Parser {
     private CompoundExpression nextCompound() throws IOException {
         final var loc = expect("{").location();
 
+        stack.push(new EnvState(stack.peek()));
+
         final List<Expression> expressions = new ArrayList<>();
         while (!nextIfAt("}")) {
             final var expression = nextExpression(null);
             expressions.add(expression);
         }
+
+        stack.pop();
         return new CompoundExpression(loc, expressions.toArray(Expression[]::new));
     }
 
@@ -514,9 +530,15 @@ public class Parser {
         while (at("(")) {
             final var loc = skip().location();
 
+            final FunctionType calleeType;
+            if (expr instanceof IDExpression e) {
+                calleeType = (FunctionType) stack.peek().getSymbol(e.toString()).getType();
+            } else
+                throw new QScriptException();
+
             final List<Expression> args = new ArrayList<>();
             while (!nextIfAt(")")) {
-                final var arg = nextExpression(null);
+                final var arg = nextExpression(calleeType.getArg(args.size()));
                 args.add(arg);
                 if (!at(")"))
                     expect(",");
@@ -549,18 +571,36 @@ public class Parser {
 
         if (nextIfAt("$")) {
             expect("(");
+            final var type = (FunctionType) expected;
+
+            stack.push(new EnvState(stack.peek()));
+
             final List<String> argnames = new ArrayList<>();
             while (!nextIfAt(")")) {
                 final var argname = expect(TokenType.ID).value();
+                stack.peek().declareSymbol(type.getArg(argnames.size()), argname);
                 argnames.add(argname);
                 if (!at(")"))
                     expect(",");
             }
+
+            final List<Expression> expressions = new ArrayList<>();
             final var bkpResult = currentResult;
-            currentResult = ((FunctionType) expected).getResult();
-            final var compound = nextCompound();
+            currentResult = type.getResult();
+            expect("{");
+            while (!nextIfAt("}")) {
+                final var expression = nextExpression(null);
+                expressions.add(expression);
+            }
             currentResult = bkpResult;
-            return new FunctionExpression(loc, expected, argnames.toArray(String[]::new), compound);
+
+            stack.pop();
+
+            return new FunctionExpression(
+                    loc,
+                    type,
+                    argnames.toArray(String[]::new),
+                    expressions.toArray(Expression[]::new));
         }
 
         if (nextIfAt("(")) {
@@ -569,17 +609,19 @@ public class Parser {
             return expression;
         }
 
-        if (at(TokenType.ID))
-            return new IDExpression(loc, expected, skip().value());
+        if (at(TokenType.ID)) {
+            final var id = skip().value();
+            return new IDExpression(loc, stack.peek(), id);
+        }
 
         if (at(TokenType.INT))
-            return new IntExpression(loc,  Long.valueOf(skip().value()));
+            return new IntExpression(loc, Long.valueOf(skip().value()));
 
         if (at(TokenType.FLOAT))
-            return new FloatExpression(loc,  Double.valueOf(skip().value()));
+            return new FloatExpression(loc, Double.valueOf(skip().value()));
 
         if (at(TokenType.STRING))
-            return new StringExpression(loc, PointerType.get(Type.get("i8")), skip().value());
+            return new StringExpression(loc, skip().value());
 
         throw new QScriptException(loc, "unhandled token '%s' (%s)", token.value(), token.type());
     }

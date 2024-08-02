@@ -12,24 +12,12 @@ public class CallExpression extends Expression {
 
     public CallExpression(
             final SourceLocation location,
-            final Type promise,
+            final Type result,
             final Expression callee,
             final Expression[] args) {
-        super(location, promise);
+        super(location, result);
         this.callee = callee;
         this.args = args;
-    }
-
-    public Expression getCallee() {
-        return callee;
-    }
-
-    public int getArgCount() {
-        return args.length;
-    }
-
-    public Expression getArg(final int i) {
-        return args[i];
     }
 
     @Override

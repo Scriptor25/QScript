@@ -14,20 +14,20 @@ import io.scriptor.type.Type;
 public class FunctionExpression extends Expression {
 
     private final String[] argnames;
-    private final CompoundExpression compound;
+    private final Expression[] expressions;
 
     public FunctionExpression(
             final SourceLocation location,
-            final Type promise,
+            final Type type,
             final String[] argnames,
-            final CompoundExpression compound) {
-        super(location, promise);
+            final Expression[] expressions) {
+        super(location, type);
 
-        if (promise == null)
+        if (type == null)
             throw new QScriptException(location, "function expression must have a promise type");
 
         this.argnames = argnames;
-        this.compound = compound;
+        this.expressions = expressions;
     }
 
     @Override
@@ -38,7 +38,7 @@ public class FunctionExpression extends Expression {
             for (int i = 0; i < argnames.length; ++i)
                 subenv.defineSymbol(args[i].getType(), argnames[i], args[i]);
             subenv.setVarargs(Arrays.copyOfRange(args, argnames.length, args.length));
-            for (final var expression : compound) {
+            for (final var expression : expressions) {
                 final var value = expression.eval(subenv);
                 if (value != null && value.isReturn())
                     return value.setReturn(false);
@@ -49,12 +49,31 @@ public class FunctionExpression extends Expression {
 
     @Override
     public String toString() {
-        final var builder = new StringBuilder();
+        final var builder = new StringBuilder()
+                .append("$(");
         for (int i = 0; i < argnames.length; ++i) {
             if (i > 0)
                 builder.append(", ");
             builder.append(argnames[i]);
         }
-        return "$(%s) %s".formatted(builder, compound);
+        builder.append(") {");
+
+        if (expressions.length == 0)
+            return builder
+                    .append("}")
+                    .toString();
+        builder.append('\n');
+
+        final var indent = CompoundExpression.indent();
+        for (final var expression : expressions)
+            builder
+                    .append(indent)
+                    .append(expression)
+                    .append('\n');
+
+        return builder
+                .append(CompoundExpression.unindent())
+                .append("}")
+                .toString();
     }
 }

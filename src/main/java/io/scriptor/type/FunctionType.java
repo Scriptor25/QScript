@@ -56,6 +56,13 @@ public class FunctionType extends Type {
     }
 
     public Type getArg(final int i) {
+        if (i < 0)
+            throw new IndexOutOfBoundsException();
+        if (i >= args.length) {
+            if (vararg)
+                return null;
+            throw new IndexOutOfBoundsException();
+        }
         return args[i];
     }
 }

@@ -5,6 +5,7 @@ import io.scriptor.environment.Environment;
 import io.scriptor.environment.Operation;
 import io.scriptor.environment.Value;
 import io.scriptor.parser.SourceLocation;
+import io.scriptor.type.Type;
 
 public class BinaryExpression extends Expression {
 
@@ -17,22 +18,10 @@ public class BinaryExpression extends Expression {
             final String operator,
             final Expression lhs,
             final Expression rhs) {
-        super(location, null);
+        super(location, Type.getHigherOrder(lhs.getType(), rhs.getType()));
         this.operator = operator;
         this.lhs = lhs;
         this.rhs = rhs;
-    }
-
-    public String getOperator() {
-        return operator;
-    }
-
-    public Expression getLHS() {
-        return lhs;
-    }
-
-    public Expression getRHS() {
-        return rhs;
     }
 
     @Override
@@ -40,13 +29,8 @@ public class BinaryExpression extends Expression {
         if (operator.equals("="))
             return Operation.assign(env, lhs, rhs.eval(env));
 
-        var left = lhs.eval(env);
-        var right = rhs.eval(env);
-
-        if (left.getType() != right.getType()) {
-            left = Operation.higherOrderCast(left, right.getType());
-            right = Operation.higherOrderCast(right, left.getType());
-        }
+        final var left = Operation.cast(lhs.eval(env), getType());
+        final var right = Operation.cast(rhs.eval(env), getType());
 
         switch (operator) {
             case "<=" -> {

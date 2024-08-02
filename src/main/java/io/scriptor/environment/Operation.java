@@ -46,54 +46,6 @@ public class Operation {
         throw new QScriptException();
     }
 
-    public static Value higherOrderCast(final Value value, final Type type) {
-        if (value.getType() == type)
-            return value;
-
-        final var vtype = value.getType();
-
-        if (vtype.isInt()) {
-            if (type.isInt()) {
-                if (vtype.getSize() >= type.getSize())
-                    return value;
-                return toicast(value, type);
-            }
-
-            if (type.isFloat())
-                return tofcast(value, type);
-
-            if (type.isPointer())
-                return topcast(value, type);
-        }
-
-        if (vtype.isFloat()) {
-            if (type.isInt())
-                return value;
-
-            if (type.isFloat()) {
-                if (vtype.getSize() >= type.getSize())
-                    return value;
-                return tofcast(value, type);
-            }
-
-            if (type.isPointer())
-                return value;
-        }
-
-        if (vtype.isPointer()) {
-            if (type.isInt())
-                return value;
-
-            if (type.isFloat())
-                return tofcast(value, type);
-
-            if (type.isPointer())
-                return topcast(value, type);
-        }
-
-        throw new QScriptException();
-    }
-
     public static void check(final Value lhs, final Value rhs) {
         if (lhs == null)
             throw new QScriptException();
@@ -105,7 +57,7 @@ public class Operation {
 
     public static Value assign(final Environment env, final Expression assignee, final Value value) {
         if (assignee instanceof IDExpression e)
-            return env.getSymbol(e.getId()).setValue(value);
+            return env.getSymbol(e.toString()).setValue(value);
 
         throw new QScriptException();
     }

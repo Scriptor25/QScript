@@ -34,15 +34,14 @@ public class Environment {
     }
 
     public Symbol declareSymbol(final Type type, final String id) {
-        return symbols.computeIfAbsent(id, key -> new Symbol(type, new UndefinedValue(type)));
+        return symbols.computeIfAbsent(id, key -> new Symbol(type, key, new UndefinedValue(type)));
     }
 
     public void defineSymbol(final Type type, final String id, final Value value) {
         final var symbol = declareSymbol(type, id);
-        if (!(symbol.getValue() instanceof UndefinedValue))
+        if (!(symbol.getValue() == null || symbol.getValue() instanceof UndefinedValue))
             throw new QScriptException("symbol '%s' aready defined", id);
-
-        symbol.setValue(value != null ? value : Value.getDefault(type));
+        symbol.setValue(value);
     }
 
     public Symbol getSymbol(final String id) {

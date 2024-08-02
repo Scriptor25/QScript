@@ -33,14 +33,13 @@ public class SwitchExpression extends Expression {
                     entry.getKey().eval(null),
                     entry.getValue());
         this.defaulteroo = defaulteroo;
-
     }
 
     @Override
     public Value eval(final Environment env) {
         final var switcheroo = this.switcheroo.eval(env);
         final var caseroo = Arrays.stream(caseroos)
-                .filter(c -> c.index().getNumber().doubleValue() == switcheroo.getNumber().doubleValue())
+                .filter(c -> c.index().getNumber().longValue() == switcheroo.getNumber().longValue())
                 .findFirst();
         if (caseroo.isEmpty())
             return defaulteroo.eval(env);
@@ -54,10 +53,13 @@ public class SwitchExpression extends Expression {
 
     @Override
     public String toString() {
+        final var indent = CompoundExpression.indent();
+
         final var builder = new StringBuilder();
         for (final var entry : caseroos)
-            builder.append(entry.index()).append(": ").append(entry.value()).append('\n');
+            builder.append(indent).append(entry.index()).append(": ").append(entry.value()).append('\n');
 
-        return "switch %s%n%sdefault: %s".formatted(switcheroo, builder, defaulteroo);
+        CompoundExpression.unindent();
+        return "switch %s%n%s%sdefault: %s".formatted(switcheroo, builder, indent, defaulteroo);
     }
 }

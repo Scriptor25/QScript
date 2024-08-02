@@ -23,9 +23,10 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
         final var global = new Environment();
-
-        final var type = FunctionType.get(Type.get("void"), true, PointerType.get(Type.get("i8")));
-        global.defineSymbol(type, "printf", new FunctionValue(type, Main::printf));
+        {
+            final var type = FunctionType.get(Type.get("void"), true, PointerType.get(Type.get("i8")));
+            global.defineSymbol(type, "printf", new FunctionValue(type, Main::printf));
+        }
 
         if (args.length == 0) {
             final var session = new ShellSession(global, System.in, System.out, System.err);

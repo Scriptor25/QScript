@@ -1,30 +1,26 @@
 package io.scriptor.expression;
 
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.stream.Stream;
-
 import io.scriptor.environment.Environment;
 import io.scriptor.environment.Value;
 import io.scriptor.parser.SourceLocation;
 
-public class CompoundExpression extends Expression implements Iterable<Expression> {
+public class CompoundExpression extends Expression {
 
     private static int depth = 0;
 
-    private static String space() {
+    public static String space() {
         final var builder = new StringBuilder();
         for (int i = 0; i < depth; ++i)
             builder.append("    ");
         return builder.toString();
     }
 
-    private static String indent() {
+    public static String indent() {
         ++depth;
         return space();
     }
 
-    private static String unindent() {
+    public static String unindent() {
         --depth;
         return space();
     }
@@ -34,18 +30,6 @@ public class CompoundExpression extends Expression implements Iterable<Expressio
     public CompoundExpression(final SourceLocation location, final Expression[] expressions) {
         super(location, null);
         this.expressions = expressions;
-    }
-
-    public int getExpressionCount() {
-        return expressions.length;
-    }
-
-    public Expression getExpression(final int i) {
-        return expressions[i];
-    }
-
-    public Stream<Expression> stream() {
-        return Arrays.stream(expressions);
     }
 
     @Override
@@ -63,8 +47,6 @@ public class CompoundExpression extends Expression implements Iterable<Expressio
     public String toString() {
         if (expressions.length == 0)
             return "{}";
-        if (expressions.length == 1)
-            return "{ %s }".formatted(expressions[0]);
 
         final var builder = new StringBuilder();
         final var indent = indent();
@@ -72,23 +54,5 @@ public class CompoundExpression extends Expression implements Iterable<Expressio
             builder.append(indent).append(expression).append('\n');
 
         return "{%n%s%s}".formatted(builder, unindent());
-    }
-
-    @Override
-    public Iterator<Expression> iterator() {
-        return new Iterator<>() {
-
-            int i = 0;
-
-            @Override
-            public boolean hasNext() {
-                return i < expressions.length;
-            }
-
-            @Override
-            public Expression next() {
-                return expressions[i++];
-            }
-        };
     }
 }
