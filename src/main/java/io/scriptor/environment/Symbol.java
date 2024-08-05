@@ -1,5 +1,6 @@
 package io.scriptor.environment;
 
+import io.scriptor.parser.SourceLocation;
 import io.scriptor.type.Type;
 
 public class Symbol {
@@ -8,10 +9,10 @@ public class Symbol {
     private final String id;
     private Value value;
 
-    public Symbol(final Type type, final String id, final Value value) {
+    public Symbol(final SourceLocation location, final Type type, final String id, final Value value) {
         this.type = type;
         this.id = id;
-        setValue(value);
+        setValue(location, value);
     }
 
     public Symbol(final Type type, final String id) {
@@ -31,9 +32,9 @@ public class Symbol {
         return value;
     }
 
-    public Value setValue(Value value) {
+    public Value setValue(final SourceLocation location, Value value) {
         if (type != value.getType())
-            value = Operation.cast(value, type);
+            value = Operation.cast(location, value, type);
         return this.value = value;
     }
 }

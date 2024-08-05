@@ -5,6 +5,7 @@ import static io.scriptor.QScriptException.rtassert;
 import java.util.Arrays;
 import java.util.Map;
 
+import io.scriptor.QScriptException;
 import io.scriptor.environment.Environment;
 import io.scriptor.environment.Operation;
 import io.scriptor.environment.Value;
@@ -19,11 +20,11 @@ public class SwitchExpression extends Expression {
             final Expression switcher,
             final Map<Expression, Expression> cases,
             final Expression defaultCase) {
-        rtassert(location != null);
-        rtassert(type != null);
-        rtassert(switcher != null);
-        rtassert(cases != null);
-        rtassert(defaultCase != null);
+        rtassert(location != null, () -> new QScriptException(null, "location is null"));
+        rtassert(type != null, () -> new QScriptException(location, "type is null"));
+        rtassert(switcher != null, () -> new QScriptException(location, "switcher is null"));
+        rtassert(cases != null, () -> new QScriptException(location, "cases is null"));
+        rtassert(defaultCase != null, () -> new QScriptException(location, "defaultCase is null"));
         return new SwitchExpression(location, type, switcher, cases, defaultCase);
     }
 
@@ -60,6 +61,7 @@ public class SwitchExpression extends Expression {
         if (opt.isEmpty())
             return defaultCase.eval(env);
         return Operation.cast(
+                getLocation(),
                 opt
                         .get()
                         .value()

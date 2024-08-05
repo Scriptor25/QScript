@@ -1,5 +1,10 @@
 package io.scriptor.type;
 
+import static io.scriptor.QScriptException.rtassert;
+
+import io.scriptor.QScriptException;
+import io.scriptor.parser.SourceLocation;
+
 public class FunctionType extends Type {
 
     private static String makeId(final Type result, final boolean vararg, final Type... args) {
@@ -55,14 +60,13 @@ public class FunctionType extends Type {
         return args.length;
     }
 
-    public Type getArg(final int i) {
-        if (i < 0)
-            throw new IndexOutOfBoundsException();
-        if (i >= args.length) {
-            if (vararg)
-                return null;
-            throw new IndexOutOfBoundsException();
-        }
+    public Type getArg(final SourceLocation location, final int i) {
+        if (vararg && i >= args.length)
+            return null;
+
+        rtassert(i >= 0 && i < args.length,
+                () -> new QScriptException(location, "index %d out of bounds [0;%d[", i, args.length));
+
         return args[i];
     }
 }

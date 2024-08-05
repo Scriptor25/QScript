@@ -1,5 +1,6 @@
-include "io.qs"
-include "vec3.qs"
+include "../../std/include/stdio.qsh"
+
+include "../include/vec3.qsh"
 
 def i32(i32, i8**) main = $(argc, argv) {
     def vec3 a = vec3(1, 0, 2)

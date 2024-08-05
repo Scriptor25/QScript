@@ -1,4 +1,4 @@
-def void(i8*, ?) printf
+include "../std/include/stdio.qsh"
 
 def i32(i32) fib = $(n) {
     def i32 a = 0
@@ -17,6 +17,5 @@ def i32(i32, i8**) main = $(argc, argv) {
     def i32 result = fib(n)
 
     printf("fib(%d) = %d\n", n, result)
-
     return 0
 }

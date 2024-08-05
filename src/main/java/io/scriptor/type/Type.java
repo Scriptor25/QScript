@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.scriptor.QScriptException;
+import io.scriptor.parser.SourceLocation;
 
 public class Type {
 
@@ -27,48 +28,48 @@ public class Type {
         new Type("f64", IS_FLOAT, 64);
     }
 
-    public static void use(final String id, final Type type) {
-        rtassert(id != null);
-        rtassert(type != null);
+    public static void useAs(final SourceLocation location, final String id, final Type type) {
+        rtassert(id != null, () -> new QScriptException(location, "id is null"));
+        rtassert(type != null, () -> new QScriptException(location, "type is null"));
         TYPES.put(id, type);
     }
 
-    public static Type get(final String id) {
-        rtassert(id != null);
-        rtassert(TYPES.containsKey(id));
+    public static Type get(final SourceLocation location, final String id) {
+        rtassert(id != null, () -> new QScriptException(location, "id is null"));
+        rtassert(TYPES.containsKey(id), () -> new QScriptException(location, "no type with id '%s'", id));
         return TYPES.get(id);
     }
 
     public static Type getVoid() {
-        return get("void");
+        return get(null, "void");
     }
 
     public static Type getInt1() {
-        return get("i1");
+        return get(null, "i1");
     }
 
     public static Type getInt8() {
-        return get("i8");
+        return get(null, "i8");
     }
 
     public static Type getInt16() {
-        return get("i16");
+        return get(null, "i16");
     }
 
     public static Type getInt32() {
-        return get("i32");
+        return get(null, "i32");
     }
 
     public static Type getInt64() {
-        return get("i64");
+        return get(null, "i64");
     }
 
     public static Type getFlt32() {
-        return get("f32");
+        return get(null, "f32");
     }
 
     public static Type getFlt64() {
-        return get("f64");
+        return get(null, "f64");
     }
 
     public static Type getVoidPtr() {
@@ -79,9 +80,9 @@ public class Type {
         return PointerType.get(getInt8());
     }
 
-    public static Type getHigherOrder(final Type a, final Type b) {
-        rtassert(a != null);
-        rtassert(b != null);
+    public static Type getHigherOrder(final SourceLocation location, final Type a, final Type b) {
+        rtassert(a != null, () -> new QScriptException(location, "a is null"));
+        rtassert(b != null, () -> new QScriptException(location, "b is null"));
 
         if (a == b)
             return a;
@@ -122,7 +123,7 @@ public class Type {
                 return b;
         }
 
-        throw new QScriptException("cannot determine higher order type of %s and %s", a, b);
+        throw new QScriptException(location, "cannot determine higher order type of %s and %s", a, b);
     }
 
     protected static <T extends Type> T create(final String id, final T type) {

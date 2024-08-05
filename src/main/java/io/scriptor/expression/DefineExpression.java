@@ -2,6 +2,7 @@ package io.scriptor.expression;
 
 import static io.scriptor.QScriptException.rtassert;
 
+import io.scriptor.QScriptException;
 import io.scriptor.environment.EnvState;
 import io.scriptor.environment.Environment;
 import io.scriptor.environment.Value;
@@ -15,10 +16,10 @@ public class DefineExpression extends Expression {
             final EnvState state,
             final Type type,
             final String id) {
-        rtassert(location != null);
-        rtassert(state != null);
-        rtassert(type != null);
-        rtassert(id != null);
+        rtassert(location != null, () -> new QScriptException(null, "location is null"));
+        rtassert(state != null, () -> new QScriptException(location, "state is null"));
+        rtassert(type != null, () -> new QScriptException(location, "type is null"));
+        rtassert(id != null, () -> new QScriptException(location, "id is null"));
         return new DefineExpression(location, state, type, id, null);
     }
 
@@ -28,11 +29,11 @@ public class DefineExpression extends Expression {
             final Type type,
             final String id,
             final Expression init) {
-        rtassert(location != null);
-        rtassert(state != null);
-        rtassert(type != null);
-        rtassert(id != null);
-        rtassert(init != null);
+        rtassert(location != null, () -> new QScriptException(null, "location is null"));
+        rtassert(state != null, () -> new QScriptException(location, "state is null"));
+        rtassert(type != null, () -> new QScriptException(location, "type is null"));
+        rtassert(id != null, () -> new QScriptException(location, "id is null"));
+        rtassert(init != null, () -> new QScriptException(location, "init is null"));
         return new DefineExpression(location, state, type, id, init);
     }
 
@@ -56,9 +57,15 @@ public class DefineExpression extends Expression {
     @Override
     public Value eval(final Environment env) {
         if (init != null)
-            env.defineSymbol(type, id, init == null ? Value.getDefault(type) : init.eval(env));
+            env.defineSymbol(
+                    getLocation(),
+                    type,
+                    id,
+                    init == null
+                            ? Value.getDefault(getLocation(), type)
+                            : init.eval(env));
         else if (type.isFunction())
-            env.declareSymbol(type, id);
+            env.declareSymbol(getLocation(), type, id);
         return null;
     }
 

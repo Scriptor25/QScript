@@ -1,0 +1,35 @@
+def f64(i8*) atof
+def i32(i8*) atoi
+def i64(i8*) atol
+def i64(i8*) atoll
+def f64(i8*, i8**) strtod
+def f32(i8*, i8**) strtof
+def i64(i8*, i8**, i32) strtol
+def f64(i8*, i8**) strtold
+def i64(i8*, i8**, i32) strtoll
+def i64(i8*, i8**, i32) strtoul
+def i64(i8*, i8**, i32) strtoull
+
+def i32() rand
+def void(i32) srand
+
+def void*(i64, i64) calloc
+def void(void*) free
+def void*(i64) malloc
+def void*(void*, i64) realloc
+
+def void() abort
+def i32(void()) atexit
+def i32(void()) at_quick_exit
+def void(i32) exit
+def i8*(i8*) getenv
+def void(i32) quick_exit
+def i32(i8*) system
+def void(i32) _Exit
+
+def void*(void*, void*, i64, i64, i32(void*, void*)) bsearch
+def void(void*, i64, i64, i32(void*, void*)) qsort
+
+def i32(i32) abs
+def i64(i64) labs
+def i64(i64) llabs

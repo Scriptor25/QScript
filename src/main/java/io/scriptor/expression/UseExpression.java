@@ -2,6 +2,7 @@ package io.scriptor.expression;
 
 import static io.scriptor.QScriptException.rtassert;
 
+import io.scriptor.QScriptException;
 import io.scriptor.environment.Environment;
 import io.scriptor.environment.Value;
 import io.scriptor.parser.SourceLocation;
@@ -10,9 +11,9 @@ import io.scriptor.type.Type;
 public class UseExpression extends Expression {
 
     public static UseExpression create(final SourceLocation location, final String id, final Type type) {
-        rtassert(location != null);
-        rtassert(id != null);
-        rtassert(type != null);
+        rtassert(location != null, () -> new QScriptException(null, "location is null"));
+        rtassert(id != null, () -> new QScriptException(location, "id is null"));
+        rtassert(type != null, () -> new QScriptException(location, "type is null"));
         return new UseExpression(location, id, type);
     }
 
@@ -26,7 +27,7 @@ public class UseExpression extends Expression {
     }
 
     public void use() {
-        Type.use(id, type);
+        Type.useAs(getLocation(), id, type);
     }
 
     @Override

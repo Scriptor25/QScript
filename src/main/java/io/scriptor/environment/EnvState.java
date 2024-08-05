@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.scriptor.QScriptException;
+import io.scriptor.parser.SourceLocation;
 import io.scriptor.type.Type;
 
 public class EnvState {
@@ -27,11 +28,11 @@ public class EnvState {
         return symbols.computeIfAbsent(id, key -> new Symbol(type, id));
     }
 
-    public Symbol getSymbol(final String id) {
+    public Symbol getSymbol(final SourceLocation location, final String id) {
         if (!symbols.containsKey(id)) {
             if (parent != null)
-                return parent.getSymbol(id);
-            throw new QScriptException("undefined symbol '%s'", id);
+                return parent.getSymbol(location, id);
+            throw new QScriptException(location, "undefined symbol '%s'", id);
         }
         return symbols.get(id);
     }

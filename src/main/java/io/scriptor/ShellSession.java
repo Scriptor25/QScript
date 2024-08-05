@@ -1,11 +1,11 @@
 package io.scriptor;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PrintStream;
+
+import org.jline.reader.LineReader;
+import org.jline.reader.LineReaderBuilder;
+import org.jline.terminal.Terminal;
+import org.jline.terminal.TerminalBuilder;
 
 import io.scriptor.environment.Environment;
 import io.scriptor.environment.UndefinedValue;
@@ -15,27 +15,21 @@ import io.scriptor.parser.Parser;
 public class ShellSession implements AutoCloseable {
 
     private final Environment global;
-    private final BufferedReader reader;
-    private final PrintStream out;
-    private final PrintStream err;
+    private final Terminal terminal;
+    private final LineReader reader;
 
-    public ShellSession(final Environment global, final InputStream in, final OutputStream out,
-            final OutputStream err) {
-        this(global, in, new PrintStream(out), new PrintStream(err));
-    }
-
-    public ShellSession(final Environment global, final InputStream in, final PrintStream out, final PrintStream err) {
+    public ShellSession(final Environment global)
+            throws IOException {
         this.global = global;
-        reader = new BufferedReader(new InputStreamReader(in));
-        this.out = out;
-        this.err = err;
+        this.terminal = TerminalBuilder.terminal();
+        this.reader = LineReaderBuilder.builder()
+                .terminal(terminal)
+                .build();
     }
 
     public void run() throws IOException {
         while (true) {
-            out.print(">> ");
-
-            final var line = reader.readLine();
+            final var line = reader.readLine(">> ");
             if (line == null)
                 break;
             if (line.isBlank())
@@ -43,8 +37,8 @@ public class ShellSession implements AutoCloseable {
 
             try {
                 Parser.parse(global, new StringStream(line), null, this::callback);
-            } catch (QScriptException e) {
-                err.println(e.getMessage());
+            } catch (final QScriptException e) {
+                terminal.writer().println(e.getMessage());
             }
         }
     }
@@ -52,11 +46,11 @@ public class ShellSession implements AutoCloseable {
     private void callback(final Expression expression) {
         final var value = expression.eval(global);
         if (!(value == null || value instanceof UndefinedValue))
-            out.println(value);
+            terminal.writer().println(value);
     }
 
     @Override
     public void close() throws IOException {
-        reader.close();
+        terminal.close();
     }
 }

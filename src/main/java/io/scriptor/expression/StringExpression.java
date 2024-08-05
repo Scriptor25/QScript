@@ -2,6 +2,7 @@ package io.scriptor.expression;
 
 import static io.scriptor.QScriptException.rtassert;
 
+import io.scriptor.QScriptException;
 import io.scriptor.environment.ConstValue;
 import io.scriptor.environment.Environment;
 import io.scriptor.environment.Value;
@@ -12,8 +13,8 @@ import io.scriptor.type.Type;
 public class StringExpression extends Expression {
 
     public static StringExpression create(final SourceLocation location, final String value) {
-        rtassert(location != null);
-        rtassert(value != null);
+        rtassert(location != null, () -> new QScriptException(null, "location is null"));
+        rtassert(value != null, () -> new QScriptException(location, "value is null"));
         return new StringExpression(location, value);
     }
 

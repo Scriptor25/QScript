@@ -16,12 +16,12 @@ public class BinaryExpression extends Expression {
             final String operator,
             final Expression lhs,
             final Expression rhs) {
-        rtassert(location != null);
-        rtassert(operator != null);
-        rtassert(lhs != null);
-        rtassert(rhs != null);
-        final var type = Type.getHigherOrder(lhs.getType(), rhs.getType());
-        rtassert(type != null);
+        rtassert(location != null, () -> new QScriptException(null, "location is null"));
+        rtassert(operator != null, () -> new QScriptException(location, "operator is null"));
+        rtassert(lhs != null, () -> new QScriptException(location, "lhs is null"));
+        rtassert(rhs != null, () -> new QScriptException(location, "rhs is null"));
+        final var type = Type.getHigherOrder(location, lhs.getType(), rhs.getType());
+        rtassert(type != null, () -> new QScriptException(location, "type is null"));
         return new BinaryExpression(location, type, operator, lhs, rhs);
     }
 
@@ -44,23 +44,23 @@ public class BinaryExpression extends Expression {
     @Override
     public Value eval(final Environment env) {
         if (operator.equals("="))
-            return Operation.assign(env, lhs, rhs.eval(env));
+            return Operation.assign(getLocation(), env, lhs, rhs.eval(env));
 
-        final var left = Operation.cast(lhs.eval(env), getType());
-        final var right = Operation.cast(rhs.eval(env), getType());
+        final var left = Operation.cast(getLocation(), lhs.eval(env), getType());
+        final var right = Operation.cast(getLocation(), rhs.eval(env), getType());
 
         switch (operator) {
             case "<=" -> {
-                return Operation.le(left, right);
+                return Operation.le(getLocation(), left, right);
             }
             case ">=" -> {
-                return Operation.ge(left, right);
+                return Operation.ge(getLocation(), left, right);
             }
             case "==" -> {
-                return Operation.eq(left, right);
+                return Operation.eq(getLocation(), left, right);
             }
             case "!=" -> {
-                return Operation.ne(left, right);
+                return Operation.ne(getLocation(), left, right);
             }
         }
 
@@ -68,13 +68,13 @@ public class BinaryExpression extends Expression {
         final var op = this.operator.replace("=", "");
 
         final var result = switch (op) {
-            case "+" -> Operation.add(left, right);
-            case "-" -> Operation.sub(left, right);
-            case "*" -> Operation.mul(left, right);
-            case "/" -> Operation.div(left, right);
-            case "%" -> Operation.rem(left, right);
-            case "<" -> Operation.lt(left, right);
-            case ">" -> Operation.gt(left, right);
+            case "+" -> Operation.add(getLocation(), left, right);
+            case "-" -> Operation.sub(getLocation(), left, right);
+            case "*" -> Operation.mul(getLocation(), left, right);
+            case "/" -> Operation.div(getLocation(), left, right);
+            case "%" -> Operation.rem(getLocation(), left, right);
+            case "<" -> Operation.lt(getLocation(), left, right);
+            case ">" -> Operation.gt(getLocation(), left, right);
             default -> throw new QScriptException(
                     getLocation(),
                     "no such operator '%s %s %s'",
@@ -84,7 +84,7 @@ public class BinaryExpression extends Expression {
         };
 
         if (assign)
-            return Operation.assign(env, lhs, result);
+            return Operation.assign(getLocation(), env, lhs, result);
         return result;
     }
 

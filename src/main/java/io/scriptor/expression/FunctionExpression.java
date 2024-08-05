@@ -20,10 +20,10 @@ public class FunctionExpression extends Expression {
             final Type type,
             final String[] argnames,
             final Expression[] expressions) {
-        rtassert(location != null);
-        rtassert(type != null);
-        rtassert(argnames != null);
-        rtassert(expressions != null);
+        rtassert(location != null, () -> new QScriptException(null, "location is null"));
+        rtassert(type != null, () -> new QScriptException(location, "type is null"));
+        rtassert(argnames != null, () -> new QScriptException(location, "argnames is null"));
+        rtassert(expressions != null, () -> new QScriptException(location, "expressions is null"));
         return new FunctionExpression(location, type, argnames, expressions);
     }
 
@@ -50,7 +50,7 @@ public class FunctionExpression extends Expression {
         return new FunctionValue(this, functionType, (global, args) -> {
             final var subenv = new Environment(env);
             for (int i = 0; i < argnames.length; ++i)
-                subenv.defineSymbol(args[i].getType(), argnames[i], args[i]);
+                subenv.defineSymbol(getLocation(), args[i].getType(), argnames[i], args[i]);
             subenv.setVarargs(Arrays.copyOfRange(args, argnames.length, args.length));
             for (final var expression : expressions) {
                 final var value = expression.eval(subenv);

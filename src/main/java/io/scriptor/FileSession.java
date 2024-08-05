@@ -23,8 +23,6 @@ public class FileSession {
     }
 
     private void callback(final Expression expression) {
-        final var value = expression.eval(global);
-        if (value != null)
-            System.out.println(value);
+        expression.eval(global);
     }
 }

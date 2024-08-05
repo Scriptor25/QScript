@@ -1,0 +1,4 @@
+use bool as i1
+
+def bool false = 0
+def bool true = 1

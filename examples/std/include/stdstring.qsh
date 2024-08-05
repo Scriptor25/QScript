@@ -1,0 +1,26 @@
+def void*(void*, void*, i64) memcpy
+def void*(void*, void*, i64) memmove
+def i8*(i8*, i8*) strcpy
+def i8*(i8*, i8*, i64) strncpy
+
+def i8*(i8*, i8*) strcat
+def i8*(i8*, i8*, i64) strncat
+
+def i32(void*, void*, i64) memcmp
+def i32(i8*, i8*) strcmp
+def i32(i8*, i8*) strcoll
+def i32(i8*, i8*, i64) strncmp
+def i64(i8*, i8*, i64) strxfrm
+
+def void*(void*, i32, i64) memchr
+def i8*(i8*, i32) strchr
+def i64(i8*, i8*) strcspn
+def i8*(i8*, i8*) strpbrk
+def i8*(i8*, i32) strrchr
+def i64(i8*, i8*) strspn
+def i8*(i8*, i8*) strstr
+def i8*(i8*, i8*) strtok
+
+def void*(void*, i32, i64) memset
+def i8*(i32) strerror
+def i64(i8*) strlen

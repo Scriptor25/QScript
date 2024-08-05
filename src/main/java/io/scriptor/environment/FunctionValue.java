@@ -1,6 +1,7 @@
 package io.scriptor.environment;
 
 import io.scriptor.expression.Expression;
+import io.scriptor.parser.SourceLocation;
 import io.scriptor.type.FunctionType;
 import io.scriptor.type.Type;
 
@@ -31,7 +32,7 @@ public class FunctionValue extends Value {
     }
 
     @Override
-    public boolean getBoolean() {
+    public boolean getBoolean(final SourceLocation location) {
         return function != null;
     }
 

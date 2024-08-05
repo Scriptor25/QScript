@@ -13,6 +13,7 @@ import java.util.Vector;
 import io.scriptor.QScriptException;
 import io.scriptor.environment.EnvState;
 import io.scriptor.environment.Environment;
+import io.scriptor.environment.Operation;
 import io.scriptor.expression.BinaryExpression;
 import io.scriptor.expression.CallExpression;
 import io.scriptor.expression.CompoundExpression;
@@ -414,7 +415,7 @@ public class Parser {
 
     private Type nextType() throws IOException {
         final var base = expect(TokenType.ID).value();
-        return nextType(Type.get(base));
+        return nextType(Type.get(token.location(), base));
     }
 
     private Type nextType(final Type base) throws IOException {
@@ -566,12 +567,14 @@ public class Parser {
         return nextBinary(expected, nextCall(expected), 0);
     }
 
-    private Expression nextBinary(final Type expected, Expression lhs, final int minPrecedence) throws IOException {
+    private Expression nextBinary(Type expected, Expression lhs, final int minPrecedence) throws IOException {
         while (at(TokenType.OPERATOR) && PRECEDENCES.get(token.value()) >= minPrecedence) {
             final var tk = skip();
             final var loc = tk.location();
             final var operator = tk.value();
             final var precedence = PRECEDENCES.get(operator);
+            if (Operation.isAssigning(operator))
+                expected = lhs.getType();
             var rhs = nextCall(expected);
             while (at(TokenType.OPERATOR) && PRECEDENCES.get(token.value()) > precedence) {
                 final var laPrecedence = PRECEDENCES.get(token.value());
@@ -592,7 +595,7 @@ public class Parser {
 
             final List<Expression> args = new ArrayList<>();
             while (!nextIfAt(")")) {
-                final var arg = nextExpression(calleeType.getArg(args.size()));
+                final var arg = nextExpression(calleeType.getArg(token.location(), args.size()));
                 args.add(arg);
                 if (!at(")"))
                     expect(",");
@@ -632,7 +635,7 @@ public class Parser {
             final List<String> argnames = new ArrayList<>();
             while (!nextIfAt(")")) {
                 final var argname = expect(TokenType.ID).value();
-                stack.peek().declareSymbol(type.getArg(argnames.size()), argname);
+                stack.peek().declareSymbol(type.getArg(token.location(), argnames.size()), argname);
                 argnames.add(argname);
                 if (!at(")"))
                     expect(",");

@@ -1,0 +1,56 @@
+type FILE
+type fpos_t
+type va_list
+
+def i32(i8*) remove
+def i32(i8*, i8*) rename
+def FILE*() tmpfile
+def i8*(i8*) tmpnam
+
+def i32(FILE*) fclose
+def i32(FILE*) fflush
+def FILE*(i8*, i8*) fopen
+def FILE*(i8*, i8*, FILE*) freopen
+def void(FILE*, i8*) setbuf
+def i32(FILE*, i8*, i32, i64) setvbuf
+
+def i32(FILE*, i8*, ?) fprintf
+def i32(FILE*, i8*, ?) fscanf
+def i32(i8*, ?) printf
+def i32(i8*, ?) scanf
+def i32(i8*, i64, i8*, ?) snprintf
+def i32(i8*, i8*, ?) sprintf
+def i32(i8*, i8*, ?) sscanf
+def i32(FILE*, i8*, va_list) vfprintf
+def i32(FILE*, i8*, va_list) vfscanf
+def i32(i8*, va_list) vprintf
+def i32(i8*, va_list) vscanf
+def i32(i8*, i64, i8*, va_list) vsnprintf
+def i32(i8*, i8*, va_list) vsprintf
+def i32(i8*, i8*, va_list) vsscanf
+
+def i32(FILE*) fgetc
+def i8*(i8*, i32, FILE*) fgets
+def i32(i32, FILE*) fputc
+def i32(i8*, FILE*) fputs
+def i32(FILE*) getc
+def i32() getchar
+def i8*(i8*) gets
+def i32(i32, FILE*) putc
+def i32(i32) putchar
+def i32(i8*) puts
+def i32(i32, FILE*) ungetc
+
+def i64(void*, i64, i64, FILE*) fread
+def i64(void*, i64, i64, FILE*) fwrite
+
+def i32(FILE*, fpos_t*) fgetpos
+def i32(FILE*, i64, i32) fseek
+def i32(FILE*, fpos_t*) fsetpos
+def i64(FILE*) ftell
+def void(FILE*) rewind
+
+def void(FILE*) clearerr
+def i32(FILE*) feof
+def i32(FILE*) ferror
+def void(i8*) perror

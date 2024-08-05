@@ -14,9 +14,9 @@ public class UnaryExpression extends Expression {
             final SourceLocation location,
             final String operator,
             final Expression operand) {
-        rtassert(location != null);
-        rtassert(operator != null);
-        rtassert(operand != null);
+        rtassert(location != null, () -> new QScriptException(null, "location is null"));
+        rtassert(operator != null, () -> new QScriptException(location, "operator is null"));
+        rtassert(operand != null, () -> new QScriptException(location, "operand is null"));
         return new UnaryExpression(location, true, operator, operand);
     }
 
@@ -24,9 +24,9 @@ public class UnaryExpression extends Expression {
             final SourceLocation location,
             final String operator,
             final Expression operand) {
-        rtassert(location != null);
-        rtassert(operator != null);
-        rtassert(operand != null);
+        rtassert(location != null, () -> new QScriptException(null, "location is null"));
+        rtassert(operator != null, () -> new QScriptException(location, "operator is null"));
+        rtassert(operand != null, () -> new QScriptException(location, "operand is null"));
         return new UnaryExpression(location, false, operator, operand);
     }
 
@@ -50,23 +50,23 @@ public class UnaryExpression extends Expression {
         final var value = operand.eval(env);
         switch (operator) {
             case "++" -> {
-                final var result = Operation.inc(value);
-                Operation.assign(env, operand, result);
+                final var result = Operation.inc(getLocation(), value);
+                Operation.assign(getLocation(), env, operand, result);
                 if (right)
                     return value;
                 return result;
             }
 
             case "--" -> {
-                final var result = Operation.dec(value);
-                Operation.assign(env, operand, result);
+                final var result = Operation.dec(getLocation(), value);
+                Operation.assign(getLocation(), env, operand, result);
                 if (right)
                     return value;
                 return result;
             }
 
             case "-" -> {
-                return Operation.neg(value);
+                return Operation.neg(getLocation(), value);
             }
 
             default -> throw new QScriptException(getLocation(), "no such operator '%s%s'", value.getType(), operator);

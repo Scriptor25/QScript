@@ -2,6 +2,7 @@ package io.scriptor.expression;
 
 import static io.scriptor.QScriptException.rtassert;
 
+import io.scriptor.QScriptException;
 import io.scriptor.environment.Environment;
 import io.scriptor.environment.Value;
 import io.scriptor.parser.SourceLocation;
@@ -15,13 +16,14 @@ public class CallExpression extends Expression {
             final Type result,
             final Expression callee,
             final Expression[] args) {
-        rtassert(location != null);
-        rtassert(result != null);
-        rtassert(callee != null);
-        rtassert(args != null);
+        rtassert(location != null, () -> new QScriptException(null, "location is null"));
+        rtassert(result != null, () -> new QScriptException(location, "result is null"));
+        rtassert(callee != null, () -> new QScriptException(location, "callee is null"));
+        rtassert(args != null, () -> new QScriptException(location, "args is null"));
         final var type = (FunctionType) callee.getType();
-        rtassert(type != null);
-        rtassert((type.hasVararg() && type.getArgCount() <= args.length) || type.getArgCount() == args.length);
+        rtassert(type != null, () -> new QScriptException(location, "type is null"));
+        rtassert((type.hasVararg() && type.getArgCount() <= args.length) || type.getArgCount() == args.length,
+                () -> new QScriptException(location, "incorrect number of args"));
         return new CallExpression(location, result, callee, args);
     }
 
@@ -44,7 +46,7 @@ public class CallExpression extends Expression {
         final var args = new Value[this.args.length];
         for (int i = 0; i < args.length; ++i)
             args[i] = this.args[i].eval(env);
-        return env.call(callee, args);
+        return env.call(getLocation(), callee, args);
     }
 
     @Override

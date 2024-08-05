@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.scriptor.QScriptException;
+import io.scriptor.parser.SourceLocation;
 import io.scriptor.type.FunctionType;
 import io.scriptor.type.Type;
 
@@ -33,55 +34,56 @@ public class Environment {
         return varargs[i];
     }
 
-    public Symbol declareSymbol(final Type type, final String id) {
-        return symbols.computeIfAbsent(id, key -> new Symbol(type, key, new UndefinedValue(type)));
+    public Symbol declareSymbol(final SourceLocation location, final Type type, final String id) {
+        return symbols.computeIfAbsent(id, key -> new Symbol(location, type, key, new UndefinedValue(type)));
     }
 
-    public void defineSymbol(final Type type, final String id, final Value value) {
-        final var symbol = declareSymbol(type, id);
+    public void defineSymbol(final SourceLocation location, final Type type, final String id, final Value value) {
+        final var symbol = declareSymbol(location, type, id);
         if (!(symbol.getValue() == null || symbol.getValue() instanceof UndefinedValue))
-            throw new QScriptException("symbol '%s' aready defined", id);
-        symbol.setValue(value);
+            throw new QScriptException(location, "symbol '%s' aready defined", id);
+        symbol.setValue(location, value);
     }
 
-    public Symbol getSymbol(final String id) {
+    public Symbol getSymbol(final SourceLocation location, final String id) {
         if (!symbols.containsKey(id)) {
             if (parent != null)
-                return parent.getSymbol(id);
-            throw new QScriptException("undefined symbol '%s'", id);
+                return parent.getSymbol(location, id);
+            throw new QScriptException(location, "undefined symbol '%s'", id);
         }
         return symbols.get(id);
     }
 
-    public Value call(final Value callee, final Value... args) {
+    public Value call(final SourceLocation location, final Value callee, final Value... args) {
         if (!callee.getType().isFunction())
-            throw new QScriptException("cannot create call on non-function value of type %s", callee.getType());
+            throw new QScriptException(location, "cannot create call on non-function value of type %s",
+                    callee.getType());
 
         if (callee instanceof UndefinedValue)
-            throw new QScriptException("cannot create call on undefined function");
+            throw new QScriptException(location, "cannot create call on undefined function");
 
         final var type = (FunctionType) callee.getType();
         if (type.hasVararg() && type.getArgCount() > args.length)
-            throw new QScriptException("not enough arguments");
+            throw new QScriptException(location, "not enough arguments");
         if (!type.hasVararg() && type.getArgCount() != args.length)
-            throw new QScriptException("wrong number of arguments");
+            throw new QScriptException(location, "wrong number of arguments");
         for (int i = 0; i < type.getArgCount(); ++i)
-            if (type.getArg(i) != args[i].getType())
-                args[i] = Operation.cast(args[i], type.getArg(i));
+            if (type.getArg(location, i) != args[i].getType())
+                args[i] = Operation.cast(location, args[i], type.getArg(location, i));
 
         return ((FunctionValue) callee).call(global, args);
     }
 
-    public <T> T call(final String id, final Object... args) {
-        final var symbol = getSymbol(id);
+    public <T> T call(final SourceLocation location, final String id, final Object... args) {
+        final var symbol = getSymbol(location, id);
         final var callee = symbol.getValue();
         final var type = (FunctionType) callee.getType();
         final var vargs = new Value[type.hasVararg() ? args.length : type.getArgCount()];
         for (int i = 0; i < args.length; ++i)
-            vargs[i] = ConstValue.fromJava(args[i]);
+            vargs[i] = ConstValue.fromJava(location, args[i]);
         for (int i = args.length; i < vargs.length; ++i)
-            vargs[i] = new UndefinedValue(type.getArg(i));
-        return call(callee, vargs).getJava();
+            vargs[i] = new UndefinedValue(type.getArg(location, i));
+        return call(location, callee, vargs).getJava();
     }
 
     public EnvState getState() {

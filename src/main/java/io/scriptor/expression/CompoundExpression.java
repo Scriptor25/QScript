@@ -2,6 +2,7 @@ package io.scriptor.expression;
 
 import static io.scriptor.QScriptException.rtassert;
 
+import io.scriptor.QScriptException;
 import io.scriptor.environment.Environment;
 import io.scriptor.environment.Value;
 import io.scriptor.parser.SourceLocation;
@@ -9,8 +10,8 @@ import io.scriptor.parser.SourceLocation;
 public class CompoundExpression extends Expression {
 
     public static CompoundExpression create(final SourceLocation location, final Expression[] expressions) {
-        rtassert(location != null);
-        rtassert(expressions != null);
+        rtassert(location != null, () -> new QScriptException(null, "location is null"));
+        rtassert(expressions != null, () -> new QScriptException(location, "expressions is null"));
         return new CompoundExpression(location, expressions);
     }
 

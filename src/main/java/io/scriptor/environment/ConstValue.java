@@ -1,11 +1,12 @@
 package io.scriptor.environment;
 
 import io.scriptor.QScriptException;
+import io.scriptor.parser.SourceLocation;
 import io.scriptor.type.Type;
 
 public class ConstValue<E> extends Value {
 
-    public static ConstValue<?> getDefault(final Type type) {
+    public static ConstValue<?> getDefault(final SourceLocation location, final Type type) {
         if (type == Type.getInt1())
             return new ConstValue<>(type, false);
         if (type == Type.getInt8())
@@ -22,10 +23,10 @@ public class ConstValue<E> extends Value {
             return new ConstValue<>(type, 0.0);
         if (type.isPointer())
             return new ConstValue<>(type, 0L);
-        throw new QScriptException("no default value for %s", type);
+        throw new QScriptException(location, "no default value for %s", type);
     }
 
-    public static ConstValue<?> fromJava(final Object object) {
+    public static ConstValue<?> fromJava(final SourceLocation location, final Object object) {
         if (object instanceof Boolean b)
             return new ConstValue<>(Type.getInt1(), b);
         if (object instanceof Byte b)
@@ -40,7 +41,7 @@ public class ConstValue<E> extends Value {
             return new ConstValue<>(Type.getFlt32(), f);
         if (object instanceof Double d)
             return new ConstValue<>(Type.getFlt64(), d);
-        throw new QScriptException("no conversion from java value %s", object);
+        throw new QScriptException(location, "no conversion from java value %s", object);
     }
 
     private final E java;
@@ -51,12 +52,12 @@ public class ConstValue<E> extends Value {
     }
 
     @Override
-    public boolean getBoolean() {
+    public boolean getBoolean(final SourceLocation location) {
         if (java instanceof Boolean b)
             return b;
         if (java instanceof Number n)
             return n.doubleValue() != 0.0;
-        throw new QScriptException("value %s does not have a boolean version");
+        throw new QScriptException(location, "value %s does not have a boolean version");
     }
 
     @Override

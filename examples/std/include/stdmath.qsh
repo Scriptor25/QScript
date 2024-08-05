@@ -1,0 +1,123 @@
+def f64(f64) cos
+def f32(f32) cosf
+def f64(f64) sin
+def f32(f32) sinf
+def f64(f64) tan
+def f32(f32) tanf
+def f64(f64) acos
+def f32(f32) acosf
+def f64(f64) asin
+def f32(f32) asinf
+def f64(f64) atan
+def f32(f32) atanf
+def f64(f64, f64) atan2
+def f32(f32) atan2f
+
+def f64(f64) cosh
+def f32(f32) coshf
+def f64(f64) sinh
+def f32(f32) sinhf
+def f64(f64) tanh
+def f32(f32) tanhf
+def f64(f64) acosh
+def f32(f32) acoshf
+def f64(f64) asinh
+def f32(f32) asinhf
+def f64(f64) atanh
+def f32(f32) atanhf
+
+def f64(f64) exp
+def f32(f32) expf
+def f64(f64, i32*) frexp
+def f32(f32, i32*) frexpf
+def f64(f64, i32) ldexp
+def f32(f32, i32) ldexpf
+def f64(f64) log
+def f32(f32) logf
+def f64(f64) log10
+def f32(f32) log10f
+def f64(f64, f64*) modf
+def f32(f32, f32*) modff
+def f64(f64) exp2
+def f32(f32) exp2f
+def f64(f64) expm1
+def f32(f32) expm1f
+def i32(f64) ilogb
+def i32(f32) ilogbf
+def f64(f64) log1p
+def f32(f32) log1pf
+def f64(f64) log2
+def f32(f32) log2f
+def f64(f64) logb
+def f32(f32) logbf
+def f64(f64, i32) scalbn
+def f32(f32, i32) scalbnf
+def f64(f64, i64) scalbln
+def f32(f32, i64) scalblnf
+
+def f64(f64, f64) pow
+def f32(f32, f32) powf
+def f64(f64) sqrt
+def f32(f32) sqrtf
+def f64(f64) cbrt
+def f32(f32) cbrtf
+def f64(f64, f64) hypot
+def f32(f32, f32) hypotf
+
+def f64(f64) erf
+def f32(f32) erff
+def f64(f64) erfc
+def f32(f32) erfcf
+def f64(f64) tgamma
+def f32(f32) tgammaf
+def f64(f64) lgamma
+def f32(f32) lgammaf
+
+def f64(f64) ceil
+def f32(f32) ceilf
+def f64(f64) floor
+def f32(f32) floorf
+def f64(f64) fmod
+def f32(f32) fmodf
+def f64(f64) trunc
+def f32(f32) truncf
+def f64(f64) round
+def f32(f32) roundf
+def i64(f64) lround
+def i64(f32) lroundf
+def i64(f64) llround
+def i64(f32) llroundf
+def f64(f64) rint
+def f32(f32) rintf
+def i64(f64) lrint
+def i64(f32) lrintf
+def i64(f64) llrint
+def i64(f32) llrintf
+def f64(f64) nearbyint
+def f32(f32) nearbyintf
+def f64(f64, f64) remainder
+def f32(f32, f32) remainderf
+def f64(f64, f64, i32*) remquo
+def f32(f32, f32, i32*) remquof
+
+def f64(f64, f64) copysign
+def f32(f32, f32) copysignf
+def f64() nan
+def f64(f64, f64) nextafter
+def f32(f32, f32) nextafterf
+def f64(f64, f64) nexttoward
+def f32(f32, f32) nexttowardf
+
+def f64(f64, f64) fdim
+def f32(f32, f32) fdimf
+def f64(f64, f64) fmax
+def f32(f32, f32) fmaxf
+def f64(f64, f64) fmin
+def f32(f32, f32) fminf
+
+def f64(f64) fabs
+def f32(f32) fabsf
+def f64(f64) abs
+def f32(f32) absf
+def f64(f64, f64, f64) fma
+def f32(f32, f32, f32) fmaf

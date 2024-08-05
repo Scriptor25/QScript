@@ -1,5 +1,6 @@
 package io.scriptor.environment;
 
+import io.scriptor.parser.SourceLocation;
 import io.scriptor.type.Type;
 
 public class UndefinedValue extends Value {
@@ -9,7 +10,7 @@ public class UndefinedValue extends Value {
     }
 
     @Override
-    public boolean getBoolean() {
+    public boolean getBoolean(final SourceLocation location) {
         return false;
     }
 
