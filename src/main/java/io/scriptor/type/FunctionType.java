@@ -1,9 +1,6 @@
 package io.scriptor.type;
 
-import static io.scriptor.QScriptException.rtassert;
-
-import io.scriptor.QScriptException;
-import io.scriptor.parser.SourceLocation;
+import io.scriptor.backend.IRContext;
 
 public class FunctionType extends Type {
 
@@ -30,19 +27,25 @@ public class FunctionType extends Type {
     }
 
     public static FunctionType get(final Type result, final boolean vararg, final Type... args) {
+        final var context = result.getContext();
         final var id = makeId(result, vararg, args);
-        final var type = Type.getUnsafe(id);
-        if (type != null)
-            return (FunctionType) type;
-        return Type.create(id, new FunctionType(id, result, vararg, args));
+        if (context.existsType(id))
+            return context.getType(id);
+
+        return new FunctionType(context, id, result, vararg, args);
     }
 
     private final Type result;
     private final boolean vararg;
     private final Type[] args;
 
-    protected FunctionType(final String id, final Type result, final boolean vararg, final Type... args) {
-        super(id, Type.IS_FUNCTION, 64);
+    protected FunctionType(
+            final IRContext context,
+            final String id,
+            final Type result,
+            final boolean vararg,
+            final Type... args) {
+        super(context, id, Type.IS_FUN, 64);
         this.result = result;
         this.vararg = vararg;
         this.args = args;
@@ -60,12 +63,9 @@ public class FunctionType extends Type {
         return args.length;
     }
 
-    public Type getArg(final SourceLocation location, final int i) {
+    public Type getArg(final int i) {
         if (vararg && i >= args.length)
             return null;
-
-        rtassert(i >= 0 && i < args.length,
-                () -> new QScriptException(location, "index %d out of bounds [0;%d[", i, args.length));
 
         return args[i];
     }

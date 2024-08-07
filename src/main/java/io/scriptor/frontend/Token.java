@@ -1,4 +1,4 @@
-package io.scriptor.parser;
+package io.scriptor.frontend;
 
 public record Token(SourceLocation location, TokenType type, String value) {
 

@@ -1,89 +1,67 @@
 package io.scriptor.type;
 
-import static io.scriptor.QScriptException.rtassert;
-
-import java.util.HashMap;
-import java.util.Map;
-
 import io.scriptor.QScriptException;
-import io.scriptor.parser.SourceLocation;
+import io.scriptor.backend.IRContext;
+import io.scriptor.frontend.SourceLocation;
 
 public class Type {
 
-    protected static final int IS_VOID = 1;
-    protected static final int IS_INT = 2;
-    protected static final int IS_FLOAT = 4;
-    protected static final int IS_POINTER = 8;
-    protected static final int IS_FUNCTION = 16;
+    public static final int IS_VOID = 1;
+    public static final int IS_INT = 2;
+    public static final int IS_FLT = 4;
+    public static final int IS_PTR = 8;
+    public static final int IS_FUN = 16;
+    public static final int IS_STRUCT = 32;
 
-    private static final Map<String, Type> TYPES = new HashMap<>();
-    static {
-        new Type("void", IS_VOID, 0);
-        new Type("i1", IS_INT, 1);
-        new Type("i8", IS_INT, 8);
-        new Type("i16", IS_INT, 16);
-        new Type("i32", IS_INT, 32);
-        new Type("i64", IS_INT, 64);
-        new Type("f32", IS_FLOAT, 32);
-        new Type("f64", IS_FLOAT, 64);
+    public static void useAs(final IRContext context, final String id, final Type type) {
+        context.getType(id, () -> type);
     }
 
-    public static void useAs(final SourceLocation location, final String id, final Type type) {
-        rtassert(id != null, () -> new QScriptException(location, "id is null"));
-        rtassert(type != null, () -> new QScriptException(location, "type is null"));
-        TYPES.put(id, type);
+    public static Type get(final IRContext context, final String id) {
+        return context.getType(id);
     }
 
-    public static Type get(final SourceLocation location, final String id) {
-        rtassert(id != null, () -> new QScriptException(location, "id is null"));
-        rtassert(TYPES.containsKey(id), () -> new QScriptException(location, "no type with id '%s'", id));
-        return TYPES.get(id);
+    public static Type getVoid(final IRContext context) {
+        return get(context, "void");
     }
 
-    public static Type getVoid() {
-        return get(null, "void");
+    public static Type getInt1(final IRContext context) {
+        return get(context, "i1");
     }
 
-    public static Type getInt1() {
-        return get(null, "i1");
+    public static Type getInt8(final IRContext context) {
+        return get(context, "i8");
     }
 
-    public static Type getInt8() {
-        return get(null, "i8");
+    public static Type getInt16(final IRContext context) {
+        return get(context, "i16");
     }
 
-    public static Type getInt16() {
-        return get(null, "i16");
+    public static Type getInt32(final IRContext context) {
+        return get(context, "i32");
     }
 
-    public static Type getInt32() {
-        return get(null, "i32");
+    public static Type getInt64(final IRContext context) {
+        return get(context, "i64");
     }
 
-    public static Type getInt64() {
-        return get(null, "i64");
+    public static Type getFlt32(final IRContext context) {
+        return get(context, "f32");
     }
 
-    public static Type getFlt32() {
-        return get(null, "f32");
+    public static Type getFlt64(final IRContext context) {
+        return get(context, "f64");
     }
 
-    public static Type getFlt64() {
-        return get(null, "f64");
+    public static Type getVoidPtr(final IRContext context) {
+        return PointerType.get(getVoid(context));
     }
 
-    public static Type getVoidPtr() {
-        return PointerType.get(getVoid());
-    }
-
-    public static Type getInt8Ptr() {
-        return PointerType.get(getInt8());
+    public static Type getInt8Ptr(final IRContext context) {
+        return PointerType.get(getInt8(context));
     }
 
     public static Type getHigherOrder(final SourceLocation location, final Type a, final Type b) {
-        rtassert(a != null, () -> new QScriptException(location, "a is null"));
-        rtassert(b != null, () -> new QScriptException(location, "b is null"));
-
         if (a == b)
             return a;
 
@@ -94,53 +72,72 @@ public class Type {
                 return b;
             }
 
-            if (b.isFloat())
+            if (b.isFlt())
                 return b;
 
-            if (b.isPointer())
+            if (b.isPtr())
                 return a;
         }
 
-        if (a.isFloat()) {
+        if (a.isFlt()) {
             if (b.isInt())
                 return a;
 
-            if (b.isFloat()) {
+            if (b.isFlt()) {
                 if (a.getSize() >= b.getSize())
                     return a;
                 return b;
             }
 
-            if (b.isPointer())
+            if (b.isPtr())
                 return a;
         }
 
-        if (a.isPointer()) {
+        if (a.isPtr()) {
             if (b.isInt())
                 return b;
 
-            if (b.isFloat())
+            if (b.isFlt())
                 return b;
         }
 
-        throw new QScriptException(location, "cannot determine higher order type of %s and %s", a, b);
+        throw new QScriptException(location, "cannot determine higher order type from %s and %s", a, b);
     }
 
-    protected static <T extends Type> T create(final String id, final T type) {
-        TYPES.put(id, type);
-        return type;
+    public static Type getNative(final IRContext context, final Class<?> clazz) {
+        if (clazz.isArray()) {
+            final var base = getNative(context, clazz.getComponentType());
+            return PointerType.get(base);
+        }
+
+        if (clazz == Void.class || clazz == void.class)
+            return Type.getVoid(context);
+        if (clazz == Boolean.class || clazz == boolean.class)
+            return Type.getInt1(context);
+        if (clazz == Byte.class || clazz == byte.class)
+            return Type.getInt8(context);
+        if (clazz == Short.class || clazz == short.class)
+            return Type.getInt16(context);
+        if (clazz == Integer.class || clazz == int.class)
+            return Type.getInt32(context);
+        if (clazz == Long.class || clazz == long.class)
+            return Type.getInt64(context);
+        if (clazz == Float.class || clazz == float.class)
+            return Type.getFlt32(context);
+        if (clazz == Double.class || clazz == double.class)
+            return Type.getFlt64(context);
+
+        return Type.get(context, clazz.getSimpleName());
     }
 
-    protected static Type getUnsafe(final String id) {
-        return TYPES.get(id);
-    }
-
+    private final IRContext context;
     private final String id;
     private final int flags;
     private final int size;
 
-    protected Type(final String id, final int flags, final int size) {
-        TYPES.put(id, this);
+    public Type(final IRContext context, final String id, final int flags, final int size) {
+        context.getType(id, () -> this);
+        this.context = context;
         this.id = id;
         this.flags = flags;
         this.size = size;
@@ -149,6 +146,10 @@ public class Type {
     @Override
     public String toString() {
         return id;
+    }
+
+    public IRContext getContext() {
+        return context;
     }
 
     public String getId() {
@@ -171,15 +172,51 @@ public class Type {
         return (flags & IS_INT) != 0;
     }
 
-    public boolean isFloat() {
-        return (flags & IS_FLOAT) != 0;
+    public boolean isInt(final int size) {
+        return isInt() && this.size == size;
     }
 
-    public boolean isPointer() {
-        return (flags & IS_POINTER) != 0;
+    public boolean isInt1() {
+        return isInt(1);
     }
 
-    public boolean isFunction() {
-        return (flags & IS_FUNCTION) != 0;
+    public boolean isInt8() {
+        return isInt(8);
+    }
+
+    public boolean isInt16() {
+        return isInt(16);
+    }
+
+    public boolean isInt32() {
+        return isInt(32);
+    }
+
+    public boolean isInt64() {
+        return isInt(64);
+    }
+
+    public boolean isFlt() {
+        return (flags & IS_FLT) != 0;
+    }
+
+    public boolean isFlt(final int size) {
+        return isFlt() && this.size == size;
+    }
+
+    public boolean isFlt32() {
+        return isFlt(32);
+    }
+
+    public boolean isFlt64() {
+        return isFlt(64);
+    }
+
+    public boolean isPtr() {
+        return (flags & IS_PTR) != 0;
+    }
+
+    public boolean isFun() {
+        return (flags & IS_FUN) != 0;
     }
 }

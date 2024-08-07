@@ -1,12 +1,9 @@
 package io.scriptor.expression;
 
-import static io.scriptor.QScriptException.rtassert;
-
-import io.scriptor.QScriptException;
-import io.scriptor.environment.Environment;
-import io.scriptor.environment.Operation;
-import io.scriptor.environment.Value;
-import io.scriptor.parser.SourceLocation;
+import io.scriptor.backend.IRBuilder;
+import io.scriptor.backend.IRModule;
+import io.scriptor.backend.value.Value;
+import io.scriptor.frontend.SourceLocation;
 
 public class UnaryExpression extends Expression {
 
@@ -14,9 +11,6 @@ public class UnaryExpression extends Expression {
             final SourceLocation location,
             final String operator,
             final Expression operand) {
-        rtassert(location != null, () -> new QScriptException(null, "location is null"));
-        rtassert(operator != null, () -> new QScriptException(location, "operator is null"));
-        rtassert(operand != null, () -> new QScriptException(location, "operand is null"));
         return new UnaryExpression(location, true, operator, operand);
     }
 
@@ -24,9 +18,6 @@ public class UnaryExpression extends Expression {
             final SourceLocation location,
             final String operator,
             final Expression operand) {
-        rtassert(location != null, () -> new QScriptException(null, "location is null"));
-        rtassert(operator != null, () -> new QScriptException(location, "operator is null"));
-        rtassert(operand != null, () -> new QScriptException(location, "operand is null"));
         return new UnaryExpression(location, false, operator, operand);
     }
 
@@ -45,32 +36,16 @@ public class UnaryExpression extends Expression {
         this.operand = operand;
     }
 
-    @Override
-    public Value eval(final Environment env) {
-        final var value = operand.eval(env);
-        switch (operator) {
-            case "++" -> {
-                final var result = Operation.inc(getLocation(), value);
-                Operation.assign(getLocation(), env, operand, result);
-                if (right)
-                    return value;
-                return result;
-            }
+    public boolean isRight() {
+        return right;
+    }
 
-            case "--" -> {
-                final var result = Operation.dec(getLocation(), value);
-                Operation.assign(getLocation(), env, operand, result);
-                if (right)
-                    return value;
-                return result;
-            }
+    public String getOperator() {
+        return operator;
+    }
 
-            case "-" -> {
-                return Operation.neg(getLocation(), value);
-            }
-
-            default -> throw new QScriptException(getLocation(), "no such operator '%s%s'", value.getType(), operator);
-        }
+    public Expression getOperand() {
+        return operand;
     }
 
     @Override
@@ -78,5 +53,10 @@ public class UnaryExpression extends Expression {
         if (right)
             return "%s%s".formatted(operand, operator);
         return "%s%s".formatted(operator, operand);
+    }
+
+    @Override
+    public Value gen(final IRBuilder builder, final IRModule module) {
+        throw new UnsupportedOperationException();
     }
 }

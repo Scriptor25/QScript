@@ -1,4 +1,4 @@
-package io.scriptor.parser;
+package io.scriptor.frontend;
 
 import java.io.File;
 

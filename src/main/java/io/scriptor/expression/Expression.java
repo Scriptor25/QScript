@@ -1,8 +1,9 @@
 package io.scriptor.expression;
 
-import io.scriptor.environment.Environment;
-import io.scriptor.environment.Value;
-import io.scriptor.parser.SourceLocation;
+import io.scriptor.backend.IRBuilder;
+import io.scriptor.backend.IRModule;
+import io.scriptor.backend.value.Value;
+import io.scriptor.frontend.SourceLocation;
 import io.scriptor.type.Type;
 
 public abstract class Expression {
@@ -23,7 +24,7 @@ public abstract class Expression {
         return type;
     }
 
-    public abstract Value eval(final Environment env);
-
     public abstract String toString();
+
+    public abstract Value gen(final IRBuilder builder, final IRModule module);
 }

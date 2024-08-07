@@ -1,37 +1,36 @@
 package io.scriptor.expression;
 
-import static io.scriptor.QScriptException.rtassert;
-
-import io.scriptor.QScriptException;
-import io.scriptor.environment.ConstValue;
-import io.scriptor.environment.Environment;
-import io.scriptor.environment.Value;
-import io.scriptor.parser.SourceLocation;
-import io.scriptor.parser.Token;
+import io.scriptor.backend.IRBuilder;
+import io.scriptor.backend.IRModule;
+import io.scriptor.backend.value.Value;
+import io.scriptor.frontend.SourceLocation;
+import io.scriptor.frontend.Token;
 import io.scriptor.type.Type;
 
 public class StringExpression extends Expression {
 
-    public static StringExpression create(final SourceLocation location, final String value) {
-        rtassert(location != null, () -> new QScriptException(null, "location is null"));
-        rtassert(value != null, () -> new QScriptException(location, "value is null"));
-        return new StringExpression(location, value);
+    public static StringExpression create(final SourceLocation location, final Type type, final String value) {
+        return new StringExpression(location, type, value);
     }
 
     private final String value;
 
-    private StringExpression(final SourceLocation location, final String value) {
-        super(location, Type.getInt8Ptr());
+    private StringExpression(final SourceLocation location, final Type type, final String value) {
+        super(location, type);
         this.value = value;
     }
 
-    @Override
-    public Value eval(final Environment env) {
-        return new ConstValue<>(getType(), value);
+    public String getValue() {
+        return value;
     }
 
     @Override
     public String toString() {
         return "\"%s\"".formatted(Token.unescape(value));
+    }
+
+    @Override
+    public Value gen(final IRBuilder builder, final IRModule module) {
+        throw new UnsupportedOperationException();
     }
 }

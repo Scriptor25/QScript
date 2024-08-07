@@ -1,31 +1,31 @@
-package io.scriptor.environment;
+package io.scriptor.frontend;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import io.scriptor.QScriptException;
-import io.scriptor.parser.SourceLocation;
+import io.scriptor.Symbol;
 import io.scriptor.type.Type;
 
-public class EnvState {
+public class State {
 
-    private final EnvState global;
-    private final EnvState parent;
+    private final State global;
+    private final State parent;
 
     private final Map<String, Symbol> symbols = new HashMap<>();
 
-    public EnvState() {
+    public State() {
         this.global = this;
         this.parent = null;
     }
 
-    public EnvState(final EnvState parent) {
+    public State(final State parent) {
         this.global = parent.global;
         this.parent = parent;
     }
 
     public Symbol declareSymbol(final Type type, final String id) {
-        return symbols.computeIfAbsent(id, key -> new Symbol(type, id));
+        return symbols.computeIfAbsent(id, key -> new Symbol(id, type, null));
     }
 
     public Symbol getSymbol(final SourceLocation location, final String id) {

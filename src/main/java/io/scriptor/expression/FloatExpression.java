@@ -1,35 +1,35 @@
 package io.scriptor.expression;
 
-import static io.scriptor.QScriptException.rtassert;
-
-import io.scriptor.QScriptException;
-import io.scriptor.environment.ConstValue;
-import io.scriptor.environment.Environment;
-import io.scriptor.environment.Value;
-import io.scriptor.parser.SourceLocation;
+import io.scriptor.backend.IRBuilder;
+import io.scriptor.backend.IRModule;
+import io.scriptor.backend.value.Value;
+import io.scriptor.frontend.SourceLocation;
 import io.scriptor.type.Type;
 
 public class FloatExpression extends Expression {
 
-    public static FloatExpression create(final SourceLocation location, final double value) {
-        rtassert(location != null, () -> new QScriptException(null, "location is null"));
-        return new FloatExpression(location, value);
+    public static FloatExpression create(final SourceLocation location, final Type type, final double value) {
+        return new FloatExpression(location, type, value);
     }
 
     private final double value;
 
-    private FloatExpression(final SourceLocation location, final double value) {
-        super(location, Type.getFlt64());
+    private FloatExpression(final SourceLocation location, final Type type, final double value) {
+        super(location, type);
         this.value = value;
     }
 
-    @Override
-    public Value eval(final Environment env) {
-        return new ConstValue<>(getType(), value);
+    public double getValue() {
+        return value;
     }
 
     @Override
     public String toString() {
         return Double.toString(value);
+    }
+
+    @Override
+    public Value gen(final IRBuilder builder, final IRModule module) {
+        throw new UnsupportedOperationException();
     }
 }

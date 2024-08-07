@@ -1,19 +1,21 @@
-package io.scriptor.parser;
+package io.scriptor.frontend;
+
+import static io.scriptor.Util.isCompOP;
+import static io.scriptor.Util.isDecDigit;
+import static io.scriptor.Util.isID;
+import static io.scriptor.Util.isOP;
+import static io.scriptor.Util.isOctDigit;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
-import java.util.Vector;
 
 import io.scriptor.QScriptException;
-import io.scriptor.environment.EnvState;
-import io.scriptor.environment.Environment;
-import io.scriptor.environment.Operation;
 import io.scriptor.expression.BinaryExpression;
 import io.scriptor.expression.CallExpression;
 import io.scriptor.expression.CompoundExpression;
@@ -22,172 +24,94 @@ import io.scriptor.expression.Expression;
 import io.scriptor.expression.FloatExpression;
 import io.scriptor.expression.FunctionExpression;
 import io.scriptor.expression.IDExpression;
-import io.scriptor.expression.IncludeExpression;
 import io.scriptor.expression.IntExpression;
 import io.scriptor.expression.ReturnExpression;
 import io.scriptor.expression.StringExpression;
-import io.scriptor.expression.SwitchExpression;
 import io.scriptor.expression.UnaryExpression;
-import io.scriptor.expression.UseExpression;
 import io.scriptor.expression.WhileExpression;
 import io.scriptor.type.FunctionType;
 import io.scriptor.type.PointerType;
+import io.scriptor.type.StructType;
 import io.scriptor.type.Type;
 
 public class Parser {
 
-    @FunctionalInterface
-    public static interface ICallback {
-
-        void call(final Expression expression);
-    }
-
-    private static final Map<String, Integer> PRECEDENCES = new HashMap<>();
+    private static final Map<String, Integer> precedences = new HashMap<>();
     static {
-        PRECEDENCES.clear();
-        PRECEDENCES.put("=", 0);
-        PRECEDENCES.put("<<=", 0);
-        PRECEDENCES.put(">>=", 0);
-        PRECEDENCES.put(">>>=", 0);
-        PRECEDENCES.put("+=", 0);
-        PRECEDENCES.put("-=", 0);
-        PRECEDENCES.put("*=", 0);
-        PRECEDENCES.put("/=", 0);
-        PRECEDENCES.put("%=", 0);
-        PRECEDENCES.put("&=", 0);
-        PRECEDENCES.put("|=", 0);
-        PRECEDENCES.put("^=", 0);
-        PRECEDENCES.put("&&", 1);
-        PRECEDENCES.put("||", 1);
-        PRECEDENCES.put("<", 2);
-        PRECEDENCES.put(">", 2);
-        PRECEDENCES.put("<=", 2);
-        PRECEDENCES.put(">=", 2);
-        PRECEDENCES.put("==", 2);
-        PRECEDENCES.put("&", 3);
-        PRECEDENCES.put("|", 3);
-        PRECEDENCES.put("^", 3);
-        PRECEDENCES.put("<<", 4);
-        PRECEDENCES.put(">>", 4);
-        PRECEDENCES.put(">>>", 4);
-        PRECEDENCES.put("+", 5);
-        PRECEDENCES.put("-", 5);
-        PRECEDENCES.put("*", 6);
-        PRECEDENCES.put("/", 6);
-        PRECEDENCES.put("%", 6);
+        precedences.clear();
+        precedences.put("=", 0);
+        precedences.put("<<=", 0);
+        precedences.put(">>=", 0);
+        precedences.put(">>>=", 0);
+        precedences.put("+=", 0);
+        precedences.put("-=", 0);
+        precedences.put("*=", 0);
+        precedences.put("/=", 0);
+        precedences.put("%=", 0);
+        precedences.put("&=", 0);
+        precedences.put("|=", 0);
+        precedences.put("^=", 0);
+        precedences.put("&&", 1);
+        precedences.put("||", 1);
+        precedences.put("<", 2);
+        precedences.put(">", 2);
+        precedences.put("<=", 2);
+        precedences.put(">=", 2);
+        precedences.put("==", 2);
+        precedences.put("&", 3);
+        precedences.put("|", 3);
+        precedences.put("^", 3);
+        precedences.put("<<", 4);
+        precedences.put(">>", 4);
+        precedences.put(">>>", 4);
+        precedences.put("+", 5);
+        precedences.put("-", 5);
+        precedences.put("*", 6);
+        precedences.put("/", 6);
+        precedences.put("%", 6);
     }
 
-    private static boolean isOctDigit(final int c) {
-        return 0x30 <= c && c <= 0x37;
+    public static void parse(final ParserConfig config) throws IOException {
+        parse(config, new ArrayList<>());
     }
 
-    private static boolean isDecDigit(final int c) {
-        return 0x30 <= c && c <= 0x39;
-    }
-
-    // private static boolean isHexDigit(final int c) {
-    // return (0x30 <= c && c <= 0x39) || (0x41 <= c && c <= 0x46) || (0x61 <= c &&
-    // c <= 0x66);
-    // }
-
-    private static boolean isAlpha(final int c) {
-        return (0x41 <= c && c <= 0x5A) || (0x61 <= c && c <= 0x7A);
-    }
-
-    private static boolean isAlnum(final int c) {
-        return isDecDigit(c) || isAlpha(c);
-    }
-
-    private static boolean isID(final int c) {
-        return isAlnum(c) || c == '_';
-    }
-
-    private static boolean isOP(final int c) {
-        return c == '+'
-                || c == '-'
-                || c == '*'
-                || c == '/'
-                || c == '%'
-                || c == '&'
-                || c == '|'
-                || c == '^'
-                || c == '='
-                || c == '<'
-                || c == '>'
-                || c == '!'
-                || c == '~';
-    }
-
-    private static boolean isCompOP(final int c) {
-        return c == '+'
-                || c == '-'
-                || c == '&'
-                || c == '|'
-                || c == '='
-                || c == '<'
-                || c == '>';
-    }
-
-    public static void parse(
-            final Environment global,
-            final InputStream stream,
-            final File file,
-            final ICallback callback)
-            throws IOException {
-        parse(global.getState(), new Vector<>(), stream, file, callback);
-    }
-
-    public static void parse(
-            final EnvState state,
-            final List<File> parsed,
-            final InputStream stream,
-            final File file,
-            final ICallback callback)
-            throws IOException {
-        if (parsed.contains(file))
+    public static void parse(final ParserConfig config, final List<File> parsed) throws IOException {
+        if (parsed.contains(config.file()))
             return;
-        parsed.add(file);
+        parsed.add(config.file());
 
-        final var parser = new Parser(state, parsed, stream, file, callback);
+        final var parser = new Parser(config, parsed);
 
         parser.next();
         while (!parser.atEOF()) {
             final var expression = parser.nextExpression(null);
-            callback.call(expression);
+            if (expression != null)
+                config.callback().accept(expression);
         }
 
-        stream.close();
+        config.stream().close();
     }
 
+    private final ParserConfig config;
     private final List<File> parsed;
-    private final InputStream stream;
-    private final File file;
-    private final ICallback callback;
 
     private Token token;
     private int chr = -1;
     private int row = 1;
     private int column = 0;
 
-    private final Stack<EnvState> stack = new Stack<>();
+    private final Stack<State> stack = new Stack<>();
     private Type currentResult;
 
-    private Parser(
-            final EnvState state,
-            final List<File> parsed,
-            final InputStream stream,
-            final File file,
-            final ICallback callback) {
+    private Parser(final ParserConfig config, final List<File> parsed) {
+        this.config = config;
         this.parsed = parsed;
-        this.stream = stream;
-        this.file = file;
-        this.callback = callback;
-        stack.push(state);
+        stack.push(config.global());
     }
 
     private int get() throws IOException {
         ++column;
-        return stream.read();
+        return config.stream().read();
     }
 
     private void escape() throws IOException {
@@ -259,12 +183,12 @@ public class Parser {
                             break;
 
                         case '"':
-                            loc = new SourceLocation(file, row, column);
+                            loc = new SourceLocation(config.file(), row, column);
                             mode = ParserMode.STRING;
                             break;
 
                         case '\'':
-                            loc = new SourceLocation(file, row, column);
+                            loc = new SourceLocation(config.file(), row, column);
                             mode = ParserMode.CHAR;
                             break;
 
@@ -276,27 +200,27 @@ public class Parser {
                             }
 
                             if (isDecDigit(chr)) {
-                                loc = new SourceLocation(file, row, column);
+                                loc = new SourceLocation(config.file(), row, column);
                                 mode = ParserMode.NUMBER;
                                 value.append((char) chr);
                                 break;
                             }
 
                             if (isID(chr)) {
-                                loc = new SourceLocation(file, row, column);
+                                loc = new SourceLocation(config.file(), row, column);
                                 mode = ParserMode.ID;
                                 value.append((char) chr);
                                 break;
                             }
 
                             if (isOP(chr)) {
-                                loc = new SourceLocation(file, row, column);
+                                loc = new SourceLocation(config.file(), row, column);
                                 mode = ParserMode.OPERATOR;
                                 value.append((char) chr);
                                 break;
                             }
 
-                            loc = new SourceLocation(file, row, column);
+                            loc = new SourceLocation(config.file(), row, column);
                             value.append((char) chr);
                             chr = get();
                             return new Token(loc, TokenType.OTHER, value.toString());
@@ -377,7 +301,7 @@ public class Parser {
         if (at(type))
             return skip();
         if (atEOF())
-            throw new QScriptException(new SourceLocation(file, row, column), "expected %s, at EOF", type);
+            throw new QScriptException(new SourceLocation(config.file(), row, column), "expected %s, at EOF", type);
         throw new QScriptException(
                 token.location(),
                 "expected %s, at '%s' (%s)",
@@ -390,7 +314,7 @@ public class Parser {
         if (at(value))
             return skip();
         if (atEOF())
-            throw new QScriptException(new SourceLocation(file, row, column), "expected '%s', at EOF", value);
+            throw new QScriptException(new SourceLocation(config.file(), row, column), "expected '%s', at EOF", value);
         throw new QScriptException(
                 token.location(),
                 "expected '%s', at '%s' (%s)",
@@ -414,8 +338,21 @@ public class Parser {
     }
 
     private Type nextType() throws IOException {
+        if (nextIfAt("struct")) {
+            if (!nextIfAt("{"))
+                return nextType(StructType.getOpaque(config.context()));
+            final List<Type> elements = new ArrayList<>();
+            while (!nextIfAt("}")) {
+                final var type = nextType();
+                elements.add(type);
+                if (!at("}"))
+                    expect(",");
+            }
+            return nextType(StructType.get(config.context(), elements.toArray(Type[]::new)));
+        }
+
         final var base = expect(TokenType.ID).value();
-        return nextType(Type.get(token.location(), base));
+        return nextType(Type.get(config.context(), base));
     }
 
     private Type nextType(final Type base) throws IOException {
@@ -444,11 +381,15 @@ public class Parser {
     }
 
     private Expression nextExpression(final Type expected) throws IOException {
-        if (at("use"))
-            return nextUse();
+        if (at("use")) {
+            nextUse();
+            return null;
+        }
 
-        if (at("include"))
-            return nextInclude();
+        if (at("include")) {
+            nextInclude();
+            return null;
+        }
 
         if (at("def"))
             return nextDefine();
@@ -458,9 +399,6 @@ public class Parser {
 
         if (at("return"))
             return nextReturn();
-
-        if (at("switch"))
-            return nextSwitch(expected);
 
         if (at("{"))
             return nextCompound();
@@ -477,34 +415,36 @@ public class Parser {
         stack.peek().declareSymbol(type, id);
 
         if (!nextIfAt("="))
-            return DefineExpression.create(loc, stack.peek(), type, id);
+            return DefineExpression.create(loc, type, id);
 
         final var init = nextExpression(type);
-        return DefineExpression.create(loc, stack.peek(), type, id, init);
+        return DefineExpression.create(loc, type, id, init);
     }
 
-    private UseExpression nextUse() throws IOException {
-        final var loc = expect("use").location();
+    private void nextUse() throws IOException {
+        expect("use");
         final var id = expect(TokenType.ID).value();
         expect("as");
         final var type = nextType();
-        final var expr = UseExpression.create(loc, id, type);
-        expr.use();
-        return expr;
+
+        config.context().getType(id, () -> type);
     }
 
-    private IncludeExpression nextInclude() throws IOException {
-        final var loc = expect("include").location();
+    private void nextInclude() throws IOException {
+        expect("include");
         final var filename = expect(TokenType.STRING).value();
-        final var expr = IncludeExpression.create(loc, filename);
-        expr.use(stack.peek(), parsed, file == null ? null : file.getParentFile(), callback);
-        return expr;
+
+        var file = new File(filename);
+        if (!file.isAbsolute())
+            file = new File(config.file().getParentFile(), filename);
+
+        parse(new ParserConfig(config, file, new FileInputStream(file)), parsed);
     }
 
     private Expression nextWhile() throws IOException {
         final var loc = expect("while").location();
 
-        final var condition = nextExpression(Type.getInt1());
+        final var condition = nextExpression(Type.getInt1(config.context()));
         final var loop = nextExpression(null);
 
         return WhileExpression.create(loc, condition, loop);
@@ -520,40 +460,11 @@ public class Parser {
         return ReturnExpression.create(loc, currentResult, expression);
     }
 
-    private SwitchExpression nextSwitch(final Type expected) throws IOException {
-        final var loc = expect("switch").location();
-
-        final var switcher = nextExpression(Type.getInt64());
-        if (!switcher.getType().isInt())
-            throw new QScriptException(
-                    switcher.getLocation(),
-                    "switch must be of type integer, but is of type %s",
-                    switcher.getType());
-
-        final Map<Expression, Expression> cases = new HashMap<>();
-        while (!nextIfAt("default")) {
-            final var c = nextExpression(switcher.getType());
-            if (!c.getType().isInt())
-                throw new QScriptException(
-                        c.getLocation(),
-                        "case must be of type integer, but is of type %s",
-                        c.getType());
-            expect(":");
-            final var expression = nextExpression(expected);
-            cases.put(c, expression);
-        }
-
-        expect(":");
-        final var defaultCase = nextExpression(expected);
-
-        return SwitchExpression.create(loc, expected, switcher, cases, defaultCase);
-    }
-
     private CompoundExpression nextCompound() throws IOException {
         final var loc = expect("{").location();
         final List<Expression> expressions = new ArrayList<>();
 
-        stack.push(new EnvState(stack.peek()));
+        stack.push(new State(stack.peek()));
         while (!nextIfAt("}")) {
             final var expression = nextExpression(null);
             expressions.add(expression);
@@ -564,21 +475,20 @@ public class Parser {
     }
 
     private Expression nextBinary(final Type expected) throws IOException {
-        return nextBinary(expected, nextCall(expected), 0);
+        return nextBinary(nextCall(expected), 0);
     }
 
-    private Expression nextBinary(Type expected, Expression lhs, final int minPrecedence) throws IOException {
-        while (at(TokenType.OPERATOR) && PRECEDENCES.get(token.value()) >= minPrecedence) {
+    private Expression nextBinary(Expression lhs, final int minPrecedence) throws IOException {
+        while (at(TokenType.OPERATOR) && precedences.get(token.value()) >= minPrecedence) {
             final var tk = skip();
             final var loc = tk.location();
             final var operator = tk.value();
-            final var precedence = PRECEDENCES.get(operator);
-            if (Operation.isAssigning(operator))
-                expected = lhs.getType();
+            final var precedence = precedences.get(operator);
+            final var expected = lhs.getType();
             var rhs = nextCall(expected);
-            while (at(TokenType.OPERATOR) && PRECEDENCES.get(token.value()) > precedence) {
-                final var laPrecedence = PRECEDENCES.get(token.value());
-                rhs = nextBinary(expected, rhs, precedence + (laPrecedence > precedence ? 1 : 0));
+            while (at(TokenType.OPERATOR) && precedences.get(token.value()) > precedence) {
+                final var laPrecedence = precedences.get(token.value());
+                rhs = nextBinary(rhs, precedence + (laPrecedence > precedence ? 1 : 0));
             }
             lhs = BinaryExpression.create(loc, operator, lhs, rhs);
         }
@@ -595,7 +505,7 @@ public class Parser {
 
             final List<Expression> args = new ArrayList<>();
             while (!nextIfAt(")")) {
-                final var arg = nextExpression(calleeType.getArg(token.location(), args.size()));
+                final var arg = nextExpression(calleeType.getArg(args.size()));
                 args.add(arg);
                 if (!at(")"))
                     expect(",");
@@ -622,7 +532,7 @@ public class Parser {
 
     private Expression nextPrimary(final Type expected) throws IOException {
         if (atEOF())
-            throw new QScriptException(new SourceLocation(file, row, column), "reached eof");
+            throw new QScriptException(new SourceLocation(config.file(), row, column), "reached eof");
 
         final var loc = token.location();
 
@@ -630,12 +540,12 @@ public class Parser {
             expect("(");
             final var type = (FunctionType) expected;
 
-            stack.push(new EnvState(stack.peek()));
+            stack.push(new State(stack.peek()));
 
             final List<String> argnames = new ArrayList<>();
             while (!nextIfAt(")")) {
                 final var argname = expect(TokenType.ID).value();
-                stack.peek().declareSymbol(type.getArg(token.location(), argnames.size()), argname);
+                stack.peek().declareSymbol(type.getArg(argnames.size()), argname);
                 argnames.add(argname);
                 if (!at(")"))
                     expect(",");
@@ -672,13 +582,13 @@ public class Parser {
         }
 
         if (at(TokenType.INT))
-            return IntExpression.create(loc, Long.valueOf(skip().value()));
+            return IntExpression.create(loc, Type.getInt64(config.context()), Long.valueOf(skip().value()));
 
         if (at(TokenType.FLOAT))
-            return FloatExpression.create(loc, Double.valueOf(skip().value()));
+            return FloatExpression.create(loc, Type.getFlt64(config.context()), Double.valueOf(skip().value()));
 
         if (at(TokenType.STRING))
-            return StringExpression.create(loc, skip().value());
+            return StringExpression.create(loc, Type.getInt8Ptr(config.context()), skip().value());
 
         if (at(TokenType.OPERATOR)) {
             final var operator = skip().value();

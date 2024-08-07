@@ -1,13 +1,9 @@
 package io.scriptor.expression;
 
-import static io.scriptor.QScriptException.rtassert;
-
-import io.scriptor.QScriptException;
-import io.scriptor.environment.Environment;
-import io.scriptor.environment.Operation;
-import io.scriptor.environment.UndefinedValue;
-import io.scriptor.environment.Value;
-import io.scriptor.parser.SourceLocation;
+import io.scriptor.backend.IRBuilder;
+import io.scriptor.backend.IRModule;
+import io.scriptor.backend.value.Value;
+import io.scriptor.frontend.SourceLocation;
 import io.scriptor.type.Type;
 
 public class ReturnExpression extends Expression {
@@ -16,17 +12,12 @@ public class ReturnExpression extends Expression {
             final SourceLocation location,
             final Type result,
             final Expression expression) {
-        rtassert(location != null, () -> new QScriptException(null, "location is null"));
-        rtassert(result != null, () -> new QScriptException(location, "result is null"));
-        rtassert(expression != null, () -> new QScriptException(location, "expression is null"));
         return new ReturnExpression(location, result, expression);
     }
 
     public static ReturnExpression create(
             final SourceLocation location,
             final Type result) {
-        rtassert(location != null, () -> new QScriptException(null, "location is null"));
-        rtassert(result != null, () -> new QScriptException(location, "result is null"));
         return new ReturnExpression(location, result, null);
     }
 
@@ -37,20 +28,26 @@ public class ReturnExpression extends Expression {
             final SourceLocation location,
             final Type result,
             final Expression expression) {
-        super(location, result);
+        super(location, null);
         this.result = result;
         this.expression = expression;
     }
 
-    @Override
-    public Value eval(final Environment env) {
-        if (expression == null)
-            return new UndefinedValue(result).setReturn(true);
-        return Operation.cast(getLocation(), expression.eval(env), result).setReturn(true);
+    public Type getResult() {
+        return result;
+    }
+
+    public Expression getExpression() {
+        return expression;
     }
 
     @Override
     public String toString() {
         return "return %s".formatted(expression);
+    }
+
+    @Override
+    public Value gen(final IRBuilder builder, final IRModule module) {
+        throw new UnsupportedOperationException();
     }
 }

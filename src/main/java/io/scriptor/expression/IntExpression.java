@@ -1,35 +1,35 @@
 package io.scriptor.expression;
 
-import static io.scriptor.QScriptException.rtassert;
-
-import io.scriptor.QScriptException;
-import io.scriptor.environment.ConstValue;
-import io.scriptor.environment.Environment;
-import io.scriptor.environment.Value;
-import io.scriptor.parser.SourceLocation;
+import io.scriptor.backend.IRBuilder;
+import io.scriptor.backend.IRModule;
+import io.scriptor.backend.value.Value;
+import io.scriptor.frontend.SourceLocation;
 import io.scriptor.type.Type;
 
 public class IntExpression extends Expression {
 
-    public static IntExpression create(final SourceLocation location, final long value) {
-        rtassert(location != null, () -> new QScriptException(null, "location is null"));
-        return new IntExpression(location, value);
+    public static IntExpression create(final SourceLocation location, final Type type, final long value) {
+        return new IntExpression(location, type, value);
     }
 
     private final long value;
 
-    private IntExpression(final SourceLocation location, final long value) {
-        super(location, Type.getInt64());
+    private IntExpression(final SourceLocation location, final Type type, final long value) {
+        super(location, type);
         this.value = value;
     }
 
-    @Override
-    public Value eval(final Environment env) {
-        return new ConstValue<>(getType(), value);
+    public long getValue() {
+        return value;
     }
 
     @Override
     public String toString() {
         return Long.toString(value);
+    }
+
+    @Override
+    public Value gen(final IRBuilder builder, final IRModule module) {
+        throw new UnsupportedOperationException();
     }
 }

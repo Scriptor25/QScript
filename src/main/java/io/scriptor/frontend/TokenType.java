@@ -1,4 +1,4 @@
-package io.scriptor.parser;
+package io.scriptor.frontend;
 
 public enum TokenType {
     ID,

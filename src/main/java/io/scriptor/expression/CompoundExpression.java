@@ -1,17 +1,13 @@
 package io.scriptor.expression;
 
-import static io.scriptor.QScriptException.rtassert;
-
-import io.scriptor.QScriptException;
-import io.scriptor.environment.Environment;
-import io.scriptor.environment.Value;
-import io.scriptor.parser.SourceLocation;
+import io.scriptor.backend.IRBuilder;
+import io.scriptor.backend.IRModule;
+import io.scriptor.backend.value.Value;
+import io.scriptor.frontend.SourceLocation;
 
 public class CompoundExpression extends Expression {
 
     public static CompoundExpression create(final SourceLocation location, final Expression[] expressions) {
-        rtassert(location != null, () -> new QScriptException(null, "location is null"));
-        rtassert(expressions != null, () -> new QScriptException(location, "expressions is null"));
         return new CompoundExpression(location, expressions);
     }
 
@@ -41,15 +37,12 @@ public class CompoundExpression extends Expression {
         this.expressions = expressions;
     }
 
-    @Override
-    public Value eval(final Environment env) {
-        final var subenv = new Environment(env);
-        for (final var expression : expressions) {
-            final var value = expression.eval(subenv);
-            if (value != null && value.isReturn())
-                return value;
-        }
-        return null;
+    public int getExpressionCount() {
+        return expressions.length;
+    }
+
+    public Expression getExpression(final int index) {
+        return expressions[index];
     }
 
     @Override
@@ -63,5 +56,10 @@ public class CompoundExpression extends Expression {
             builder.append(indent).append(expression).append('\n');
 
         return "{%n%s%s}".formatted(builder, unindent());
+    }
+
+    @Override
+    public Value gen(final IRBuilder builder, final IRModule module) {
+        throw new UnsupportedOperationException();
     }
 }

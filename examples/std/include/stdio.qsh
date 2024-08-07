@@ -1,6 +1,6 @@
-type FILE
-type fpos_t
-type va_list
+use FILE as struct
+use fpos_t as struct
+use va_list as struct
 
 def i32(i8*) remove
 def i32(i8*, i8*) rename

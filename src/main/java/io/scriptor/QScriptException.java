@@ -1,14 +1,11 @@
 package io.scriptor;
 
-import java.util.function.Supplier;
-
-import io.scriptor.parser.SourceLocation;
+import io.scriptor.frontend.SourceLocation;
 
 public class QScriptException extends RuntimeException {
 
-    public static void rtassert(final boolean check, final Supplier<QScriptException> supplier) {
-        if (!check)
-            throw supplier.get();
+    public QScriptException(final String format, final Object... args) {
+        super(format.formatted(args));
     }
 
     public QScriptException(final SourceLocation location, final String format, final Object... args) {

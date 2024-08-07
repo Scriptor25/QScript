@@ -7,27 +7,28 @@ import org.jline.reader.LineReaderBuilder;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 
-import io.scriptor.environment.Environment;
-import io.scriptor.environment.UndefinedValue;
+import io.scriptor.backend.IRContext;
 import io.scriptor.expression.Expression;
-import io.scriptor.parser.Parser;
+import io.scriptor.frontend.Parser;
+import io.scriptor.frontend.ParserConfig;
+import io.scriptor.frontend.State;
 
 public class ShellSession implements AutoCloseable {
 
-    private final Environment global;
+    private final State global = new State();
     private final Terminal terminal;
     private final LineReader reader;
 
-    public ShellSession(final Environment global)
-            throws IOException {
-        this.global = global;
+    private final IRContext context = new IRContext();
+
+    public ShellSession() throws IOException {
         this.terminal = TerminalBuilder.terminal();
         this.reader = LineReaderBuilder.builder()
                 .terminal(terminal)
                 .build();
     }
 
-    public void run() throws IOException {
+    public ShellSession run() throws IOException {
         while (true) {
             final var line = reader.readLine(">> ");
             if (line == null)
@@ -36,17 +37,17 @@ public class ShellSession implements AutoCloseable {
                 continue;
 
             try {
-                Parser.parse(global, new StringStream(line), null, this::callback);
+                Parser.parse(new ParserConfig(context, null, this::callback, global, new StringStream(line)));
             } catch (final QScriptException e) {
                 terminal.writer().println(e.getMessage());
             }
         }
+
+        return this;
     }
 
     private void callback(final Expression expression) {
-        final var value = expression.eval(global);
-        if (!(value == null || value instanceof UndefinedValue))
-            terminal.writer().println(value);
+        System.out.println(expression);
     }
 
     @Override

@@ -4,25 +4,32 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
-import io.scriptor.environment.Environment;
+import io.scriptor.backend.IRContext;
 import io.scriptor.expression.Expression;
-import io.scriptor.parser.Parser;
+import io.scriptor.frontend.Parser;
+import io.scriptor.frontend.ParserConfig;
+import io.scriptor.frontend.State;
 
 public class FileSession {
 
-    private final Environment global;
+    private final State global = new State();
+    private final IRContext context = new IRContext();
     private final File file;
 
-    public FileSession(final Environment global, final String filename) {
-        this.global = global;
+    public FileSession(final String filename) {
         this.file = new File(filename);
     }
 
     public void run() throws IOException {
-        Parser.parse(global, new FileInputStream(file), file, this::callback);
+        Parser.parse(new ParserConfig(
+                context,
+                file,
+                this::callback,
+                global,
+                new FileInputStream(file)));
     }
 
     private void callback(final Expression expression) {
-        expression.eval(global);
+        System.out.println(expression);
     }
 }
