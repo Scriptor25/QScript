@@ -1,5 +1,7 @@
 package io.scriptor.util;
 
+import io.scriptor.type.Type;
+
 public class Util {
 
     public static boolean isOctDigit(final int c) {
@@ -74,5 +76,13 @@ public class Util {
     }
 
     private Util() {
+    }
+
+    public static Type getUnOpResult(final String operator, final Type operand) {
+        return switch (operator) {
+            case "++", "--", "-", "~" -> operand;
+            case "!" -> Type.getInt1(operand.getContext());
+            default -> null;
+        };
     }
 }

@@ -76,6 +76,10 @@ public class DefFunExpression extends Expression {
 
     @Override
     public Value genIR(final IRBuilder builder, final IRModule module) {
+        final var name = builder.isGlobal()
+                ? this.name
+                : builder.getInsertFunction().getName() + "$" + this.name;
+
         final var type = FunctionType.get(result, vararg, Arrays.stream(args).map(Arg::type).toArray(Type[]::new));
         final var function = module.getFunction(type, name);
 
@@ -103,6 +107,6 @@ public class DefFunExpression extends Expression {
         body.genIR(builder, module);
 
         builder.setInsertPoint(bkp);
-        throw new UnsupportedOperationException();
+        return null;
     }
 }

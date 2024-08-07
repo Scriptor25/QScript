@@ -52,6 +52,56 @@ public class BinaryExpression extends Expression {
 
     @Override
     public Value genIR(final IRBuilder builder, final IRModule module) {
+        if ("=".equals(operator)) {
+            throw new UnsupportedOperationException();
+        }
+
+        Value result;
+
+        final var left = lhs.genIR(builder, module);
+        final var right = rhs.genIR(builder, module);
+
+        result = switch (operator) {
+            case "==" -> builder.createCmpEQ(left, right);
+            case "!=" -> builder.createCmpNE(left, right);
+            case "<=" -> builder.createCmpLE(left, right);
+            case ">=" -> builder.createCmpGE(left, right);
+            case "<" -> builder.createCmpLT(left, right);
+            case ">" -> builder.createCmpGT(left, right);
+            default -> null;
+        };
+
+        if (result != null)
+            return result;
+
+        final var assign = operator.contains("=");
+        final var op = operator.replace("=", "");
+
+        result = switch (op) {
+            case "+" -> builder.createAdd(left, right);
+            case "-" -> builder.createSub(left, right);
+            case "*" -> builder.createMul(left, right);
+            case "/" -> builder.createDiv(left, right);
+            case "%" -> builder.createRem(left, right);
+            case "&" -> builder.createAnd(left, right);
+            case "|" -> builder.createOr(left, right);
+            case "^" -> builder.createXOr(left, right);
+            case "&&" -> builder.createLAnd(left, right);
+            case "||" -> builder.createLOr(left, right);
+            case "^^" -> builder.createLXOr(left, right);
+            case "<<" -> builder.createShL(left, right);
+            case ">>" -> builder.createLShR(left, right);
+            case ">>>" -> builder.createAShR(left, right);
+            default -> null;
+        };
+
+        if (result != null) {
+            if (assign) {
+                throw new UnsupportedOperationException();
+            }
+            return result;
+        }
+
         throw new UnsupportedOperationException();
     }
 }

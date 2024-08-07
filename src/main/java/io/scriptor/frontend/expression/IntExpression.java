@@ -2,6 +2,7 @@ package io.scriptor.frontend.expression;
 
 import io.scriptor.backend.IRBuilder;
 import io.scriptor.backend.IRModule;
+import io.scriptor.backend.value.ConstInt64;
 import io.scriptor.backend.value.Value;
 import io.scriptor.frontend.SourceLocation;
 import io.scriptor.type.Type;
@@ -30,6 +31,6 @@ public class IntExpression extends Expression {
 
     @Override
     public Value genIR(final IRBuilder builder, final IRModule module) {
-        throw new UnsupportedOperationException();
+        return new ConstInt64(getType(), value);
     }
 }

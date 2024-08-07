@@ -83,6 +83,8 @@ public class DefVarExpression extends Expression {
         if (init != null) {
             builder.createStore(ptr, init.genIR(builder, module));
         }
+
+        builder.setValue(name, ptr);
         return null;
     }
 }

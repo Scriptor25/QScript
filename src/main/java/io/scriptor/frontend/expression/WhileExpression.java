@@ -1,5 +1,6 @@
 package io.scriptor.frontend.expression;
 
+import io.scriptor.backend.Block;
 import io.scriptor.backend.IRBuilder;
 import io.scriptor.backend.IRModule;
 import io.scriptor.backend.value.Value;
@@ -41,6 +42,22 @@ public class WhileExpression extends Expression {
 
     @Override
     public Value genIR(final IRBuilder builder, final IRModule module) {
-        throw new UnsupportedOperationException();
+        final var function = builder.getInsertFunction();
+        final var header = new Block(function, "header");
+        final var loop = new Block(function, "loop");
+        final var end = new Block(function, "end");
+
+        builder.createBr(header);
+
+        builder.setInsertPoint(header);
+        final var condition = this.condition.genIR(builder, module);
+        builder.createCondBr(condition, loop, end);
+
+        builder.setInsertPoint(loop);
+        this.loop.genIR(builder, module);
+        builder.createBr(header);
+
+        builder.setInsertPoint(end);
+        return null;
     }
 }
