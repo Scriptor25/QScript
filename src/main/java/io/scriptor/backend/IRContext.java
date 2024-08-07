@@ -8,8 +8,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import io.scriptor.QScriptException;
 import io.scriptor.type.Type;
+import io.scriptor.util.QScriptException;
 
 public class IRContext {
 

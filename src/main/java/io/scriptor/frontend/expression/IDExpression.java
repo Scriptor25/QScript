@@ -1,4 +1,4 @@
-package io.scriptor.expression;
+package io.scriptor.frontend.expression;
 
 import io.scriptor.backend.IRBuilder;
 import io.scriptor.backend.IRModule;

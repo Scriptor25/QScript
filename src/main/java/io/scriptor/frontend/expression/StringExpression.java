@@ -1,10 +1,11 @@
-package io.scriptor.expression;
+package io.scriptor.frontend.expression;
+
+import static io.scriptor.util.Util.unescape;
 
 import io.scriptor.backend.IRBuilder;
 import io.scriptor.backend.IRModule;
 import io.scriptor.backend.value.Value;
 import io.scriptor.frontend.SourceLocation;
-import io.scriptor.frontend.Token;
 import io.scriptor.type.Type;
 
 public class StringExpression extends Expression {
@@ -26,7 +27,7 @@ public class StringExpression extends Expression {
 
     @Override
     public String toString() {
-        return "\"%s\"".formatted(Token.unescape(value));
+        return "\"%s\"".formatted(unescape(value));
     }
 
     @Override

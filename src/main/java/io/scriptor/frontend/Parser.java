@@ -1,10 +1,10 @@
 package io.scriptor.frontend;
 
-import static io.scriptor.Util.isCompOP;
-import static io.scriptor.Util.isDecDigit;
-import static io.scriptor.Util.isID;
-import static io.scriptor.Util.isOP;
-import static io.scriptor.Util.isOctDigit;
+import static io.scriptor.util.Util.isCompOP;
+import static io.scriptor.util.Util.isDecDigit;
+import static io.scriptor.util.Util.isID;
+import static io.scriptor.util.Util.isOP;
+import static io.scriptor.util.Util.isOctDigit;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -15,24 +15,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
-import io.scriptor.QScriptException;
-import io.scriptor.expression.BinaryExpression;
-import io.scriptor.expression.CallExpression;
-import io.scriptor.expression.CompoundExpression;
-import io.scriptor.expression.DefineExpression;
-import io.scriptor.expression.Expression;
-import io.scriptor.expression.FloatExpression;
-import io.scriptor.expression.FunctionExpression;
-import io.scriptor.expression.IDExpression;
-import io.scriptor.expression.IntExpression;
-import io.scriptor.expression.ReturnExpression;
-import io.scriptor.expression.StringExpression;
-import io.scriptor.expression.UnaryExpression;
-import io.scriptor.expression.WhileExpression;
+import io.scriptor.frontend.expression.BinaryExpression;
+import io.scriptor.frontend.expression.CallExpression;
+import io.scriptor.frontend.expression.CompoundExpression;
+import io.scriptor.frontend.expression.DefineExpression;
+import io.scriptor.frontend.expression.Expression;
+import io.scriptor.frontend.expression.FloatExpression;
+import io.scriptor.frontend.expression.FunctionExpression;
+import io.scriptor.frontend.expression.IDExpression;
+import io.scriptor.frontend.expression.IntExpression;
+import io.scriptor.frontend.expression.ReturnExpression;
+import io.scriptor.frontend.expression.StringExpression;
+import io.scriptor.frontend.expression.UnaryExpression;
+import io.scriptor.frontend.expression.WhileExpression;
 import io.scriptor.type.FunctionType;
 import io.scriptor.type.PointerType;
 import io.scriptor.type.StructType;
 import io.scriptor.type.Type;
+import io.scriptor.util.QScriptException;
 
 public class Parser {
 

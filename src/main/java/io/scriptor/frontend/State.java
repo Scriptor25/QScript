@@ -3,9 +3,9 @@ package io.scriptor.frontend;
 import java.util.HashMap;
 import java.util.Map;
 
-import io.scriptor.QScriptException;
-import io.scriptor.Symbol;
+import io.scriptor.backend.Symbol;
 import io.scriptor.type.Type;
+import io.scriptor.util.QScriptException;
 
 public class State {
 

@@ -1,4 +1,4 @@
-package io.scriptor.expression;
+package io.scriptor.frontend.expression;
 
 import io.scriptor.backend.IRBuilder;
 import io.scriptor.backend.IRModule;
@@ -6,26 +6,26 @@ import io.scriptor.backend.value.Value;
 import io.scriptor.frontend.SourceLocation;
 import io.scriptor.type.Type;
 
-public class IntExpression extends Expression {
+public class FloatExpression extends Expression {
 
-    public static IntExpression create(final SourceLocation location, final Type type, final long value) {
-        return new IntExpression(location, type, value);
+    public static FloatExpression create(final SourceLocation location, final Type type, final double value) {
+        return new FloatExpression(location, type, value);
     }
 
-    private final long value;
+    private final double value;
 
-    private IntExpression(final SourceLocation location, final Type type, final long value) {
+    private FloatExpression(final SourceLocation location, final Type type, final double value) {
         super(location, type);
         this.value = value;
     }
 
-    public long getValue() {
+    public double getValue() {
         return value;
     }
 
     @Override
     public String toString() {
-        return Long.toString(value);
+        return Double.toString(value);
     }
 
     @Override

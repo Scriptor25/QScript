@@ -3,7 +3,6 @@ package io.scriptor.backend;
 import java.util.HashMap;
 import java.util.Map;
 
-import io.scriptor.Symbol;
 import io.scriptor.backend.value.ConstValue;
 import io.scriptor.type.Type;
 

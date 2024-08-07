@@ -2,6 +2,9 @@ package io.scriptor;
 
 import java.io.IOException;
 
+import io.scriptor.session.FileSession;
+import io.scriptor.session.ShellSession;
+
 public class Main {
 
     @SuppressWarnings("resource")

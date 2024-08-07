@@ -1,7 +1,7 @@
 package io.scriptor.std;
 
 import io.scriptor.annotations.NativeType;
-import io.scriptor.memory.Heap;
+import io.scriptor.util.Heap;
 
 public class stdlib {
 

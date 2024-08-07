@@ -1,11 +1,11 @@
-package io.scriptor.expression;
+package io.scriptor.frontend.expression;
 
-import io.scriptor.QScriptException;
 import io.scriptor.backend.IRBuilder;
 import io.scriptor.backend.IRModule;
 import io.scriptor.backend.value.Value;
 import io.scriptor.frontend.SourceLocation;
 import io.scriptor.type.Type;
+import io.scriptor.util.QScriptException;
 
 public class FunctionExpression extends Expression {
 

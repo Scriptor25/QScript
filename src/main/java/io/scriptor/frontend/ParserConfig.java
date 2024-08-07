@@ -5,7 +5,7 @@ import java.io.InputStream;
 import java.util.function.Consumer;
 
 import io.scriptor.backend.IRContext;
-import io.scriptor.expression.Expression;
+import io.scriptor.frontend.expression.Expression;
 
 public record ParserConfig(
         IRContext context,

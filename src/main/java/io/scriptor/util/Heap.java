@@ -1,4 +1,4 @@
-package io.scriptor.memory;
+package io.scriptor.util;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;

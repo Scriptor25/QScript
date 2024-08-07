@@ -1,14 +1,14 @@
-package io.scriptor;
+package io.scriptor.session;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
 import io.scriptor.backend.IRContext;
-import io.scriptor.expression.Expression;
 import io.scriptor.frontend.Parser;
 import io.scriptor.frontend.ParserConfig;
 import io.scriptor.frontend.State;
+import io.scriptor.frontend.expression.Expression;
 
 public class FileSession {
 

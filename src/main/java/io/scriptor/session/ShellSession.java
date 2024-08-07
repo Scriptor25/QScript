@@ -1,4 +1,4 @@
-package io.scriptor;
+package io.scriptor.session;
 
 import java.io.IOException;
 
@@ -8,10 +8,12 @@ import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 
 import io.scriptor.backend.IRContext;
-import io.scriptor.expression.Expression;
 import io.scriptor.frontend.Parser;
 import io.scriptor.frontend.ParserConfig;
 import io.scriptor.frontend.State;
+import io.scriptor.frontend.expression.Expression;
+import io.scriptor.util.QScriptException;
+import io.scriptor.util.StringStream;
 
 public class ShellSession implements AutoCloseable {
 

@@ -1,8 +1,8 @@
 package io.scriptor.type;
 
-import io.scriptor.QScriptException;
 import io.scriptor.backend.IRContext;
 import io.scriptor.frontend.SourceLocation;
+import io.scriptor.util.QScriptException;
 
 public class Type {
 
