@@ -31,7 +31,15 @@ public class IDExpression extends Expression {
     }
 
     @Override
-    public Value gen(final IRBuilder builder, final IRModule module) {
+    public Value genIR(final IRBuilder builder, final IRModule module) {
+        var value = builder.getValue(id);
+        if (value != null)
+            return value;
+
+        value = module.getGlobal(id);
+        if (value != null)
+            return value;
+
         throw new UnsupportedOperationException();
     }
 }

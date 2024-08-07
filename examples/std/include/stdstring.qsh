@@ -1,26 +1,26 @@
-def void*(void*, void*, i64) memcpy
-def void*(void*, void*, i64) memmove
-def i8*(i8*, i8*) strcpy
-def i8*(i8*, i8*, i64) strncpy
+def void* memcpy(void*, void*, i64)
+def void* memmove(void*, void*, i64)
+def i8* strcpy(i8*, i8*)
+def i8* strncpy(i8*, i8*, i64)
 
-def i8*(i8*, i8*) strcat
-def i8*(i8*, i8*, i64) strncat
+def i8* strcat(i8*, i8*)
+def i8* strncat(i8*, i8*, i64)
 
-def i32(void*, void*, i64) memcmp
-def i32(i8*, i8*) strcmp
-def i32(i8*, i8*) strcoll
-def i32(i8*, i8*, i64) strncmp
-def i64(i8*, i8*, i64) strxfrm
+def i32 memcmp(void*, void*, i64)
+def i32 strcmp(i8*, i8*)
+def i32 strcoll(i8*, i8*)
+def i32 strncmp(i8*, i8*, i64)
+def i64 strxfrm(i8*, i8*, i64)
 
-def void*(void*, i32, i64) memchr
-def i8*(i8*, i32) strchr
-def i64(i8*, i8*) strcspn
-def i8*(i8*, i8*) strpbrk
-def i8*(i8*, i32) strrchr
-def i64(i8*, i8*) strspn
-def i8*(i8*, i8*) strstr
-def i8*(i8*, i8*) strtok
+def void* memchr(void*, i32, i64)
+def i8* strchr(i8*, i32)
+def i64 strcspn(i8*, i8*)
+def i8* strpbrk(i8*, i8*)
+def i8* strrchr(i8*, i32)
+def i64 strspn(i8*, i8*)
+def i8* strstr(i8*, i8*)
+def i8* strtok(i8*, i8*)
 
-def void*(void*, i32, i64) memset
-def i8*(i32) strerror
-def i64(i8*) strlen
+def void* memset(void*, i32, i64)
+def i8* strerror(i32)
+def i64 strlen(i8*)

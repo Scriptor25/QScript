@@ -18,11 +18,13 @@ import java.util.Stack;
 import io.scriptor.frontend.expression.BinaryExpression;
 import io.scriptor.frontend.expression.CallExpression;
 import io.scriptor.frontend.expression.CompoundExpression;
-import io.scriptor.frontend.expression.DefineExpression;
+import io.scriptor.frontend.expression.DefFunExpression;
+import io.scriptor.frontend.expression.DefVarExpression;
 import io.scriptor.frontend.expression.Expression;
 import io.scriptor.frontend.expression.FloatExpression;
 import io.scriptor.frontend.expression.FunctionExpression;
 import io.scriptor.frontend.expression.IDExpression;
+import io.scriptor.frontend.expression.IfExpression;
 import io.scriptor.frontend.expression.IntExpression;
 import io.scriptor.frontend.expression.ReturnExpression;
 import io.scriptor.frontend.expression.StringExpression;
@@ -338,6 +340,10 @@ public class Parser {
     }
 
     private Type nextType() throws IOException {
+        return nextType(false);
+    }
+
+    private Type nextType(final boolean unsafe) throws IOException {
         if (nextIfAt("struct")) {
             if (!nextIfAt("{"))
                 return nextType(StructType.getOpaque(config.context()));
@@ -349,6 +355,14 @@ public class Parser {
                     expect(",");
             }
             return nextType(StructType.get(config.context(), elements.toArray(Type[]::new)));
+        }
+
+        if (unsafe) {
+            if (!at(TokenType.ID))
+                throw new QScriptException(token.location(), "expected id");
+            final var id = token.value();
+            if (!config.context().existsType(id))
+                return null;
         }
 
         final var base = expect(TokenType.ID).value();
@@ -397,6 +411,9 @@ public class Parser {
         if (at("while"))
             return nextWhile();
 
+        if (at("if"))
+            return nextIf();
+
         if (at("return"))
             return nextReturn();
 
@@ -406,19 +423,76 @@ public class Parser {
         return nextBinary(expected);
     }
 
-    private DefineExpression nextDefine() throws IOException {
+    private Expression nextDefine() throws IOException {
         final var loc = expect("def").location();
 
-        final var type = nextType();
-        final var id = expect(TokenType.ID).value();
+        var type = nextType(true);
+        final String name;
+        if (!at(TokenType.ID)) {
+            name = type.getId();
+            type = null;
+        } else {
+            name = skip().value();
+        }
 
-        stack.peek().declareSymbol(type, id);
+        if (nextIfAt("=")) {
+            final var init = nextExpression(type);
+            if (type == null)
+                type = init.getType();
+            stack.peek().declareSymbol(type, name);
+            return DefVarExpression.create(loc, type, name, init);
+        }
 
-        if (!nextIfAt("="))
-            return DefineExpression.create(loc, type, id);
+        if (nextIfAt("(")) {
+            final List<Arg> args = new ArrayList<>();
+            var vararg = false;
+            while (!nextIfAt(")")) {
+                if (nextIfAt("?")) {
+                    vararg = true;
+                    expect(")");
+                    break;
+                }
+                final var argtype = nextType();
+                final String argname;
+                if (at(TokenType.ID)) {
+                    argname = skip().value();
+                } else {
+                    argname = null;
+                }
+                args.add(new Arg(argtype, argname));
+                if (!at(")"))
+                    expect(",");
+            }
 
-        final var init = nextExpression(type);
-        return DefineExpression.create(loc, type, id, init);
+            final var funtype = FunctionType.get(
+                    type,
+                    vararg,
+                    args.stream()
+                            .map(Arg::type)
+                            .toArray(Type[]::new));
+            stack.peek().declareSymbol(funtype, name);
+
+            if (at("{")) {
+                stack.push(new State(stack.peek()));
+
+                for (final var arg : args)
+                    stack.peek().declareSymbol(arg.type(), arg.name());
+
+                final var bkpResult = currentResult;
+                currentResult = type;
+                final var body = nextCompound();
+                currentResult = bkpResult;
+
+                stack.pop();
+
+                return DefFunExpression.create(loc, type, name, args.toArray(Arg[]::new), vararg, body);
+            }
+
+            return DefFunExpression.create(loc, type, name, args.toArray(Arg[]::new), vararg);
+        }
+
+        stack.peek().declareSymbol(type, name);
+        return DefVarExpression.create(loc, type, name);
     }
 
     private void nextUse() throws IOException {
@@ -441,13 +515,27 @@ public class Parser {
         parse(new ParserConfig(config, file, new FileInputStream(file)), parsed);
     }
 
-    private Expression nextWhile() throws IOException {
+    private WhileExpression nextWhile() throws IOException {
         final var loc = expect("while").location();
 
         final var condition = nextExpression(Type.getInt1(config.context()));
         final var loop = nextExpression(null);
 
         return WhileExpression.create(loc, condition, loop);
+    }
+
+    private IfExpression nextIf() throws IOException {
+        final var loc = expect("if").location();
+
+        final var condition = nextExpression(Type.getInt1(config.context()));
+        final var thendo = nextExpression(null);
+
+        if (nextIfAt("else")) {
+            final var elsedo = nextExpression(null);
+            return IfExpression.create(loc, condition, thendo, elsedo);
+        }
+
+        return IfExpression.create(loc, condition, thendo);
     }
 
     private ReturnExpression nextReturn() throws IOException {
@@ -551,14 +639,9 @@ public class Parser {
                     expect(",");
             }
 
-            final List<Expression> expressions = new ArrayList<>();
             final var bkpResult = currentResult;
             currentResult = type.getResult();
-            expect("{");
-            while (!nextIfAt("}")) {
-                final var expression = nextExpression(null);
-                expressions.add(expression);
-            }
+            final var body = nextCompound();
             currentResult = bkpResult;
 
             stack.pop();
@@ -567,7 +650,7 @@ public class Parser {
                     loc,
                     type,
                     argnames.toArray(String[]::new),
-                    expressions.toArray(Expression[]::new));
+                    body);
         }
 
         if (nextIfAt("(")) {

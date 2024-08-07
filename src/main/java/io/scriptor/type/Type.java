@@ -7,11 +7,12 @@ import io.scriptor.util.QScriptException;
 public class Type {
 
     public static final int IS_VOID = 1;
-    public static final int IS_INT = 2;
-    public static final int IS_FLT = 4;
-    public static final int IS_PTR = 8;
-    public static final int IS_FUN = 16;
+    public static final int IS_INTEGER = 2;
+    public static final int IS_FLOAT = 4;
+    public static final int IS_POINTER = 8;
+    public static final int IS_FUNCTION = 16;
     public static final int IS_STRUCT = 32;
+    public static final int IS_ARRAY = 64;
 
     public static void useAs(final IRContext context, final String id, final Type type) {
         context.getType(id, () -> type);
@@ -127,6 +128,9 @@ public class Type {
         if (clazz == Double.class || clazz == double.class)
             return Type.getFlt64(context);
 
+        if (CharSequence.class.isAssignableFrom(clazz))
+            return Type.getInt8Ptr(context);
+
         return Type.get(context, clazz.getSimpleName());
     }
 
@@ -169,7 +173,7 @@ public class Type {
     }
 
     public boolean isInt() {
-        return (flags & IS_INT) != 0;
+        return (flags & IS_INTEGER) != 0;
     }
 
     public boolean isInt(final int size) {
@@ -197,7 +201,7 @@ public class Type {
     }
 
     public boolean isFlt() {
-        return (flags & IS_FLT) != 0;
+        return (flags & IS_FLOAT) != 0;
     }
 
     public boolean isFlt(final int size) {
@@ -213,10 +217,10 @@ public class Type {
     }
 
     public boolean isPtr() {
-        return (flags & IS_PTR) != 0;
+        return (flags & IS_POINTER) != 0;
     }
 
     public boolean isFun() {
-        return (flags & IS_FUN) != 0;
+        return (flags & IS_FUNCTION) != 0;
     }
 }

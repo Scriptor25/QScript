@@ -1,5 +1,8 @@
 package io.scriptor.type;
 
+import java.util.Arrays;
+import java.util.stream.Stream;
+
 import io.scriptor.backend.IRContext;
 
 public class FunctionType extends Type {
@@ -45,7 +48,7 @@ public class FunctionType extends Type {
             final Type result,
             final boolean vararg,
             final Type... args) {
-        super(context, id, Type.IS_FUN, 64);
+        super(context, id, Type.IS_FUNCTION, 64);
         this.result = result;
         this.vararg = vararg;
         this.args = args;
@@ -55,7 +58,7 @@ public class FunctionType extends Type {
         return result;
     }
 
-    public boolean hasVararg() {
+    public boolean isVarArg() {
         return vararg;
     }
 
@@ -68,5 +71,9 @@ public class FunctionType extends Type {
             return null;
 
         return args[i];
+    }
+
+    public Stream<Type> getArgs() {
+        return Arrays.stream(args);
     }
 }

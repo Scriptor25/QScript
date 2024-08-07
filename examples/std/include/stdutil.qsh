@@ -1,1 +1,1 @@
-def i8*(i8*, ?) format
+def i8* format(i8*, ?)

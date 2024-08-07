@@ -10,11 +10,15 @@ public class Main {
     @SuppressWarnings("resource")
     public static void main(String[] args) throws IOException {
         if (args.length == 0) {
-            new ShellSession().run().close();
-        } else {
-            for (final var arg : args) {
-                new FileSession(arg).run();
-            }
+            new ShellSession()
+                    .run()
+                    .close();
+            return;
+        }
+
+        for (final var arg : args) {
+            System.out.println(arg);
+            new FileSession(arg);
         }
     }
 }

@@ -29,7 +29,7 @@ public class IntExpression extends Expression {
     }
 
     @Override
-    public Value gen(final IRBuilder builder, final IRModule module) {
+    public Value genIR(final IRBuilder builder, final IRModule module) {
         throw new UnsupportedOperationException();
     }
 }

@@ -53,7 +53,11 @@ public class CallExpression extends Expression {
     }
 
     @Override
-    public Value gen(final IRBuilder builder, final IRModule module) {
-        throw new UnsupportedOperationException();
+    public Value genIR(final IRBuilder builder, final IRModule module) {
+        final var callee = this.callee.genIR(builder, module);
+        final var args = new Value[this.args.length];
+        for (int i = 0; i < args.length; ++i)
+            args[i] = this.args[i].genIR(builder, module);
+        return builder.createCall(callee, args);
     }
 }

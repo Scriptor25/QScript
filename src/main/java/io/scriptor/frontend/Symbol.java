@@ -1,4 +1,4 @@
-package io.scriptor.backend;
+package io.scriptor.frontend;
 
 import io.scriptor.backend.value.ConstValue;
 import io.scriptor.type.Type;

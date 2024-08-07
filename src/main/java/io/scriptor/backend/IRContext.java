@@ -1,7 +1,7 @@
 package io.scriptor.backend;
 
-import static io.scriptor.type.Type.IS_FLT;
-import static io.scriptor.type.Type.IS_INT;
+import static io.scriptor.type.Type.IS_FLOAT;
+import static io.scriptor.type.Type.IS_INTEGER;
 import static io.scriptor.type.Type.IS_VOID;
 
 import java.util.HashMap;
@@ -17,13 +17,13 @@ public class IRContext {
 
     public IRContext() {
         new Type(this, "void", IS_VOID, 0);
-        new Type(this, "i1", IS_INT, 1);
-        new Type(this, "i8", IS_INT, 8);
-        new Type(this, "i16", IS_INT, 16);
-        new Type(this, "i32", IS_INT, 32);
-        new Type(this, "i64", IS_INT, 64);
-        new Type(this, "f32", IS_FLT, 32);
-        new Type(this, "f64", IS_FLT, 64);
+        new Type(this, "i1", IS_INTEGER, 1);
+        new Type(this, "i8", IS_INTEGER, 8);
+        new Type(this, "i16", IS_INTEGER, 16);
+        new Type(this, "i32", IS_INTEGER, 32);
+        new Type(this, "i64", IS_INTEGER, 64);
+        new Type(this, "f32", IS_FLOAT, 32);
+        new Type(this, "f64", IS_FLOAT, 64);
     }
 
     /**

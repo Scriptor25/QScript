@@ -16,7 +16,7 @@ public class PointerType extends Type {
     private final Type base;
 
     protected PointerType(final IRContext context, final String id, final Type base) {
-        super(context, id, Type.IS_PTR, 64);
+        super(context, id, Type.IS_POINTER, 64);
         this.base = base;
     }
 

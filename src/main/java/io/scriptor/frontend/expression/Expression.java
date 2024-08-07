@@ -24,7 +24,11 @@ public abstract class Expression {
         return type;
     }
 
+    public boolean isConst() {
+        return false;
+    }
+
     public abstract String toString();
 
-    public abstract Value gen(final IRBuilder builder, final IRModule module);
+    public abstract Value genIR(final IRBuilder builder, final IRModule module);
 }

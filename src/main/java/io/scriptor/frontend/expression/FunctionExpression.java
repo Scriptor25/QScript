@@ -1,9 +1,12 @@
 package io.scriptor.frontend.expression;
 
+import io.scriptor.backend.Block;
 import io.scriptor.backend.IRBuilder;
 import io.scriptor.backend.IRModule;
+import io.scriptor.backend.value.Function;
 import io.scriptor.backend.value.Value;
 import io.scriptor.frontend.SourceLocation;
+import io.scriptor.type.FunctionType;
 import io.scriptor.type.Type;
 import io.scriptor.util.QScriptException;
 
@@ -13,25 +16,25 @@ public class FunctionExpression extends Expression {
             final SourceLocation location,
             final Type type,
             final String[] args,
-            final Expression[] expressions) {
-        return new FunctionExpression(location, type, args, expressions);
+            final CompoundExpression body) {
+        return new FunctionExpression(location, type, args, body);
     }
 
     private final String[] args;
-    private final Expression[] expressions;
+    private final CompoundExpression body;
 
     private FunctionExpression(
             final SourceLocation location,
             final Type type,
             final String[] args,
-            final Expression[] expressions) {
+            final CompoundExpression body) {
         super(location, type);
 
         if (type == null)
             throw new QScriptException(location, "function expression must have a promise type");
 
         this.args = args;
-        this.expressions = expressions;
+        this.body = body;
     }
 
     public int getArgCount() {
@@ -42,12 +45,8 @@ public class FunctionExpression extends Expression {
         return args[index];
     }
 
-    public int getExpressionCount() {
-        return expressions.length;
-    }
-
-    public Expression getExpression(final int index) {
-        return expressions[index];
+    public CompoundExpression getBody() {
+        return body;
     }
 
     @Override
@@ -59,29 +58,27 @@ public class FunctionExpression extends Expression {
                 builder.append(", ");
             builder.append(args[i]);
         }
-        builder.append(") {");
-
-        if (expressions.length == 0)
-            return builder
-                    .append("}")
-                    .toString();
-        builder.append('\n');
-
-        final var indent = CompoundExpression.indent();
-        for (final var expression : expressions)
-            builder
-                    .append(indent)
-                    .append(expression)
-                    .append('\n');
 
         return builder
-                .append(CompoundExpression.unindent())
-                .append("}")
+                .append(") ")
+                .append(body)
                 .toString();
     }
 
     @Override
-    public Value gen(final IRBuilder builder, final IRModule module) {
-        throw new UnsupportedOperationException();
+    public Value genIR(final IRBuilder builder, final IRModule module) {
+        final var type = (FunctionType) getType();
+        final var function = new Function(type);
+
+        final var entry = new Block(function, "entry");
+        final var bkpInsertPoint = builder.getInsertPoint();
+        builder.setInsertPoint(entry);
+
+        type.getResult();
+        type.getArgs();
+        type.isVarArg();
+
+        builder.setInsertPoint(bkpInsertPoint);
+        return function;
     }
 }

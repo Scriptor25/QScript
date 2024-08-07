@@ -13,7 +13,7 @@ public abstract class Value {
             for (int i = 0; i < array.length; ++i) {
                 array[i] = getConstNative(context, Array.get(value, i));
             }
-            final var type = Type.getNative(context, value.getClass());
+            // final var type = Type.getNative(context, value.getClass());
             throw new UnsupportedOperationException();
         }
 
@@ -57,23 +57,27 @@ public abstract class Value {
     }
 
     private final Type type;
-    private boolean isReturn;
+    private String name;
 
     protected Value(final Type type) {
         this.type = type;
+    }
+
+    protected Value(final Type type, final String name) {
+        this.type = type;
+        this.name = name;
     }
 
     public Type getType() {
         return type;
     }
 
-    public boolean isReturn() {
-        return isReturn;
+    public String getName() {
+        return name;
     }
 
-    public Value setReturn(final boolean isReturn) {
-        this.isReturn = isReturn;
-        return this;
+    public void setName(final String name) {
+        this.name = name;
     }
 
     public <T> T getNative() {

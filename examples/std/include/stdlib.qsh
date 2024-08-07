@@ -1,35 +1,35 @@
-def f64(i8*) atof
-def i32(i8*) atoi
-def i64(i8*) atol
-def i64(i8*) atoll
-def f64(i8*, i8**) strtod
-def f32(i8*, i8**) strtof
-def i64(i8*, i8**, i32) strtol
-def f64(i8*, i8**) strtold
-def i64(i8*, i8**, i32) strtoll
-def i64(i8*, i8**, i32) strtoul
-def i64(i8*, i8**, i32) strtoull
+def f64 atof(i8*)
+def i32 atoi(i8*)
+def i64 atol(i8*)
+def i64 atoll(i8*)
+def f64 strtod(i8*, i8**)
+def f32 strtof(i8*, i8**)
+def i64 strtol(i8*, i8**, i32)
+def f64 strtold(i8*, i8**)
+def i64 strtoll(i8*, i8**, i32)
+def i64 strtoul(i8*, i8**, i32)
+def i64 strtoull(i8*, i8**, i32)
 
-def i32() rand
-def void(i32) srand
+def i32 rand()
+def void srand(i32)
 
-def void*(i64, i64) calloc
-def void(void*) free
-def void*(i64) malloc
-def void*(void*, i64) realloc
+def void* calloc(i64, i64)
+def void free(void*)
+def void* malloc(i64)
+def void* realloc(void*, i64)
 
-def void() abort
-def i32(void()) atexit
-def i32(void()) at_quick_exit
-def void(i32) exit
-def i8*(i8*) getenv
-def void(i32) quick_exit
-def i32(i8*) system
-def void(i32) _Exit
+def void abort()
+def i32 atexit(void())
+def i32 at_quick_exit(void())
+def void exit(i32)
+def i8* getenv(i8*)
+def void quick_exit(i32)
+def i32 system(i8*)
+def void _Exit(i32)
 
-def void*(void*, void*, i64, i64, i32(void*, void*)) bsearch
-def void(void*, i64, i64, i32(void*, void*)) qsort
+def void* bsearch(void*, void*, i64, i64, i32(void*, void*))
+def void qsort(void*, i64, i64, i32(void*, void*))
 
-def i32(i32) abs
-def i64(i64) labs
-def i64(i64) llabs
+def i32 abs(i32)
+def i64 labs(i64)
+def i64 llabs(i64)

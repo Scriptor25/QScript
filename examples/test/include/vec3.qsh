@@ -1,12 +1,12 @@
 use vec3 as f64(i32)
 
-def vec3(f64, f64, f64) vec3
-def f64(vec3) vec3_length_squared
-def f64(vec3) vec3_length
-def vec3(vec3, vec3) vec3_add
-def vec3(vec3, vec3) vec3_sub
-def vec3(vec3, f64) vec3_mul
-def vec3(vec3, f64) vec3_div
-def vec3(vec3, vec3) vec3_cross
-def f64(vec3, vec3) vec3_dot
-def i8*(vec3) vec3_string
+def vec3 vec3(f64, f64, f64)
+def f64 vec3_length_squared(vec3)
+def f64 vec3_length(vec3)
+def vec3 vec3_add(vec3, vec3)
+def vec3 vec3_sub(vec3, vec3)
+def vec3 vec3_mul(vec3, f64)
+def vec3 vec3_div(vec3, f64)
+def vec3 vec3_cross(vec3, vec3)
+def f64 vec3_dot(vec3, vec3)
+def i8* vec3_string(vec3)

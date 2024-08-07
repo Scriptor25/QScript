@@ -59,7 +59,11 @@ public class CompoundExpression extends Expression {
     }
 
     @Override
-    public Value gen(final IRBuilder builder, final IRModule module) {
-        throw new UnsupportedOperationException();
+    public Value genIR(final IRBuilder builder, final IRModule module) {
+        builder.push();
+        for (final var expression : expressions)
+            expression.genIR(builder, module);
+        builder.pop();
+        return null;
     }
 }
