@@ -31,6 +31,9 @@ public class FileSession {
                 this::callback,
                 global,
                 new FileInputStream(file)));
+
+        System.out.println("IR Module:");
+        module.dump();
     }
 
     private void callback(final Expression expression) {

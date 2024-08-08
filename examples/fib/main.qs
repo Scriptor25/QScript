@@ -12,10 +12,11 @@ def i32 fib(i32 n) {
     return b
 }
 
-def i32 main(i32 argc, i8** argv) {
-    def i32 n = 10
-    def result = fib(n)
+def i32 N = 10
 
-    printf("fib(%d) = %d\n", n, result)
+def i32 main(i32 argc, i8** argv) {
+    def result = fib(N)
+
+    printf("fib(%d) = %d\n", N, result)
     return 0
 }

@@ -3,22 +3,22 @@ package io.scriptor.frontend.expression;
 import io.scriptor.backend.Block;
 import io.scriptor.backend.IRBuilder;
 import io.scriptor.backend.IRModule;
-import io.scriptor.backend.value.Value;
+import io.scriptor.backend.ref.ValueRef;
 import io.scriptor.frontend.SourceLocation;
 
-public class WhileExpression extends Expression {
+public class WhileExpr extends Expression {
 
-    public static WhileExpression create(
+    public static WhileExpr create(
             final SourceLocation location,
             final Expression condition,
             final Expression loop) {
-        return new WhileExpression(location, condition, loop);
+        return new WhileExpr(location, condition, loop);
     }
 
     private final Expression condition;
     private final Expression loop;
 
-    private WhileExpression(
+    private WhileExpr(
             final SourceLocation location,
             final Expression condition,
             final Expression loop) {
@@ -41,7 +41,7 @@ public class WhileExpression extends Expression {
     }
 
     @Override
-    public Value genIR(final IRBuilder builder, final IRModule module) {
+    public ValueRef genIR(final IRBuilder builder, final IRModule module) {
         final var function = builder.getInsertFunction();
         final var header = new Block(function, "header");
         final var loop = new Block(function, "loop");
@@ -50,7 +50,7 @@ public class WhileExpression extends Expression {
         builder.createBr(header);
 
         builder.setInsertPoint(header);
-        final var condition = this.condition.genIR(builder, module);
+        final var condition = this.condition.genIR(builder, module).get();
         builder.createCondBr(condition, loop, end);
 
         builder.setInsertPoint(loop);

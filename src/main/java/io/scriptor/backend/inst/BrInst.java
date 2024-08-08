@@ -11,7 +11,10 @@ public class BrInst extends Instruction {
         this.dest = dest;
     }
 
-    public Block getDest() {
-        return dest;
+    @Override
+    public void dump() {
+        super.dump();
+        System.out.print("br ");
+        dest.dumpFlat();
     }
 }

@@ -54,7 +54,7 @@ public class Util {
                 || c == '>';
     }
 
-    public static String unescape(final String value) {
+    public static CharSequence unescape(final CharSequence value) {
         final var builder = new StringBuilder();
         for (int i = 0; i < value.length(); ++i) {
             final var c = value.charAt(i);

@@ -18,6 +18,12 @@ public class ConstInt1 extends ConstValue {
     }
 
     @Override
+    public void dump() {
+        super.dump();
+        System.out.printf("0x%01X", value);
+    }
+
+    @Override
     public boolean getInt1() {
         return value;
     }

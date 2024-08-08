@@ -16,15 +16,14 @@ public class CondBrInst extends Instruction {
         this.destElse = destElse;
     }
 
-    public Value getCondition() {
-        return condition;
-    }
-
-    public Block getDestThen() {
-        return destThen;
-    }
-
-    public Block getDestElse() {
-        return destElse;
+    @Override
+    public void dump() {
+        super.dump();
+        System.out.print("br ");
+        condition.dumpFlat();
+        System.out.print(", ");
+        destThen.dumpFlat();
+        System.out.print(", ");
+        destElse.dumpFlat();
     }
 }

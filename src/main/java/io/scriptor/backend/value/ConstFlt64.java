@@ -18,6 +18,12 @@ public class ConstFlt64 extends ConstValue {
     }
 
     @Override
+    public void dump() {
+        super.dump();
+        System.out.print(Double.toHexString(value));
+    }
+
+    @Override
     public double getFlt64() {
         return value;
     }

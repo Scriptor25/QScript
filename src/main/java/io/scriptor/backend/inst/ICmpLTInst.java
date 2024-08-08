@@ -1,14 +1,15 @@
 package io.scriptor.backend.inst;
 
 import io.scriptor.backend.value.Value;
+import io.scriptor.type.Type;
 
-public class FAddInst extends Instruction {
+public class ICmpLTInst extends Instruction {
 
     private final Value left;
     private final Value right;
 
-    public FAddInst(final Value left, final Value right) {
-        super(left.getType());
+    public ICmpLTInst(final Type type, final Value left, final Value right) {
+        super(type);
         this.left = left;
         this.right = right;
     }
@@ -16,7 +17,7 @@ public class FAddInst extends Instruction {
     @Override
     public void dump() {
         super.dump();
-        System.out.print("fadd ");
+        System.out.print("icmp lt, ");
         left.dumpFlat();
         System.out.print(", ");
         right.dumpFlat();

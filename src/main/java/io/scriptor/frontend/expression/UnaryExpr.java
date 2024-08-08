@@ -4,30 +4,33 @@ import static io.scriptor.util.Util.getUnOpResult;
 
 import io.scriptor.backend.IRBuilder;
 import io.scriptor.backend.IRModule;
+import io.scriptor.backend.ref.RValueRef;
+import io.scriptor.backend.ref.ValueRef;
+import io.scriptor.backend.value.ConstValue;
 import io.scriptor.backend.value.Value;
 import io.scriptor.frontend.SourceLocation;
 
-public class UnaryExpression extends Expression {
+public class UnaryExpr extends Expression {
 
-    public static UnaryExpression createR(
+    public static UnaryExpr createR(
             final SourceLocation location,
             final String operator,
             final Expression operand) {
-        return new UnaryExpression(location, true, operator, operand);
+        return new UnaryExpr(location, true, operator, operand);
     }
 
-    public static UnaryExpression createL(
+    public static UnaryExpr createL(
             final SourceLocation location,
             final String operator,
             final Expression operand) {
-        return new UnaryExpression(location, false, operator, operand);
+        return new UnaryExpr(location, false, operator, operand);
     }
 
     private final boolean right;
     private final String operator;
     private final Expression operand;
 
-    private UnaryExpression(
+    private UnaryExpr(
             final SourceLocation location,
             final boolean right,
             final String operator,
@@ -58,18 +61,19 @@ public class UnaryExpression extends Expression {
     }
 
     @Override
-    public Value genIR(final IRBuilder builder, final IRModule module) {
-        final var value = operand.genIR(builder, module);
+    public ValueRef genIR(final IRBuilder builder, final IRModule module) {
+        final var operand = this.operand.genIR(builder, module);
+        final var value = operand.get();
 
         final boolean assign;
         final Value result;
 
         if ("++".equals(operator)) {
             assign = true;
-            result = builder.createAdd(value, Value.getConstInt(getType(), 1));
+            result = builder.createAdd(value, ConstValue.getConstInt(getType(), 1));
         } else if ("--".equals(operator)) {
             assign = true;
-            result = builder.createSub(value, Value.getConstInt(getType(), 1));
+            result = builder.createSub(value, ConstValue.getConstInt(getType(), 1));
         } else {
             assign = false;
             result = switch (operator) {
@@ -82,11 +86,11 @@ public class UnaryExpression extends Expression {
 
         if (result != null) {
             if (assign) {
-                if (!right) {
-                    return;
-                }
             }
-            return result;
+
+            if (right)
+                return RValueRef.create(value);
+            return RValueRef.create(result);
         }
 
         throw new UnsupportedOperationException();

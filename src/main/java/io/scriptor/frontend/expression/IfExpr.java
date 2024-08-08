@@ -2,31 +2,31 @@ package io.scriptor.frontend.expression;
 
 import io.scriptor.backend.IRBuilder;
 import io.scriptor.backend.IRModule;
-import io.scriptor.backend.value.Value;
+import io.scriptor.backend.ref.ValueRef;
 import io.scriptor.frontend.SourceLocation;
 
-public class IfExpression extends Expression {
+public class IfExpr extends Expression {
 
-    public static IfExpression create(
+    public static IfExpr create(
             final SourceLocation location,
             final Expression condition,
             final Expression thendo) {
-        return new IfExpression(location, condition, thendo, null);
+        return new IfExpr(location, condition, thendo, null);
     }
 
-    public static IfExpression create(
+    public static IfExpr create(
             final SourceLocation location,
             final Expression condition,
             final Expression thendo,
             final Expression elsedo) {
-        return new IfExpression(location, condition, thendo, elsedo);
+        return new IfExpr(location, condition, thendo, elsedo);
     }
 
     private final Expression condition;
     private final Expression thendo;
     private final Expression elsedo;
 
-    private IfExpression(
+    private IfExpr(
             final SourceLocation location,
             final Expression condition,
             final Expression thendo,
@@ -45,8 +45,7 @@ public class IfExpression extends Expression {
     }
 
     @Override
-    public Value genIR(final IRBuilder builder, final IRModule module) {
+    public ValueRef genIR(final IRBuilder builder, final IRModule module) {
         throw new UnsupportedOperationException();
     }
-
 }

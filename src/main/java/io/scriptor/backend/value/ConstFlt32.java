@@ -18,6 +18,12 @@ public class ConstFlt32 extends ConstValue {
     }
 
     @Override
+    public void dump() {
+        super.dump();
+        System.out.print(Float.toHexString(value));
+    }
+
+    @Override
     public float getFlt32() {
         return value;
     }

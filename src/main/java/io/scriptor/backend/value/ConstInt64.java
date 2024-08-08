@@ -18,6 +18,12 @@ public class ConstInt64 extends ConstValue {
     }
 
     @Override
+    public void dump() {
+        super.dump();
+        System.out.printf("0x%016X", value);
+    }
+
+    @Override
     public long getInt64() {
         return value;
     }

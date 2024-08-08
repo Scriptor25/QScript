@@ -3,33 +3,34 @@ package io.scriptor.frontend.expression;
 import io.scriptor.backend.Block;
 import io.scriptor.backend.IRBuilder;
 import io.scriptor.backend.IRModule;
+import io.scriptor.backend.ref.LValueRef;
+import io.scriptor.backend.ref.ValueRef;
 import io.scriptor.backend.value.ConstValue;
-import io.scriptor.backend.value.Value;
 import io.scriptor.frontend.SourceLocation;
 import io.scriptor.type.Type;
 
-public class DefVarExpression extends Expression {
+public class DefVarExpr extends Expression {
 
-    public static DefVarExpression create(
+    public static DefVarExpr create(
             final SourceLocation location,
             final Type type,
             final String name) {
-        return new DefVarExpression(location, type, name, null);
+        return new DefVarExpr(location, type, name, null);
     }
 
-    public static DefVarExpression create(
+    public static DefVarExpr create(
             final SourceLocation location,
             final Type type,
             final String name,
             final Expression init) {
-        return new DefVarExpression(location, type, name, init);
+        return new DefVarExpr(location, type, name, init);
     }
 
     private final Type type;
     private final String name;
     private final Expression init;
 
-    private DefVarExpression(
+    private DefVarExpr(
             final SourceLocation location,
             final Type type,
             final String name,
@@ -53,6 +54,11 @@ public class DefVarExpression extends Expression {
     }
 
     @Override
+    public boolean isConst() {
+        return true;
+    }
+
+    @Override
     public String toString() {
         if (init == null)
             return "def %s %s".formatted(type, name);
@@ -60,31 +66,40 @@ public class DefVarExpression extends Expression {
     }
 
     @Override
-    public Value genIR(final IRBuilder builder, final IRModule module) {
+    public ValueRef genIR(final IRBuilder builder, final IRModule module) {
         if (builder.isGlobal()) {
             final ConstValue constInit;
-            if (init != null && init.isConst()) {
-                constInit = (ConstValue) init.genIR(builder, module);
+            if (init != null && init.isConst() && init.getType() == type) {
+                constInit = (ConstValue) init.genIR(builder, module).get();
             } else {
                 constInit = null;
             }
+
             final var ptr = module.createGlobal(type, constInit, name);
-            if (init != null && constInit == null) {
+            final var ref = LValueRef.create(builder, ptr);
+
+            if (constInit == null && init != null) {
                 final var block = new Block();
                 builder.setInsertPoint(block);
-                builder.createStore(ptr, init.genIR(builder, module));
+                final var init = this.init.genIR(builder, module);
+                ref.set(builder.createCast(init.get(), type));
                 builder.resetInsertPoint();
                 module.createCtor(block);
             }
+
+            builder.putRef(name, ref);
             return null;
         }
 
-        final var ptr = builder.createAlloca(type);
-        if (init != null) {
-            builder.createStore(ptr, init.genIR(builder, module));
+        final ValueRef ref;
+        if (init == null) {
+            ref = LValueRef.alloca(builder, type);
+        } else {
+            final var init = this.init.genIR(builder, module);
+            ref = LValueRef.alloca(builder, type, builder.createCast(init.get(), type));
         }
 
-        builder.setValue(name, ptr);
+        builder.putRef(name, ref);
         return null;
     }
 }

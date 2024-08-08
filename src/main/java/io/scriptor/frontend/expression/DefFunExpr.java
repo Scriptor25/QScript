@@ -5,16 +5,17 @@ import java.util.Arrays;
 import io.scriptor.backend.Block;
 import io.scriptor.backend.IRBuilder;
 import io.scriptor.backend.IRModule;
-import io.scriptor.backend.value.Value;
+import io.scriptor.backend.ref.LValueRef;
+import io.scriptor.backend.ref.ValueRef;
 import io.scriptor.frontend.Arg;
 import io.scriptor.frontend.SourceLocation;
 import io.scriptor.type.FunctionType;
 import io.scriptor.type.Type;
 import io.scriptor.util.QScriptException;
 
-public class DefFunExpression extends Expression {
+public class DefFunExpr extends Expression {
 
-    public static DefFunExpression create(
+    public static DefFunExpr create(
             final SourceLocation location,
             final Type result,
             final String name,
@@ -23,35 +24,40 @@ public class DefFunExpression extends Expression {
         return create(location, result, name, args, vararg, null);
     }
 
-    public static DefFunExpression create(
+    public static DefFunExpr create(
             final SourceLocation location,
             final Type result,
             final String name,
             final Arg[] args,
             final boolean vararg,
-            final CompoundExpression body) {
-        return new DefFunExpression(location, result, name, args, vararg, body);
+            final CompoundExpr body) {
+        return new DefFunExpr(location, result, name, args, vararg, body);
     }
 
     private final Type result;
     private final String name;
     private final Arg[] args;
     private final boolean vararg;
-    private final CompoundExpression body;
+    private final CompoundExpr body;
 
-    private DefFunExpression(
+    private DefFunExpr(
             final SourceLocation location,
             final Type result,
             final String name,
             final Arg[] args,
             final boolean vararg,
-            final CompoundExpression body) {
+            final CompoundExpr body) {
         super(location, null);
         this.result = result;
         this.name = name;
         this.args = args;
         this.vararg = vararg;
         this.body = body;
+    }
+
+    @Override
+    public boolean isConst() {
+        return true;
     }
 
     @Override
@@ -75,13 +81,15 @@ public class DefFunExpression extends Expression {
     }
 
     @Override
-    public Value genIR(final IRBuilder builder, final IRModule module) {
+    public ValueRef genIR(final IRBuilder builder, final IRModule module) {
         final var name = builder.isGlobal()
                 ? this.name
                 : builder.getInsertFunction().getName() + "$" + this.name;
 
         final var type = FunctionType.get(result, vararg, Arrays.stream(args).map(Arg::type).toArray(Type[]::new));
         final var function = module.getFunction(type, name);
+
+        builder.getOrCreateRef(this.name, () -> LValueRef.create(builder, function));
 
         if (body == null)
             return null;
@@ -92,20 +100,18 @@ public class DefFunExpression extends Expression {
         final var bkp = builder.getInsertPoint();
         final var entry = new Block(function, "entry");
         builder.setInsertPoint(entry);
+        builder.push();
 
-        builder.clearStack();
         for (int i = 0; i < args.length; ++i) {
             final var arg = function.getArg(i);
             arg.setName(args[i].name());
 
-            final var ptr = builder.createAlloca(args[i].type());
-            builder.createStore(ptr, arg);
-
-            builder.setValue(arg.getName(), ptr);
+            builder.putRef(arg.getName(), LValueRef.alloca(builder, arg.getType(), arg));
         }
 
         body.genIR(builder, module);
 
+        builder.pop();
         builder.setInsertPoint(bkp);
         return null;
     }

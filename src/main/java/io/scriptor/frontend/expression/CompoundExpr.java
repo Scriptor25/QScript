@@ -2,13 +2,13 @@ package io.scriptor.frontend.expression;
 
 import io.scriptor.backend.IRBuilder;
 import io.scriptor.backend.IRModule;
-import io.scriptor.backend.value.Value;
+import io.scriptor.backend.ref.ValueRef;
 import io.scriptor.frontend.SourceLocation;
 
-public class CompoundExpression extends Expression {
+public class CompoundExpr extends Expression {
 
-    public static CompoundExpression create(final SourceLocation location, final Expression[] expressions) {
-        return new CompoundExpression(location, expressions);
+    public static CompoundExpr create(final SourceLocation location, final Expression[] expressions) {
+        return new CompoundExpr(location, expressions);
     }
 
     private static int depth = 0;
@@ -32,16 +32,16 @@ public class CompoundExpression extends Expression {
 
     private final Expression[] expressions;
 
-    private CompoundExpression(final SourceLocation location, final Expression[] expressions) {
+    private CompoundExpr(final SourceLocation location, final Expression[] expressions) {
         super(location, null);
         this.expressions = expressions;
     }
 
-    public int getExpressionCount() {
+    public int getExprCount() {
         return expressions.length;
     }
 
-    public Expression getExpression(final int index) {
+    public Expression getExpr(final int index) {
         return expressions[index];
     }
 
@@ -59,7 +59,7 @@ public class CompoundExpression extends Expression {
     }
 
     @Override
-    public Value genIR(final IRBuilder builder, final IRModule module) {
+    public ValueRef genIR(final IRBuilder builder, final IRModule module) {
         builder.push();
         for (final var expression : expressions)
             expression.genIR(builder, module);

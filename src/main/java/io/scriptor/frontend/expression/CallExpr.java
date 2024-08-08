@@ -2,24 +2,26 @@ package io.scriptor.frontend.expression;
 
 import io.scriptor.backend.IRBuilder;
 import io.scriptor.backend.IRModule;
+import io.scriptor.backend.ref.RValueRef;
+import io.scriptor.backend.ref.ValueRef;
 import io.scriptor.backend.value.Value;
 import io.scriptor.frontend.SourceLocation;
 import io.scriptor.type.Type;
 
-public class CallExpression extends Expression {
+public class CallExpr extends Expression {
 
-    public static CallExpression create(
+    public static CallExpr create(
             final SourceLocation location,
             final Type result,
             final Expression callee,
             final Expression[] args) {
-        return new CallExpression(location, result, callee, args);
+        return new CallExpr(location, result, callee, args);
     }
 
     private final Expression callee;
     private final Expression[] args;
 
-    private CallExpression(
+    private CallExpr(
             final SourceLocation location,
             final Type result,
             final Expression callee,
@@ -53,11 +55,11 @@ public class CallExpression extends Expression {
     }
 
     @Override
-    public Value genIR(final IRBuilder builder, final IRModule module) {
-        final var callee = this.callee.genIR(builder, module);
+    public ValueRef genIR(final IRBuilder builder, final IRModule module) {
+        final var callee = this.callee.genIR(builder, module).get();
         final var args = new Value[this.args.length];
         for (int i = 0; i < args.length; ++i)
-            args[i] = this.args[i].genIR(builder, module);
-        return builder.createCall(callee, args);
+            args[i] = this.args[i].genIR(builder, module).get();
+        return RValueRef.create(builder.createCall(callee, args));
     }
 }

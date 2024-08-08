@@ -18,6 +18,12 @@ public class ConstInt32 extends ConstValue {
     }
 
     @Override
+    public void dump() {
+        super.dump();
+        System.out.printf("0x%08X", value);
+    }
+
+    @Override
     public int getInt32() {
         return value;
     }

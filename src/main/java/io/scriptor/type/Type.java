@@ -26,6 +26,25 @@ public class Type {
         return get(context, "void");
     }
 
+    public static Type getIntN(final IRContext context, final int size) {
+        return get(context, switch (size) {
+            case 1 -> "i1";
+            case 8 -> "i8";
+            case 16 -> "i16";
+            case 32 -> "i32";
+            case 64 -> "i64";
+            default -> null;
+        });
+    }
+
+    public static Type getFltN(final IRContext context, final int size) {
+        return get(context, switch (size) {
+            case 32 -> "f32";
+            case 64 -> "f64";
+            default -> null;
+        });
+    }
+
     public static Type getInt1(final IRContext context) {
         return get(context, "i1");
     }

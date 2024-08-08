@@ -18,6 +18,12 @@ public class ConstInt16 extends ConstValue {
     }
 
     @Override
+    public void dump() {
+        super.dump();
+        System.out.printf("0x%04X", value);
+    }
+
+    @Override
     public short getInt16() {
         return value;
     }

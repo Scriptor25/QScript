@@ -1,17 +1,24 @@
 package io.scriptor.backend.value;
 
 import io.scriptor.type.Type;
+import io.scriptor.util.Util;
 
-public class ConstString extends ConstValue {
+public class ConstString extends ConstArray {
 
-    private final String string;
+    private final CharSequence string;
 
-    public ConstString(final Type type, final String string) {
+    public ConstString(final Type type, final CharSequence string) {
         super(type);
         this.string = string;
     }
 
-    public String getString() {
+    @Override
+    public void dump() {
+        super.dump();
+        System.out.printf("\"%s\"", Util.unescape(string));
+    }
+
+    public CharSequence getString() {
         return string;
     }
 }

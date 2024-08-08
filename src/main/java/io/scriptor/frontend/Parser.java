@@ -15,21 +15,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
-import io.scriptor.frontend.expression.BinaryExpression;
-import io.scriptor.frontend.expression.CallExpression;
-import io.scriptor.frontend.expression.CompoundExpression;
-import io.scriptor.frontend.expression.DefFunExpression;
-import io.scriptor.frontend.expression.DefVarExpression;
+import io.scriptor.frontend.expression.BinaryExpr;
+import io.scriptor.frontend.expression.CallExpr;
+import io.scriptor.frontend.expression.CompoundExpr;
+import io.scriptor.frontend.expression.DefFunExpr;
+import io.scriptor.frontend.expression.DefVarExpr;
 import io.scriptor.frontend.expression.Expression;
-import io.scriptor.frontend.expression.FloatExpression;
-import io.scriptor.frontend.expression.FunctionExpression;
-import io.scriptor.frontend.expression.IDExpression;
-import io.scriptor.frontend.expression.IfExpression;
-import io.scriptor.frontend.expression.IntExpression;
-import io.scriptor.frontend.expression.ReturnExpression;
-import io.scriptor.frontend.expression.StringExpression;
-import io.scriptor.frontend.expression.UnaryExpression;
-import io.scriptor.frontend.expression.WhileExpression;
+import io.scriptor.frontend.expression.FloatExpr;
+import io.scriptor.frontend.expression.FunctionExpr;
+import io.scriptor.frontend.expression.IDExpr;
+import io.scriptor.frontend.expression.IfExpr;
+import io.scriptor.frontend.expression.IntExpr;
+import io.scriptor.frontend.expression.ReturnExpr;
+import io.scriptor.frontend.expression.StringExpr;
+import io.scriptor.frontend.expression.UnaryExpr;
+import io.scriptor.frontend.expression.WhileExpr;
 import io.scriptor.type.FunctionType;
 import io.scriptor.type.PointerType;
 import io.scriptor.type.StructType;
@@ -86,7 +86,7 @@ public class Parser {
 
         parser.next();
         while (!parser.atEOF()) {
-            final var expression = parser.nextExpression(null);
+            final var expression = parser.nextExpr(null);
             if (expression != null)
                 config.callback().accept(expression);
         }
@@ -394,7 +394,7 @@ public class Parser {
         return base;
     }
 
-    private Expression nextExpression(final Type expected) throws IOException {
+    private Expression nextExpr(final Type expected) throws IOException {
         if (at("use")) {
             nextUse();
             return null;
@@ -436,11 +436,11 @@ public class Parser {
         }
 
         if (nextIfAt("=")) {
-            final var init = nextExpression(type);
+            final var init = nextExpr(type);
             if (type == null)
                 type = init.getType();
             stack.peek().declareSymbol(type, name);
-            return DefVarExpression.create(loc, type, name, init);
+            return DefVarExpr.create(loc, type, name, init);
         }
 
         if (nextIfAt("(")) {
@@ -485,14 +485,14 @@ public class Parser {
 
                 stack.pop();
 
-                return DefFunExpression.create(loc, type, name, args.toArray(Arg[]::new), vararg, body);
+                return DefFunExpr.create(loc, type, name, args.toArray(Arg[]::new), vararg, body);
             }
 
-            return DefFunExpression.create(loc, type, name, args.toArray(Arg[]::new), vararg);
+            return DefFunExpr.create(loc, type, name, args.toArray(Arg[]::new), vararg);
         }
 
         stack.peek().declareSymbol(type, name);
-        return DefVarExpression.create(loc, type, name);
+        return DefVarExpr.create(loc, type, name);
     }
 
     private void nextUse() throws IOException {
@@ -515,51 +515,51 @@ public class Parser {
         parse(new ParserConfig(config, file, new FileInputStream(file)), parsed);
     }
 
-    private WhileExpression nextWhile() throws IOException {
+    private WhileExpr nextWhile() throws IOException {
         final var loc = expect("while").location();
 
-        final var condition = nextExpression(Type.getInt1(config.context()));
-        final var loop = nextExpression(null);
+        final var condition = nextExpr(Type.getInt1(config.context()));
+        final var loop = nextExpr(null);
 
-        return WhileExpression.create(loc, condition, loop);
+        return WhileExpr.create(loc, condition, loop);
     }
 
-    private IfExpression nextIf() throws IOException {
+    private IfExpr nextIf() throws IOException {
         final var loc = expect("if").location();
 
-        final var condition = nextExpression(Type.getInt1(config.context()));
-        final var thendo = nextExpression(null);
+        final var condition = nextExpr(Type.getInt1(config.context()));
+        final var thendo = nextExpr(null);
 
         if (nextIfAt("else")) {
-            final var elsedo = nextExpression(null);
-            return IfExpression.create(loc, condition, thendo, elsedo);
+            final var elsedo = nextExpr(null);
+            return IfExpr.create(loc, condition, thendo, elsedo);
         }
 
-        return IfExpression.create(loc, condition, thendo);
+        return IfExpr.create(loc, condition, thendo);
     }
 
-    private ReturnExpression nextReturn() throws IOException {
+    private ReturnExpr nextReturn() throws IOException {
         final var loc = expect("return").location();
 
         if (nextIfAt("void"))
-            return ReturnExpression.create(loc, currentResult);
+            return ReturnExpr.create(loc, currentResult);
 
-        final var expression = nextExpression(currentResult);
-        return ReturnExpression.create(loc, currentResult, expression);
+        final var expression = nextExpr(currentResult);
+        return ReturnExpr.create(loc, currentResult, expression);
     }
 
-    private CompoundExpression nextCompound() throws IOException {
+    private CompoundExpr nextCompound() throws IOException {
         final var loc = expect("{").location();
         final List<Expression> expressions = new ArrayList<>();
 
         stack.push(new State(stack.peek()));
         while (!nextIfAt("}")) {
-            final var expression = nextExpression(null);
+            final var expression = nextExpr(null);
             expressions.add(expression);
         }
         stack.pop();
 
-        return CompoundExpression.create(loc, expressions.toArray(Expression[]::new));
+        return CompoundExpr.create(loc, expressions.toArray(Expression[]::new));
     }
 
     private Expression nextBinary(final Type expected) throws IOException {
@@ -578,7 +578,7 @@ public class Parser {
                 final var laPrecedence = precedences.get(token.value());
                 rhs = nextBinary(rhs, precedence + (laPrecedence > precedence ? 1 : 0));
             }
-            lhs = BinaryExpression.create(loc, operator, lhs, rhs);
+            lhs = BinaryExpr.create(loc, operator, lhs, rhs);
         }
         return lhs;
     }
@@ -593,13 +593,13 @@ public class Parser {
 
             final List<Expression> args = new ArrayList<>();
             while (!nextIfAt(")")) {
-                final var arg = nextExpression(calleeType.getArg(args.size()));
+                final var arg = nextExpr(calleeType.getArg(args.size()));
                 args.add(arg);
                 if (!at(")"))
                     expect(",");
             }
 
-            expr = CallExpression.create(loc, calleeType.getResult(), expr, args.toArray(Expression[]::new));
+            expr = CallExpr.create(loc, calleeType.getResult(), expr, args.toArray(Expression[]::new));
         }
 
         return expr;
@@ -612,7 +612,7 @@ public class Parser {
             final var tk = skip();
             final var loc = tk.location();
             final var operator = tk.value();
-            expr = UnaryExpression.createR(loc, operator, expr);
+            expr = UnaryExpr.createR(loc, operator, expr);
         }
 
         return expr;
@@ -646,7 +646,7 @@ public class Parser {
 
             stack.pop();
 
-            return FunctionExpression.create(
+            return FunctionExpr.create(
                     loc,
                     type,
                     argnames.toArray(String[]::new),
@@ -654,29 +654,29 @@ public class Parser {
         }
 
         if (nextIfAt("(")) {
-            final var expression = nextExpression(expected);
+            final var expression = nextExpr(expected);
             expect(")");
             return expression;
         }
 
         if (at(TokenType.ID)) {
             final var id = skip().value();
-            return IDExpression.create(loc, stack.peek(), id);
+            return IDExpr.create(loc, stack.peek(), id);
         }
 
         if (at(TokenType.INT))
-            return IntExpression.create(loc, Type.getInt64(config.context()), Long.valueOf(skip().value()));
+            return IntExpr.create(loc, Type.getInt64(config.context()), Long.valueOf(skip().value()));
 
         if (at(TokenType.FLOAT))
-            return FloatExpression.create(loc, Type.getFlt64(config.context()), Double.valueOf(skip().value()));
+            return FloatExpr.create(loc, Type.getFlt64(config.context()), Double.valueOf(skip().value()));
 
         if (at(TokenType.STRING))
-            return StringExpression.create(loc, Type.getInt8Ptr(config.context()), skip().value());
+            return StringExpr.create(loc, Type.getInt8Ptr(config.context()), skip().value());
 
         if (at(TokenType.OPERATOR)) {
             final var operator = skip().value();
-            final var operand = nextExpression(expected);
-            return UnaryExpression.createL(loc, operator, operand);
+            final var operand = nextExpr(expected);
+            return UnaryExpr.createL(loc, operator, operand);
         }
 
         throw new QScriptException(loc, "unhandled token '%s' (%s)", token.value(), token.type());

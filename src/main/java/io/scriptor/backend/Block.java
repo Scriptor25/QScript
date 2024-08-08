@@ -25,12 +25,33 @@ public class Block {
         this.name = name;
     }
 
+    public void dump() {
+        dumpFlat();
+        System.out.println(":");
+        dumpContent();
+    }
+
+    public void dumpFlat() {
+        System.out.printf("$%s", getName());
+    }
+
+    public void dumpContent() {
+        var inst = begin;
+        while (inst != null) {
+            System.out.print("\t");
+            inst.dump();
+            inst = inst.getNext();
+            if (inst != null)
+                System.out.println();
+        }
+    }
+
     public Function getParent() {
         return parent;
     }
 
     public String getName() {
-        return name;
+        return name == null ? Integer.toString(hashCode()) : name;
     }
 
     public Instruction getBegin() {
@@ -64,7 +85,9 @@ public class Block {
     public void insert(final Instruction inst) {
         if (end != null) {
             end.insert(inst);
+            end = inst;
+            return;
         }
-        end = inst;
+        begin = end = inst;
     }
 }

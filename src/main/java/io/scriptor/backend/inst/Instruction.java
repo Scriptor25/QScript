@@ -13,6 +13,12 @@ public abstract class Instruction extends Value {
         super(type);
     }
 
+    @Override
+    public void dump() {
+        if (getType() != null)
+            System.out.printf("%%%s = %s ", getName(), getType());
+    }
+
     public Block getParent() {
         return parent;
     }

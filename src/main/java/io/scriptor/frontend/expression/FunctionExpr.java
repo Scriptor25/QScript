@@ -1,33 +1,30 @@
 package io.scriptor.frontend.expression;
 
-import io.scriptor.backend.Block;
 import io.scriptor.backend.IRBuilder;
 import io.scriptor.backend.IRModule;
-import io.scriptor.backend.value.Function;
-import io.scriptor.backend.value.Value;
+import io.scriptor.backend.ref.ValueRef;
 import io.scriptor.frontend.SourceLocation;
-import io.scriptor.type.FunctionType;
 import io.scriptor.type.Type;
 import io.scriptor.util.QScriptException;
 
-public class FunctionExpression extends Expression {
+public class FunctionExpr extends Expression {
 
-    public static FunctionExpression create(
+    public static FunctionExpr create(
             final SourceLocation location,
             final Type type,
             final String[] args,
-            final CompoundExpression body) {
-        return new FunctionExpression(location, type, args, body);
+            final CompoundExpr body) {
+        return new FunctionExpr(location, type, args, body);
     }
 
     private final String[] args;
-    private final CompoundExpression body;
+    private final CompoundExpr body;
 
-    private FunctionExpression(
+    private FunctionExpr(
             final SourceLocation location,
             final Type type,
             final String[] args,
-            final CompoundExpression body) {
+            final CompoundExpr body) {
         super(location, type);
 
         if (type == null)
@@ -45,8 +42,13 @@ public class FunctionExpression extends Expression {
         return args[index];
     }
 
-    public CompoundExpression getBody() {
+    public CompoundExpr getBody() {
         return body;
+    }
+
+    @Override
+    public boolean isConst() {
+        return true;
     }
 
     @Override
@@ -66,19 +68,7 @@ public class FunctionExpression extends Expression {
     }
 
     @Override
-    public Value genIR(final IRBuilder builder, final IRModule module) {
-        final var type = (FunctionType) getType();
-        final var function = new Function(type);
-
-        final var entry = new Block(function, "entry");
-        final var bkpInsertPoint = builder.getInsertPoint();
-        builder.setInsertPoint(entry);
-
-        type.getResult();
-        type.getArgs();
-        type.isVarArg();
-
-        builder.setInsertPoint(bkpInsertPoint);
-        return function;
+    public ValueRef genIR(final IRBuilder builder, final IRModule module) {
+        throw new UnsupportedOperationException();
     }
 }

@@ -18,6 +18,12 @@ public class ConstInt8 extends ConstValue {
     }
 
     @Override
+    public void dump() {
+        super.dump();
+        System.out.printf("0x%02X", value);
+    }
+
+    @Override
     public byte getInt8() {
         return value;
     }
