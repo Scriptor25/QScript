@@ -1,8 +1,5 @@
 package io.scriptor.frontend.expression;
 
-import io.scriptor.backend.IRBuilder;
-import io.scriptor.backend.IRModule;
-import io.scriptor.backend.ref.ValueRef;
 import io.scriptor.frontend.SourceLocation;
 
 public class IfExpr extends Expression {
@@ -42,10 +39,5 @@ public class IfExpr extends Expression {
         if (elsedo != null)
             return "if %s %s else %s".formatted(condition, thendo, elsedo);
         return "if %s %s".formatted(condition, thendo);
-    }
-
-    @Override
-    public ValueRef genIR(final IRBuilder builder, final IRModule module) {
-        throw new UnsupportedOperationException();
     }
 }

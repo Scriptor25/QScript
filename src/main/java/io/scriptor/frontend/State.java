@@ -24,7 +24,7 @@ public class State {
     }
 
     public Symbol declareSymbol(final Type type, final String id) {
-        return symbols.computeIfAbsent(id, key -> new Symbol(id, type, null));
+        return symbols.computeIfAbsent(id, key -> new Symbol(id, type));
     }
 
     public Symbol getSymbol(final SourceLocation location, final String id) {

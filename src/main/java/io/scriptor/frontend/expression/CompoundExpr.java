@@ -1,8 +1,5 @@
 package io.scriptor.frontend.expression;
 
-import io.scriptor.backend.IRBuilder;
-import io.scriptor.backend.IRModule;
-import io.scriptor.backend.ref.ValueRef;
 import io.scriptor.frontend.SourceLocation;
 
 public class CompoundExpr extends Expression {
@@ -56,14 +53,5 @@ public class CompoundExpr extends Expression {
             builder.append(indent).append(expression).append('\n');
 
         return "{%n%s%s}".formatted(builder, unindent());
-    }
-
-    @Override
-    public ValueRef genIR(final IRBuilder builder, final IRModule module) {
-        builder.push();
-        for (final var expression : expressions)
-            expression.genIR(builder, module);
-        builder.pop();
-        return null;
     }
 }

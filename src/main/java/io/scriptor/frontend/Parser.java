@@ -346,7 +346,7 @@ public class Parser {
     private Type nextType(final boolean unsafe) throws IOException {
         if (nextIfAt("struct")) {
             if (!nextIfAt("{"))
-                return nextType(StructType.getOpaque(config.context()));
+                return nextType(StructType.getOpaque());
             final List<Type> elements = new ArrayList<>();
             while (!nextIfAt("}")) {
                 final var type = nextType();
@@ -354,19 +354,19 @@ public class Parser {
                 if (!at("}"))
                     expect(",");
             }
-            return nextType(StructType.get(config.context(), elements.toArray(Type[]::new)));
+            return nextType(StructType.get(elements.toArray(Type[]::new)));
         }
 
         if (unsafe) {
             if (!at(TokenType.ID))
                 throw new QScriptException(token.location(), "expected id");
             final var id = token.value();
-            if (!config.context().existsType(id))
+            if (!Type.exists(id))
                 return null;
         }
 
         final var base = expect(TokenType.ID).value();
-        return nextType(Type.get(config.context(), base));
+        return nextType(Type.get(base));
     }
 
     private Type nextType(final Type base) throws IOException {
@@ -501,7 +501,7 @@ public class Parser {
         expect("as");
         final var type = nextType();
 
-        config.context().getType(id, () -> type);
+        Type.useAs(id, type);
     }
 
     private void nextInclude() throws IOException {
@@ -518,7 +518,7 @@ public class Parser {
     private WhileExpr nextWhile() throws IOException {
         final var loc = expect("while").location();
 
-        final var condition = nextExpr(Type.getInt1(config.context()));
+        final var condition = nextExpr(Type.getInt1());
         final var loop = nextExpr(null);
 
         return WhileExpr.create(loc, condition, loop);
@@ -527,7 +527,7 @@ public class Parser {
     private IfExpr nextIf() throws IOException {
         final var loc = expect("if").location();
 
-        final var condition = nextExpr(Type.getInt1(config.context()));
+        final var condition = nextExpr(Type.getInt1());
         final var thendo = nextExpr(null);
 
         if (nextIfAt("else")) {
@@ -665,13 +665,13 @@ public class Parser {
         }
 
         if (at(TokenType.INT))
-            return IntExpr.create(loc, Type.getInt64(config.context()), Long.valueOf(skip().value()));
+            return IntExpr.create(loc, Type.getInt64(), Long.valueOf(skip().value()));
 
         if (at(TokenType.FLOAT))
-            return FloatExpr.create(loc, Type.getFlt64(config.context()), Double.valueOf(skip().value()));
+            return FloatExpr.create(loc, Type.getFlt64(), Double.valueOf(skip().value()));
 
         if (at(TokenType.STRING))
-            return StringExpr.create(loc, Type.getInt8Ptr(config.context()), skip().value());
+            return StringExpr.create(loc, Type.getInt8Ptr(), skip().value());
 
         if (at(TokenType.OPERATOR)) {
             final var operator = skip().value();

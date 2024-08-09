@@ -1,8 +1,5 @@
 package io.scriptor.frontend.expression;
 
-import io.scriptor.backend.IRBuilder;
-import io.scriptor.backend.IRModule;
-import io.scriptor.backend.ref.ValueRef;
 import io.scriptor.frontend.SourceLocation;
 import io.scriptor.type.Type;
 import io.scriptor.util.QScriptException;
@@ -65,10 +62,5 @@ public class FunctionExpr extends Expression {
                 .append(") ")
                 .append(body)
                 .toString();
-    }
-
-    @Override
-    public ValueRef genIR(final IRBuilder builder, final IRModule module) {
-        throw new UnsupportedOperationException();
     }
 }

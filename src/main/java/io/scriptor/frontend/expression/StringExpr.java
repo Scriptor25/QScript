@@ -2,10 +2,6 @@ package io.scriptor.frontend.expression;
 
 import static io.scriptor.util.Util.unescape;
 
-import io.scriptor.backend.IRBuilder;
-import io.scriptor.backend.IRModule;
-import io.scriptor.backend.ref.RValueRef;
-import io.scriptor.backend.ref.ValueRef;
 import io.scriptor.frontend.SourceLocation;
 import io.scriptor.type.Type;
 
@@ -34,11 +30,5 @@ public class StringExpr extends Expression {
     @Override
     public String toString() {
         return "\"%s\"".formatted(unescape(value));
-    }
-
-    @Override
-    public ValueRef genIR(final IRBuilder builder, final IRModule module) {
-        final var ptr = builder.createGlobalString(value, null, module);
-        return RValueRef.create(ptr);
     }
 }

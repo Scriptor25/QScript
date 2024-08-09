@@ -16,9 +16,8 @@ public class Main {
             return;
         }
 
-        for (final var arg : args) {
-            System.out.println(arg);
-            new FileSession(arg);
+        for (final var filename : args) {
+            FileSession.create(filename);
         }
     }
 }

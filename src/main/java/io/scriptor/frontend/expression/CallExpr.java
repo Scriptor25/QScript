@@ -1,10 +1,5 @@
 package io.scriptor.frontend.expression;
 
-import io.scriptor.backend.IRBuilder;
-import io.scriptor.backend.IRModule;
-import io.scriptor.backend.ref.RValueRef;
-import io.scriptor.backend.ref.ValueRef;
-import io.scriptor.backend.value.Value;
 import io.scriptor.frontend.SourceLocation;
 import io.scriptor.type.Type;
 
@@ -52,14 +47,5 @@ public class CallExpr extends Expression {
             builder.append(args[i]);
         }
         return "%s(%s)".formatted(callee, builder);
-    }
-
-    @Override
-    public ValueRef genIR(final IRBuilder builder, final IRModule module) {
-        final var callee = this.callee.genIR(builder, module).get();
-        final var args = new Value[this.args.length];
-        for (int i = 0; i < args.length; ++i)
-            args[i] = this.args[i].genIR(builder, module).get();
-        return RValueRef.create(builder.createCall(callee, args));
     }
 }

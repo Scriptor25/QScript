@@ -81,7 +81,7 @@ public class Util {
     public static Type getUnOpResult(final String operator, final Type operand) {
         return switch (operator) {
             case "++", "--", "-", "~" -> operand;
-            case "!" -> Type.getInt1(operand.getContext());
+            case "!" -> Type.getInt1();
             default -> null;
         };
     }

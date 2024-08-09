@@ -1,8 +1,5 @@
 package io.scriptor.frontend.expression;
 
-import io.scriptor.backend.IRBuilder;
-import io.scriptor.backend.IRModule;
-import io.scriptor.backend.ref.ValueRef;
 import io.scriptor.frontend.SourceLocation;
 import io.scriptor.type.Type;
 
@@ -29,6 +26,4 @@ public abstract class Expression {
     }
 
     public abstract String toString();
-
-    public abstract ValueRef genIR(final IRBuilder builder, final IRModule module);
 }

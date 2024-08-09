@@ -12,14 +12,26 @@
     <maven.compiler.source>17</maven.compiler.source>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <jline.version>3.26.3</jline.version>
+    <javacpp.version>1.5.10</javacpp.version>
+    <llvm.version>17.0.6-${javacpp.version}</llvm.version>
   </properties>
 
   <dependencies>
+
+    <!-- Shell -->
     <dependency>
       <groupId>org.jline</groupId>
       <artifactId>jline</artifactId>
       <version>${jline.version}</version>
     </dependency>
+
+    <!-- Backend -->
+    <dependency>
+      <groupId>org.bytedeco</groupId>
+      <artifactId>llvm</artifactId>
+      <version>${llvm.version}</version>
+    </dependency>
+
   </dependencies>
 
 </project>

@@ -1,8 +1,5 @@
 package io.scriptor.frontend.expression;
 
-import io.scriptor.backend.IRBuilder;
-import io.scriptor.backend.IRModule;
-import io.scriptor.backend.ref.ValueRef;
 import io.scriptor.frontend.SourceLocation;
 import io.scriptor.frontend.State;
 import io.scriptor.type.Type;
@@ -28,14 +25,5 @@ public class IDExpr extends Expression {
     @Override
     public String toString() {
         return id;
-    }
-
-    @Override
-    public ValueRef genIR(final IRBuilder builder, final IRModule module) {
-        final var ref = builder.getRef(id);
-        if (ref != null)
-            return ref;
-
-        throw new UnsupportedOperationException();
     }
 }

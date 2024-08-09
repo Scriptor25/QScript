@@ -1,6 +1,8 @@
 package io.scriptor.type;
 
-import io.scriptor.backend.IRContext;
+import java.util.HashMap;
+import java.util.Map;
+
 import io.scriptor.frontend.SourceLocation;
 import io.scriptor.util.QScriptException;
 
@@ -14,20 +16,39 @@ public class Type {
     public static final int IS_STRUCT = 32;
     public static final int IS_ARRAY = 64;
 
-    public static void useAs(final IRContext context, final String id, final Type type) {
-        context.getType(id, () -> type);
+    private static final Map<String, Type> types = new HashMap<>();
+    static {
+        new Type("void", IS_VOID, 0);
+        new Type("i1", IS_INTEGER, 1);
+        new Type("i8", IS_INTEGER, 8);
+        new Type("i16", IS_INTEGER, 16);
+        new Type("i32", IS_INTEGER, 32);
+        new Type("i64", IS_INTEGER, 64);
+        new Type("f32", IS_FLOAT, 32);
+        new Type("f64", IS_FLOAT, 64);
     }
 
-    public static Type get(final IRContext context, final String id) {
-        return context.getType(id);
+    public static void useAs(final String id, final Type type) {
+        types.put(id, type);
     }
 
-    public static Type getVoid(final IRContext context) {
-        return get(context, "void");
+    public static boolean exists(final String id) {
+        return types.containsKey(id);
     }
 
-    public static Type getIntN(final IRContext context, final int size) {
-        return get(context, switch (size) {
+    @SuppressWarnings("unchecked")
+    public static <T extends Type> T get(final String id) {
+        if (!exists(id))
+            throw new QScriptException("no such type with id '%s'", id);
+        return (T) types.get(id);
+    }
+
+    public static Type getVoid() {
+        return get("void");
+    }
+
+    public static Type getIntN(final int size) {
+        return get(switch (size) {
             case 1 -> "i1";
             case 8 -> "i8";
             case 16 -> "i16";
@@ -37,48 +58,48 @@ public class Type {
         });
     }
 
-    public static Type getFltN(final IRContext context, final int size) {
-        return get(context, switch (size) {
+    public static Type getFltN(final int size) {
+        return get(switch (size) {
             case 32 -> "f32";
             case 64 -> "f64";
             default -> null;
         });
     }
 
-    public static Type getInt1(final IRContext context) {
-        return get(context, "i1");
+    public static Type getInt1() {
+        return get("i1");
     }
 
-    public static Type getInt8(final IRContext context) {
-        return get(context, "i8");
+    public static Type getInt8() {
+        return get("i8");
     }
 
-    public static Type getInt16(final IRContext context) {
-        return get(context, "i16");
+    public static Type getInt16() {
+        return get("i16");
     }
 
-    public static Type getInt32(final IRContext context) {
-        return get(context, "i32");
+    public static Type getInt32() {
+        return get("i32");
     }
 
-    public static Type getInt64(final IRContext context) {
-        return get(context, "i64");
+    public static Type getInt64() {
+        return get("i64");
     }
 
-    public static Type getFlt32(final IRContext context) {
-        return get(context, "f32");
+    public static Type getFlt32() {
+        return get("f32");
     }
 
-    public static Type getFlt64(final IRContext context) {
-        return get(context, "f64");
+    public static Type getFlt64() {
+        return get("f64");
     }
 
-    public static Type getVoidPtr(final IRContext context) {
-        return PointerType.get(getVoid(context));
+    public static Type getVoidPtr() {
+        return PointerType.get(getVoid());
     }
 
-    public static Type getInt8Ptr(final IRContext context) {
-        return PointerType.get(getInt8(context));
+    public static Type getInt8Ptr() {
+        return PointerType.get(getInt8());
     }
 
     public static Type getHigherOrder(final SourceLocation location, final Type a, final Type b) {
@@ -124,43 +145,42 @@ public class Type {
         throw new QScriptException(location, "cannot determine higher order type from %s and %s", a, b);
     }
 
-    public static Type getNative(final IRContext context, final Class<?> clazz) {
+    public static Type getNative(final Class<?> clazz) {
         if (clazz.isArray()) {
-            final var base = getNative(context, clazz.getComponentType());
+            final var base = getNative(clazz.getComponentType());
             return PointerType.get(base);
         }
 
         if (clazz == Void.class || clazz == void.class)
-            return Type.getVoid(context);
+            return Type.getVoid();
         if (clazz == Boolean.class || clazz == boolean.class)
-            return Type.getInt1(context);
+            return Type.getInt1();
         if (clazz == Byte.class || clazz == byte.class)
-            return Type.getInt8(context);
+            return Type.getInt8();
         if (clazz == Short.class || clazz == short.class)
-            return Type.getInt16(context);
+            return Type.getInt16();
         if (clazz == Integer.class || clazz == int.class)
-            return Type.getInt32(context);
+            return Type.getInt32();
         if (clazz == Long.class || clazz == long.class)
-            return Type.getInt64(context);
+            return Type.getInt64();
         if (clazz == Float.class || clazz == float.class)
-            return Type.getFlt32(context);
+            return Type.getFlt32();
         if (clazz == Double.class || clazz == double.class)
-            return Type.getFlt64(context);
+            return Type.getFlt64();
 
         if (CharSequence.class.isAssignableFrom(clazz))
-            return Type.getInt8Ptr(context);
+            return Type.getInt8Ptr();
 
-        return Type.get(context, clazz.getSimpleName());
+        return Type.get(clazz.getSimpleName());
     }
 
-    private final IRContext context;
     private final String id;
     private final int flags;
     private final int size;
 
-    public Type(final IRContext context, final String id, final int flags, final int size) {
-        context.getType(id, () -> this);
-        this.context = context;
+    public Type(final String id, final int flags, final int size) {
+        types.put(id, this);
+
         this.id = id;
         this.flags = flags;
         this.size = size;
@@ -169,10 +189,6 @@ public class Type {
     @Override
     public String toString() {
         return id;
-    }
-
-    public IRContext getContext() {
-        return context;
     }
 
     public String getId() {
