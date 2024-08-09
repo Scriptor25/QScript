@@ -160,9 +160,9 @@ public class Type {
     private final Context ctx;
     private final String id;
     private final int flags;
-    private final int size;
+    private final long size;
 
-    public Type(final Context ctx, final String id, final int flags, final int size) {
+    public Type(final Context ctx, final String id, final int flags, final long size) {
         ctx.putType(id, this);
         this.ctx = ctx;
         this.id = id;
@@ -187,7 +187,7 @@ public class Type {
         return flags;
     }
 
-    public int getSize() {
+    public long getSize() {
         return size;
     }
 
@@ -199,7 +199,7 @@ public class Type {
         return (flags & IS_INTEGER) != 0;
     }
 
-    public boolean isInt(final int size) {
+    public boolean isInt(final long size) {
         return isInt() && this.size == size;
     }
 
@@ -249,5 +249,9 @@ public class Type {
 
     public boolean isStruct() {
         return (flags & IS_STRUCT) != 0;
+    }
+
+    public boolean isArray() {
+        return (flags & IS_ARRAY) != 0;
     }
 }

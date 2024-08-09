@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
+import java.util.function.Function;
 
 import io.scriptor.frontend.expression.BinaryExpr;
 import io.scriptor.frontend.expression.CallExpr;
@@ -25,12 +26,14 @@ import io.scriptor.frontend.expression.FloatExpr;
 import io.scriptor.frontend.expression.FunctionExpr;
 import io.scriptor.frontend.expression.IDExpr;
 import io.scriptor.frontend.expression.IfExpr;
+import io.scriptor.frontend.expression.IndexExpr;
 import io.scriptor.frontend.expression.IntExpr;
 import io.scriptor.frontend.expression.ReturnExpr;
 import io.scriptor.frontend.expression.StringExpr;
-import io.scriptor.frontend.expression.StructInitExpr;
+import io.scriptor.frontend.expression.InitListExpr;
 import io.scriptor.frontend.expression.UnaryExpr;
 import io.scriptor.frontend.expression.WhileExpr;
+import io.scriptor.type.ArrayType;
 import io.scriptor.type.FunctionType;
 import io.scriptor.type.PointerType;
 import io.scriptor.type.StructType;
@@ -61,6 +64,7 @@ public class Parser {
         precedences.put("<=", 2);
         precedences.put(">=", 2);
         precedences.put("==", 2);
+        precedences.put("!=", 2);
         precedences.put("&", 3);
         precedences.put("|", 3);
         precedences.put("^", 3);
@@ -376,6 +380,14 @@ public class Parser {
         if (nextIfAt("*"))
             return nextType(PointerType.get(base));
 
+        if (nextIfAt("[")) {
+            if (nextIfAt("]"))
+                return nextType(ArrayType.get(base, -1));
+            final var length = Long.parseLong(expect(TokenType.INT).value());
+            expect("]");
+            return nextType(ArrayType.get(base, length));
+        }
+
         if (nextIfAt("(")) {
             var vararg = false;
             final List<Type> args = new ArrayList<>();
@@ -531,14 +543,14 @@ public class Parser {
         final var loc = expect("if").location();
 
         final var condition = nextBinary(Type.getInt1(stack.peek()));
-        final var thendo = nextExpr(null);
+        final var then = nextExpr(null);
 
         if (nextIfAt("else")) {
-            final var elsedo = nextExpr(null);
-            return IfExpr.create(loc, condition, thendo, elsedo);
+            final var else_ = nextExpr(null);
+            return IfExpr.create(loc, condition, then, else_);
         }
 
-        return IfExpr.create(loc, condition, thendo);
+        return IfExpr.create(loc, condition, then);
     }
 
     private ReturnExpr nextReturn() throws IOException {
@@ -570,7 +582,7 @@ public class Parser {
     }
 
     private Expression nextBinary(Expression lhs, final int minPrecedence) throws IOException {
-        while (at(TokenType.OPERATOR) && precedences.get(token.value()) >= minPrecedence) {
+        while (at(TokenType.OPERATOR) && precedences.getOrDefault(token.value(), -1) >= minPrecedence) {
             final var tk = skip();
             final var loc = tk.location();
             final var operator = tk.value();
@@ -677,17 +689,25 @@ public class Parser {
         }
 
         if (nextIfAt("{")) {
-            final var type = (StructType) expected;
+
+            final Function<Integer, Type> element = (i) -> {
+                if (expected instanceof ArrayType type)
+                    return type.getBase();
+                if (expected instanceof StructType type)
+                    return type.getElement(i);
+                throw new UnsupportedOperationException();
+            };
 
             final List<Expression> args = new ArrayList<>();
             while (!nextIfAt("}")) {
-                final var arg = nextBinary(type.getElement(args.size()));
+                final var i = args.size();
+                final var arg = nextBinary(element.apply(i));
                 args.add(arg);
                 if (!at("}"))
                     expect(",");
             }
 
-            return StructInitExpr.create(loc, type, args.toArray(Expression[]::new));
+            return InitListExpr.create(loc, expected, args.toArray(Expression[]::new));
         }
 
         if (at(TokenType.ID)) {

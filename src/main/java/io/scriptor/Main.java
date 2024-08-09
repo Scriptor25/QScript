@@ -1,5 +1,6 @@
 package io.scriptor;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,24 +19,38 @@ public class Main {
             return;
         }
 
-        String outfilename = null;
-        List<String> infilenames = new ArrayList<>();
+        String out = null;
+        List<String> in = new ArrayList<>();
 
         for (int i = 0; i < args.length; ++i) {
             if ("-o".equals(args[i])) {
-                outfilename = args[++i];
+                out = args[++i];
                 continue;
             }
 
-            infilenames.add(args[i]);
+            in.add(args[i]);
         }
 
-        if (infilenames.isEmpty())
+        if (in.isEmpty())
             throw new IllegalStateException("no input filename specified");
 
-        if (outfilename == null)
-            outfilename = "output.o";
+        if (in.size() == 1) {
+            if (out == null)
+                out = "output.o";
+            FileSession.create(in.get(0), out);
+            return;
+        }
 
-        FileSession.create(infilenames.toArray(String[]::new), outfilename);
+        if (out == null)
+            out = "output";
+
+        new File(out).mkdirs();
+
+        for (final var infilename : in) {
+            var name = new File(infilename).getName();
+            name = name.substring(0, name.lastIndexOf('.'));
+            final var outfilename = out + "/" + name + ".o";
+            FileSession.create(infilename, outfilename);
+        }
     }
 }

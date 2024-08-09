@@ -1,4 +1,5 @@
 include "../std/include/stdio.qsh"
+include "../std/include/stdlib.qsh"
 
 def i32 fib(i32 n) {
     def i32 a = 0
@@ -12,11 +13,15 @@ def i32 fib(i32 n) {
     return b
 }
 
-def i32 N = 10
-
 def i32 main(i32 argc, i8** argv) {
-    def result = fib(N)
+    if argc != 2 {
+        puts("USAGE: fib <n>")
+        return 1
+    }
 
-    printf("fib(%d) = %d\n", N, result)
+    def n = atoi(argv[1])
+    def result = fib(n)
+
+    printf("fib(%d) = %d\n", n, result)
     return 0
 }

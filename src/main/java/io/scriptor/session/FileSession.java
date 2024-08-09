@@ -12,14 +12,20 @@ import io.scriptor.frontend.expression.Expression;
 
 public class FileSession {
 
-    public static void create(final String[] infilenames, final String outfilename) throws IOException {
-        final var builders = new Builder[infilenames.length];
-        for (int i = 0; i < infilenames.length; ++i) {
-            final var infilename = infilenames[i];
-            final var session = new FileSession(infilename);
-            builders[i] = session.builder;
-        }
-        Builder.mergeAndEmitToFile(builders, outfilename);
+    // public static void create(final String[] infilenames, final String
+    // outfilename) throws IOException {
+    // final var builders = new Builder[infilenames.length];
+    // for (int i = 0; i < infilenames.length; ++i) {
+    // final var infilename = infilenames[i];
+    // final var session = new FileSession(infilename);
+    // builders[i] = session.builder;
+    // }
+    // Builder.mergeAndEmitToFile(builders, outfilename);
+    // }
+
+    public static void create(final String infilename, final String outfilename) throws IOException {
+        final var session = new FileSession(infilename);
+        session.builder.emitToFile(outfilename);
     }
 
     private final Context ctx = new Context();

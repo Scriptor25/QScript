@@ -18,7 +18,7 @@ public class RValue extends Value {
     }
 
     @Override
-    public LLVMValueRef getValue() {
+    public LLVMValueRef get() {
         return value;
     }
 }

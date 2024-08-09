@@ -1,5 +1,4 @@
-#use vec3 as f64(i32)*#
-use vec3 as struct { f64, f64, f64 }
+use vec3 as f64[3]
 
 def vec3 vec3(f64, f64, f64)
 def f64 vec3_length_squared(vec3)
@@ -10,4 +9,4 @@ def vec3 vec3_mul(vec3, f64)
 def vec3 vec3_div(vec3, f64)
 def vec3 vec3_cross(vec3, vec3)
 def f64 vec3_dot(vec3, vec3)
-def i8* vec3_string(vec3)
+def i32 vec3_puts(vec3)

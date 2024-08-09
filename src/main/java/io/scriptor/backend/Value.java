@@ -29,5 +29,5 @@ public abstract class Value {
         return llvmType;
     }
 
-    public abstract LLVMValueRef getValue();
+    public abstract LLVMValueRef get();
 }

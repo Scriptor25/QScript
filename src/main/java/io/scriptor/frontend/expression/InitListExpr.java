@@ -3,15 +3,15 @@ package io.scriptor.frontend.expression;
 import io.scriptor.frontend.SourceLocation;
 import io.scriptor.type.Type;
 
-public class StructInitExpr extends Expression {
+public class InitListExpr extends Expression {
 
-    public static StructInitExpr create(final SourceLocation location, final Type type, final Expression... args) {
-        return new StructInitExpr(location, type, args);
+    public static InitListExpr create(final SourceLocation location, final Type type, final Expression... args) {
+        return new InitListExpr(location, type, args);
     }
 
     private final Expression[] args;
 
-    private StructInitExpr(final SourceLocation location, final Type type, final Expression[] args) {
+    private InitListExpr(final SourceLocation location, final Type type, final Expression[] args) {
         super(location, type);
         this.args = args;
     }

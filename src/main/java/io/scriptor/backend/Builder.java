@@ -1,6 +1,93 @@
 package io.scriptor.backend;
 
-import static org.bytedeco.llvm.global.LLVM.*;
+import static org.bytedeco.llvm.global.LLVM.LLVMAddFunction;
+import static org.bytedeco.llvm.global.LLVM.LLVMAddGlobal;
+import static org.bytedeco.llvm.global.LLVM.LLVMAppendBasicBlockInContext;
+import static org.bytedeco.llvm.global.LLVM.LLVMArrayType2;
+import static org.bytedeco.llvm.global.LLVM.LLVMBuildAdd;
+import static org.bytedeco.llvm.global.LLVM.LLVMBuildAlloca;
+import static org.bytedeco.llvm.global.LLVM.LLVMBuildBr;
+import static org.bytedeco.llvm.global.LLVM.LLVMBuildCall2;
+import static org.bytedeco.llvm.global.LLVM.LLVMBuildCondBr;
+import static org.bytedeco.llvm.global.LLVM.LLVMBuildFAdd;
+import static org.bytedeco.llvm.global.LLVM.LLVMBuildFCmp;
+import static org.bytedeco.llvm.global.LLVM.LLVMBuildFDiv;
+import static org.bytedeco.llvm.global.LLVM.LLVMBuildFMul;
+import static org.bytedeco.llvm.global.LLVM.LLVMBuildFPCast;
+import static org.bytedeco.llvm.global.LLVM.LLVMBuildFPToSI;
+import static org.bytedeco.llvm.global.LLVM.LLVMBuildFSub;
+import static org.bytedeco.llvm.global.LLVM.LLVMBuildGEP2;
+import static org.bytedeco.llvm.global.LLVM.LLVMBuildGlobalStringPtr;
+import static org.bytedeco.llvm.global.LLVM.LLVMBuildICmp;
+import static org.bytedeco.llvm.global.LLVM.LLVMBuildIntCast2;
+import static org.bytedeco.llvm.global.LLVM.LLVMBuildIntToPtr;
+import static org.bytedeco.llvm.global.LLVM.LLVMBuildLoad2;
+import static org.bytedeco.llvm.global.LLVM.LLVMBuildMul;
+import static org.bytedeco.llvm.global.LLVM.LLVMBuildPointerCast;
+import static org.bytedeco.llvm.global.LLVM.LLVMBuildPtrToInt;
+import static org.bytedeco.llvm.global.LLVM.LLVMBuildRet;
+import static org.bytedeco.llvm.global.LLVM.LLVMBuildRetVoid;
+import static org.bytedeco.llvm.global.LLVM.LLVMBuildSDiv;
+import static org.bytedeco.llvm.global.LLVM.LLVMBuildSIToFP;
+import static org.bytedeco.llvm.global.LLVM.LLVMBuildStore;
+import static org.bytedeco.llvm.global.LLVM.LLVMBuildStructGEP2;
+import static org.bytedeco.llvm.global.LLVM.LLVMBuildSub;
+import static org.bytedeco.llvm.global.LLVM.LLVMClearInsertionPosition;
+import static org.bytedeco.llvm.global.LLVM.LLVMCodeGenLevelDefault;
+import static org.bytedeco.llvm.global.LLVM.LLVMCodeModelDefault;
+import static org.bytedeco.llvm.global.LLVM.LLVMConstInt;
+import static org.bytedeco.llvm.global.LLVM.LLVMConstReal;
+import static org.bytedeco.llvm.global.LLVM.LLVMContextCreate;
+import static org.bytedeco.llvm.global.LLVM.LLVMCountBasicBlocks;
+import static org.bytedeco.llvm.global.LLVM.LLVMCreateBuilderInContext;
+import static org.bytedeco.llvm.global.LLVM.LLVMCreateFunctionPassManagerForModule;
+import static org.bytedeco.llvm.global.LLVM.LLVMCreateTargetMachine;
+import static org.bytedeco.llvm.global.LLVM.LLVMDoubleTypeInContext;
+import static org.bytedeco.llvm.global.LLVM.LLVMDumpModule;
+import static org.bytedeco.llvm.global.LLVM.LLVMDumpValue;
+import static org.bytedeco.llvm.global.LLVM.LLVMFloatTypeInContext;
+import static org.bytedeco.llvm.global.LLVM.LLVMFunctionType;
+import static org.bytedeco.llvm.global.LLVM.LLVMGetBasicBlockParent;
+import static org.bytedeco.llvm.global.LLVM.LLVMGetBasicBlockTerminator;
+import static org.bytedeco.llvm.global.LLVM.LLVMGetDefaultTargetTriple;
+import static org.bytedeco.llvm.global.LLVM.LLVMGetEntryBasicBlock;
+import static org.bytedeco.llvm.global.LLVM.LLVMGetFirstInstruction;
+import static org.bytedeco.llvm.global.LLVM.LLVMGetInsertBlock;
+import static org.bytedeco.llvm.global.LLVM.LLVMGetNamedFunction;
+import static org.bytedeco.llvm.global.LLVM.LLVMGetNextInstruction;
+import static org.bytedeco.llvm.global.LLVM.LLVMGetParam;
+import static org.bytedeco.llvm.global.LLVM.LLVMGetTargetFromTriple;
+import static org.bytedeco.llvm.global.LLVM.LLVMInitializeAllAsmParsers;
+import static org.bytedeco.llvm.global.LLVM.LLVMInitializeAllAsmPrinters;
+import static org.bytedeco.llvm.global.LLVM.LLVMInitializeAllTargetInfos;
+import static org.bytedeco.llvm.global.LLVM.LLVMInitializeAllTargetMCs;
+import static org.bytedeco.llvm.global.LLVM.LLVMInitializeAllTargets;
+import static org.bytedeco.llvm.global.LLVM.LLVMInitializeFunctionPassManager;
+import static org.bytedeco.llvm.global.LLVM.LLVMInt16TypeInContext;
+import static org.bytedeco.llvm.global.LLVM.LLVMInt1TypeInContext;
+import static org.bytedeco.llvm.global.LLVM.LLVMInt32TypeInContext;
+import static org.bytedeco.llvm.global.LLVM.LLVMInt64TypeInContext;
+import static org.bytedeco.llvm.global.LLVM.LLVMInt8TypeInContext;
+import static org.bytedeco.llvm.global.LLVM.LLVMIntNE;
+import static org.bytedeco.llvm.global.LLVM.LLVMIntSLT;
+import static org.bytedeco.llvm.global.LLVM.LLVMIsAAllocaInst;
+import static org.bytedeco.llvm.global.LLVM.LLVMLinkModules2;
+import static org.bytedeco.llvm.global.LLVM.LLVMModuleCreateWithNameInContext;
+import static org.bytedeco.llvm.global.LLVM.LLVMObjectFile;
+import static org.bytedeco.llvm.global.LLVM.LLVMPointerType;
+import static org.bytedeco.llvm.global.LLVM.LLVMPositionBuilderAtEnd;
+import static org.bytedeco.llvm.global.LLVM.LLVMPositionBuilderBefore;
+import static org.bytedeco.llvm.global.LLVM.LLVMPrintMessageAction;
+import static org.bytedeco.llvm.global.LLVM.LLVMRealOLT;
+import static org.bytedeco.llvm.global.LLVM.LLVMRealONE;
+import static org.bytedeco.llvm.global.LLVM.LLVMRelocPIC;
+import static org.bytedeco.llvm.global.LLVM.LLVMRunFunctionPassManager;
+import static org.bytedeco.llvm.global.LLVM.LLVMSetInitializer;
+import static org.bytedeco.llvm.global.LLVM.LLVMSetValueName;
+import static org.bytedeco.llvm.global.LLVM.LLVMStructTypeInContext;
+import static org.bytedeco.llvm.global.LLVM.LLVMTargetMachineEmitToFile;
+import static org.bytedeco.llvm.global.LLVM.LLVMVerifyFunction;
+import static org.bytedeco.llvm.global.LLVM.LLVMVoidTypeInContext;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,12 +112,15 @@ import io.scriptor.frontend.expression.Expression;
 import io.scriptor.frontend.expression.FloatExpr;
 import io.scriptor.frontend.expression.FunctionExpr;
 import io.scriptor.frontend.expression.IDExpr;
+import io.scriptor.frontend.expression.IfExpr;
+import io.scriptor.frontend.expression.IndexExpr;
+import io.scriptor.frontend.expression.InitListExpr;
 import io.scriptor.frontend.expression.IntExpr;
 import io.scriptor.frontend.expression.ReturnExpr;
 import io.scriptor.frontend.expression.StringExpr;
-import io.scriptor.frontend.expression.StructInitExpr;
 import io.scriptor.frontend.expression.UnaryExpr;
 import io.scriptor.frontend.expression.WhileExpr;
+import io.scriptor.type.ArrayType;
 import io.scriptor.type.FunctionType;
 import io.scriptor.type.PointerType;
 import io.scriptor.type.StructType;
@@ -42,14 +132,17 @@ public class Builder {
     public static void mergeAndEmitToFile(final Builder[] builders, final String filename) {
         LLVMModuleRef module = null;
         for (final var builder : builders) {
-            if (module == null)
+            builder.dumpModule();
+            if (module == null) {
                 module = builder.module;
-            else {
-                if (LLVMLinkModules2(module, builder.module) != 0) {
+            } else {
+                final var error = LLVMLinkModules2(module, builder.module);
+                if (error != 0) {
                     throw new IllegalStateException("failed to link modules");
                 }
             }
         }
+        LLVMDumpModule(module);
         emitToFile(module, filename);
     }
 
@@ -123,7 +216,7 @@ public class Builder {
         return bb == null;
     }
 
-    public LLVMValueRef createAlloca(final LLVMTypeRef type, final String name) {
+    public LLVMValueRef createAlloca(final LLVMTypeRef type) {
         final var bkp = LLVMGetInsertBlock(builder);
 
         final var f = LLVMGetBasicBlockParent(LLVMGetInsertBlock(builder));
@@ -140,14 +233,14 @@ public class Builder {
             LLVMPositionBuilderAtEnd(builder, entry);
         }
 
-        final var alloca = LLVMBuildAlloca(builder, type, name);
+        final var alloca = LLVMBuildAlloca(builder, type, "");
 
         LLVMPositionBuilderAtEnd(builder, bkp);
         return alloca;
     }
 
-    public LLVMValueRef createLoad(final LLVMTypeRef base, final LLVMValueRef ptr, final String name) {
-        return LLVMBuildLoad2(builder, base, ptr, name);
+    public LLVMValueRef createLoad(final LLVMTypeRef base, final LLVMValueRef ptr) {
+        return LLVMBuildLoad2(builder, base, ptr, "");
     }
 
     public LLVMValueRef createStore(final LLVMValueRef value, final LLVMValueRef ptr) {
@@ -156,49 +249,49 @@ public class Builder {
 
     public Value createCast(final Value value, final Type type) {
         final var vtype = value.getType();
-        if (vtype == type)
+        if (vtype == type || type == null)
             return value;
 
-        final var llvmvalue = value.getValue();
+        final var llvmvalue = value.get();
         final var llvmtype = genIR(type);
 
         if (vtype.isInt()) {
             if (type.isInt()) {
-                final var result = LLVMBuildIntCast2(builder, llvmvalue, llvmtype, 1, "cast");
+                final var result = LLVMBuildIntCast2(builder, llvmvalue, llvmtype, 1, "");
                 return RValue.create(this, type, result);
             }
 
             if (type.isFlt()) {
-                final var result = LLVMBuildSIToFP(builder, llvmvalue, llvmtype, "cast");
+                final var result = LLVMBuildSIToFP(builder, llvmvalue, llvmtype, "");
                 return RValue.create(this, type, result);
             }
 
             if (type.isPtr()) {
-                final var result = LLVMBuildIntToPtr(builder, llvmvalue, llvmtype, "cast");
+                final var result = LLVMBuildIntToPtr(builder, llvmvalue, llvmtype, "");
                 return RValue.create(this, type, result);
             }
         }
 
         if (vtype.isFlt()) {
             if (type.isInt()) {
-                final var result = LLVMBuildFPToSI(builder, llvmvalue, llvmtype, "cast");
+                final var result = LLVMBuildFPToSI(builder, llvmvalue, llvmtype, "");
                 return RValue.create(this, type, result);
             }
 
             if (type.isFlt()) {
-                final var result = LLVMBuildFPCast(builder, llvmvalue, llvmtype, "cast");
+                final var result = LLVMBuildFPCast(builder, llvmvalue, llvmtype, "");
                 return RValue.create(this, type, result);
             }
         }
 
         if (vtype.isPtr()) {
             if (type.isInt()) {
-                final var result = LLVMBuildPtrToInt(builder, llvmvalue, llvmtype, "cast");
+                final var result = LLVMBuildPtrToInt(builder, llvmvalue, llvmtype, "");
                 return RValue.create(this, type, result);
             }
 
             if (type.isPtr()) {
-                final var result = LLVMBuildPointerCast(builder, llvmvalue, llvmtype, "cast");
+                final var result = LLVMBuildPointerCast(builder, llvmvalue, llvmtype, "");
                 return RValue.create(this, type, result);
             }
         }
@@ -211,6 +304,18 @@ public class Builder {
     }
 
     public Value createNE(final Value left, final Value right) {
+        final var type = left.getType();
+
+        if (type.isInt()) {
+            final var result = LLVMBuildICmp(builder, LLVMIntNE, left.get(), right.get(), "");
+            return RValue.create(this, Type.getInt1(ctx), result);
+        }
+
+        if (type.isFlt()) {
+            final var result = LLVMBuildFCmp(builder, LLVMRealONE, left.get(), right.get(), "");
+            return RValue.create(this, Type.getInt1(ctx), result);
+        }
+
         throw new UnsupportedOperationException();
     }
 
@@ -218,12 +323,12 @@ public class Builder {
         final var type = left.getType();
 
         if (type.isInt()) {
-            final var result = LLVMBuildICmp(builder, LLVMIntSLT, left.getValue(), right.getValue(), "lt");
+            final var result = LLVMBuildICmp(builder, LLVMIntSLT, left.get(), right.get(), "");
             return RValue.create(this, Type.getInt1(ctx), result);
         }
 
         if (type.isFlt()) {
-            final var result = LLVMBuildFCmp(builder, LLVMRealOLT, left.getValue(), right.getValue(), "lt");
+            final var result = LLVMBuildFCmp(builder, LLVMRealOLT, left.get(), right.get(), "");
             return RValue.create(this, Type.getInt1(ctx), result);
         }
 
@@ -258,12 +363,12 @@ public class Builder {
         final var type = left.getType();
 
         if (type.isInt()) {
-            final var result = LLVMBuildAdd(builder, left.getValue(), right.getValue(), "add");
+            final var result = LLVMBuildAdd(builder, left.get(), right.get(), "");
             return RValue.create(this, type, result);
         }
 
         if (type.isFlt()) {
-            final var result = LLVMBuildFAdd(builder, left.getValue(), right.getValue(), "add");
+            final var result = LLVMBuildFAdd(builder, left.get(), right.get(), "");
             return RValue.create(this, type, result);
         }
 
@@ -271,14 +376,50 @@ public class Builder {
     }
 
     public Value createSub(final Value left, final Value right) {
+        final var type = left.getType();
+
+        if (type.isInt()) {
+            final var result = LLVMBuildSub(builder, left.get(), right.get(), "");
+            return RValue.create(this, type, result);
+        }
+
+        if (type.isFlt()) {
+            final var result = LLVMBuildFSub(builder, left.get(), right.get(), "");
+            return RValue.create(this, type, result);
+        }
+
         throw new UnsupportedOperationException();
     }
 
     public Value createMul(final Value left, final Value right) {
+        final var type = left.getType();
+
+        if (type.isInt()) {
+            final var result = LLVMBuildMul(builder, left.get(), right.get(), "");
+            return RValue.create(this, type, result);
+        }
+
+        if (type.isFlt()) {
+            final var result = LLVMBuildFMul(builder, left.get(), right.get(), "");
+            return RValue.create(this, type, result);
+        }
+
         throw new UnsupportedOperationException();
     }
 
     public Value createDiv(final Value left, final Value right) {
+        final var type = left.getType();
+
+        if (type.isInt()) {
+            final var result = LLVMBuildSDiv(builder, left.get(), right.get(), "");
+            return RValue.create(this, type, result);
+        }
+
+        if (type.isFlt()) {
+            final var result = LLVMBuildFDiv(builder, left.get(), right.get(), "");
+            return RValue.create(this, type, result);
+        }
+
         throw new UnsupportedOperationException();
     }
 
@@ -331,6 +472,9 @@ public class Builder {
         if (type.isPtr())
             return LLVMPointerType(genIR(((PointerType) type).getBase()), 0);
 
+        if (type.isArray())
+            return LLVMArrayType2(genIR(((ArrayType) type).getBase()), ((ArrayType) type).getLength());
+
         if (type.isVoid())
             return LLVMVoidTypeInContext(context);
 
@@ -370,13 +514,17 @@ public class Builder {
             return genIR(e);
         if (expr instanceof IDExpr e)
             return genIR(e);
+        if (expr instanceof IfExpr e)
+            return genIR(e);
+        if (expr instanceof IndexExpr e)
+            return genIR(e);
         if (expr instanceof IntExpr e)
             return genIR(e);
         if (expr instanceof ReturnExpr e)
             return genIR(e);
         if (expr instanceof StringExpr e)
             return genIR(e);
-        if (expr instanceof StructInitExpr e)
+        if (expr instanceof InitListExpr e)
             return genIR(e);
         if (expr instanceof UnaryExpr e)
             return genIR(e);
@@ -392,7 +540,7 @@ public class Builder {
         if ("=".equals(op)) {
             final var assignee = (LValue) genIR(expr.getLHS());
             final var value = createCast(genIR(expr.getRHS()), assignee.getType());
-            assignee.setValue(value.getValue());
+            assignee.setValue(value.get());
             return assignee;
         }
 
@@ -441,7 +589,7 @@ public class Builder {
             if (assign) {
                 final var assignee = (LValue) genIR(expr.getLHS());
                 final var value = createCast(result, assignee.getType());
-                assignee.setValue(value.getValue());
+                assignee.setValue(value.get());
                 return assignee;
             }
             return result;
@@ -455,14 +603,14 @@ public class Builder {
         final var fnty = (FunctionType) callee.getType();
         final var args = new PointerPointer<LLVMValueRef>(expr.getArgCount());
         for (int i = 0; i < expr.getArgCount(); ++i)
-            args.put(i, createCast(genIR(expr.getArg(i)), fnty.getArg(i)).getValue());
+            args.put(i, createCast(genIR(expr.getArg(i)), fnty.getArg(i)).get());
         final var result = LLVMBuildCall2(
                 builder,
                 callee.getLLVMType(),
-                callee.getValue(),
+                callee.get(),
                 args,
                 expr.getArgCount(),
-                "call");
+                "");
         return RValue.create(this, expr.getType(), result);
     }
 
@@ -536,7 +684,7 @@ public class Builder {
             if (expr.hasInit()) {
                 if (expr.getInit().isConst()) {
                     final var init = genIR(expr.getInit());
-                    LLVMSetInitializer(ptr, init.getValue());
+                    LLVMSetInitializer(ptr, init.get());
                 } else {
                     throw new UnsupportedOperationException();
                 }
@@ -579,6 +727,66 @@ public class Builder {
         throw new UnsupportedOperationException();
     }
 
+    private Value genIR(final IfExpr expr) {
+
+        final var f = LLVMGetBasicBlockParent(LLVMGetInsertBlock(builder));
+        final var head = LLVMAppendBasicBlockInContext(context, f, "head");
+        final var then = LLVMAppendBasicBlockInContext(context, f, "then");
+        final var else_ = LLVMAppendBasicBlockInContext(context, f, expr.hasElse() ? "else" : "end");
+        final var end = expr.hasElse() ? LLVMAppendBasicBlockInContext(context, f, "end") : else_;
+
+        LLVMBuildBr(builder, head);
+
+        LLVMPositionBuilderAtEnd(builder, head);
+        final var condition = genIR(expr.getCondition());
+        LLVMBuildCondBr(builder, condition.get(), then, else_);
+
+        LLVMPositionBuilderAtEnd(builder, then);
+        genIR(expr.getThen());
+        if (LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder)) == null)
+            LLVMBuildBr(builder, end);
+
+        if (expr.hasElse()) {
+            LLVMPositionBuilderAtEnd(builder, else_);
+            genIR(expr.getElse());
+            if (LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder)) == null)
+                LLVMBuildBr(builder, end);
+        }
+
+        LLVMPositionBuilderAtEnd(builder, end);
+
+        return null;
+    }
+
+    private Value genIR(final IndexExpr expr) {
+        final var ptr = genIR(expr.getPtr());
+        final var index = genIR(expr.getIndex());
+
+        final var arraytype = expr.getPtr().getType();
+
+        if (arraytype instanceof PointerType type) {
+            final var llvmbase = genIR(type.getBase());
+
+            final var indices = new PointerPointer<LLVMValueRef>(1);
+            indices.put(0, index.get());
+
+            final var gep = LLVMBuildGEP2(builder, llvmbase, ptr.get(), indices, 1, "");
+            return LValue.direct(this, type.getBase(), gep);
+        }
+
+        if (arraytype instanceof ArrayType type) {
+            final var llvmtype = genIR(type);
+
+            final var indices = new PointerPointer<LLVMValueRef>(2);
+            indices.put(0, LLVMConstInt(LLVMInt32TypeInContext(context), 0, 1));
+            indices.put(1, index.get());
+            final var gep = LLVMBuildGEP2(builder, llvmtype, ((LValue) ptr).getPtr(), indices, 2, "");
+            return LValue.direct(this, type.getBase(), gep);
+        }
+
+        throw new UnsupportedOperationException();
+    }
+
     private Value genIR(final IntExpr expr) {
         final var type = genIR(expr.getType());
         final var value = LLVMConstInt(type, expr.getValue(), 1);
@@ -592,22 +800,46 @@ public class Builder {
         }
 
         final var value = createCast(genIR(expr.getExpr()), expr.getResult());
-        LLVMBuildRet(builder, value.getValue());
+        LLVMBuildRet(builder, value.get());
         return null;
     }
 
     private Value genIR(final StringExpr expr) {
-        final var value = LLVMBuildGlobalStringPtr(builder, expr.getValue(), "string");
+        final var value = LLVMBuildGlobalStringPtr(builder, expr.getValue(), "");
         return RValue.create(this, expr.getType(), value);
     }
 
-    private Value genIR(final StructInitExpr expr) {
-        final var sty = (StructType) expr.getType();
-        final var values = new PointerPointer<LLVMValueRef>(expr.getArgCount());
-        for (int i = 0; i < expr.getArgCount(); ++i)
-            values.put(i, createCast(genIR(expr.getArg(i)), sty.getElement(i)).getValue());
-        final var str = LLVMConstStructInContext(context, values, expr.getArgCount(), 0);
-        return RValue.create(this, sty, str);
+    private Value genIR(final InitListExpr expr) {
+        if (expr.getType() instanceof StructType type) {
+            final var llvmtype = genIR(type);
+            final var ptr = createAlloca(llvmtype);
+
+            for (int i = 0; i < expr.getArgCount(); ++i) {
+                final var val = createCast(genIR(expr.getArg(i)), type.getElement(i)).get();
+                final var gep = LLVMBuildStructGEP2(builder, llvmtype, ptr, i, "");
+                createStore(val, gep);
+            }
+
+            return LValue.direct(this, type, ptr);
+        }
+
+        if (expr.getType() instanceof ArrayType type) {
+            final var llvmtype = genIR(type);
+            final var ptr = createAlloca(llvmtype);
+
+            final var indices = new PointerPointer<LLVMValueRef>(2);
+            indices.put(0, LLVMConstInt(LLVMInt32TypeInContext(context), 0, 1));
+            for (int i = 0; i < expr.getArgCount(); ++i) {
+                final var val = createCast(genIR(expr.getArg(i)), type.getBase()).get();
+                indices.put(1, LLVMConstInt(LLVMInt32TypeInContext(context), i, 1));
+                final var gep = LLVMBuildGEP2(builder, llvmtype, ptr, indices, 2, "");
+                createStore(val, gep);
+            }
+
+            return LValue.direct(this, type, ptr);
+        }
+
+        throw new UnsupportedOperationException();
     }
 
     private Value genIR(final UnaryExpr expr) {
@@ -636,9 +868,9 @@ public class Builder {
         }
 
         if (result != null) {
-            final var prev = value.getValue();
+            final var prev = value.get();
             if (assign)
-                ((LValue) value).setValue(result.getValue());
+                ((LValue) value).setValue(result.get());
             if (expr.isRight())
                 return RValue.create(this, value.getType(), prev);
             return result;
@@ -658,7 +890,7 @@ public class Builder {
 
         LLVMPositionBuilderAtEnd(builder, head);
         final var condition = genIR(expr.getCondition());
-        LLVMBuildCondBr(builder, condition.getValue(), loop, end);
+        LLVMBuildCondBr(builder, condition.get(), loop, end);
 
         LLVMPositionBuilderAtEnd(builder, loop);
         genIR(expr.getLoop());
