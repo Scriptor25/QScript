@@ -1,7 +1,10 @@
 package io.scriptor.frontend.expression;
 
+import java.util.Arrays;
+
 import io.scriptor.frontend.Arg;
 import io.scriptor.frontend.SourceLocation;
+import io.scriptor.type.FunctionType;
 import io.scriptor.type.Type;
 
 public class DefFunExpr extends Expression {
@@ -44,6 +47,34 @@ public class DefFunExpr extends Expression {
         this.args = args;
         this.vararg = vararg;
         this.body = body;
+    }
+
+    public Type getResult() {
+        return result;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public int getArgCount() {
+        return args.length;
+    }
+
+    public Arg getArg(final int i) {
+        return args[i];
+    }
+
+    public boolean isVarArg() {
+        return vararg;
+    }
+
+    public CompoundExpr getBody() {
+        return body;
+    }
+
+    public FunctionType getFunctionType() {
+        return FunctionType.get(result, vararg, Arrays.stream(args).map(Arg::type).toArray(Type[]::new));
     }
 
     @Override

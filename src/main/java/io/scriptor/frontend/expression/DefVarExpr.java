@@ -47,6 +47,10 @@ public class DefVarExpr extends Expression {
         return init;
     }
 
+    public boolean hasInit() {
+        return init != null;
+    }
+
     @Override
     public boolean isConst() {
         return true;

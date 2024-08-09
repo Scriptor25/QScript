@@ -3,6 +3,8 @@ package io.scriptor.type;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
+import io.scriptor.frontend.Context;
+
 public class FunctionType extends Type {
 
     private static String makeId(final Type result, final boolean vararg, final Type... args) {
@@ -28,11 +30,12 @@ public class FunctionType extends Type {
     }
 
     public static FunctionType get(final Type result, final boolean vararg, final Type... args) {
+        final var ctx = result.getCtx();
         final var id = makeId(result, vararg, args);
-        if (Type.exists(id))
-            return Type.get(id);
+        if (Type.exists(ctx, id))
+            return Type.get(ctx, id);
 
-        return new FunctionType(id, result, vararg, args);
+        return new FunctionType(ctx, id, result, vararg, args);
     }
 
     private final Type result;
@@ -40,11 +43,12 @@ public class FunctionType extends Type {
     private final Type[] args;
 
     protected FunctionType(
+            final Context ctx,
             final String id,
             final Type result,
             final boolean vararg,
             final Type... args) {
-        super(id, Type.IS_FUNCTION, 64);
+        super(ctx, id, Type.IS_FUNCTION, 64);
         this.result = result;
         this.vararg = vararg;
         this.args = args;

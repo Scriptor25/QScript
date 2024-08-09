@@ -1,4 +1,5 @@
-use vec3 as f64(i32)
+#use vec3 as f64(i32)*#
+use vec3 as struct { f64, f64, f64 }
 
 def vec3 vec3(f64, f64, f64)
 def f64 vec3_length_squared(vec3)

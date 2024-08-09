@@ -7,13 +7,12 @@ import java.util.function.Consumer;
 import io.scriptor.frontend.expression.Expression;
 
 public record ParserConfig(
-        File file,
+        Context ctx,
         Consumer<Expression> callback,
-
-        State global,
+        File file,
         InputStream stream) {
 
     public ParserConfig(final ParserConfig config, final File file, final InputStream stream) {
-        this(file, config.callback, config.global, stream);
+        this(config.ctx, config.callback, file, stream);
     }
 }

@@ -6,30 +6,38 @@ import java.io.IOException;
 
 import io.scriptor.frontend.Parser;
 import io.scriptor.frontend.ParserConfig;
-import io.scriptor.frontend.State;
+import io.scriptor.backend.Builder;
+import io.scriptor.frontend.Context;
 import io.scriptor.frontend.expression.Expression;
 
 public class FileSession {
 
-    public static void create(final String filename) throws IOException {
-        new FileSession(filename);
+    public static void create(final String[] infilenames, final String outfilename) throws IOException {
+        final var builders = new Builder[infilenames.length];
+        for (int i = 0; i < infilenames.length; ++i) {
+            final var infilename = infilenames[i];
+            final var session = new FileSession(infilename);
+            builders[i] = session.builder;
+        }
+        Builder.mergeAndEmitToFile(builders, outfilename);
     }
 
+    private final Context ctx = new Context();
+    private final Builder builder;
     private final File file;
-    private final State global = new State();
 
-    private FileSession(final String filename) throws IOException {
-        this.file = new File(filename);
+    private FileSession(final String infilename) throws IOException {
+        this.builder = new Builder(ctx, infilename);
+        this.file = new File(infilename);
 
         Parser.parse(new ParserConfig(
-                file,
+                ctx,
                 this::callback,
-                global,
+                file,
                 new FileInputStream(file)));
     }
 
-    private void callback(final Expression expression) {
-        System.out.println(expression);
-        System.out.println();
+    private void callback(final Expression expr) {
+        builder.genIR(expr);
     }
 }

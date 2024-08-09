@@ -79,9 +79,10 @@ public class Util {
     }
 
     public static Type getUnOpResult(final String operator, final Type operand) {
+        final var ctx = operand.getCtx();
         return switch (operator) {
             case "++", "--", "-", "~" -> operand;
-            case "!" -> Type.getInt1();
+            case "!" -> Type.getInt1(ctx);
             default -> null;
         };
     }

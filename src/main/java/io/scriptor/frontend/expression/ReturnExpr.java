@@ -38,6 +38,10 @@ public class ReturnExpr extends Expression {
         return expression;
     }
 
+    public boolean hasExpr() {
+        return expression != null;
+    }
+
     @Override
     public String toString() {
         return "return %s".formatted(expression);

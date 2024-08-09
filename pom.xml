@@ -28,7 +28,7 @@
     <!-- Backend -->
     <dependency>
       <groupId>org.bytedeco</groupId>
-      <artifactId>llvm</artifactId>
+      <artifactId>llvm-platform</artifactId>
       <version>${llvm.version}</version>
     </dependency>
 

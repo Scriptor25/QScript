@@ -28,6 +28,7 @@ import io.scriptor.frontend.expression.IfExpr;
 import io.scriptor.frontend.expression.IntExpr;
 import io.scriptor.frontend.expression.ReturnExpr;
 import io.scriptor.frontend.expression.StringExpr;
+import io.scriptor.frontend.expression.StructInitExpr;
 import io.scriptor.frontend.expression.UnaryExpr;
 import io.scriptor.frontend.expression.WhileExpr;
 import io.scriptor.type.FunctionType;
@@ -102,13 +103,13 @@ public class Parser {
     private int row = 1;
     private int column = 0;
 
-    private final Stack<State> stack = new Stack<>();
+    private final Stack<Context> stack = new Stack<>();
     private Type currentResult;
 
     private Parser(final ParserConfig config, final List<File> parsed) {
         this.config = config;
         this.parsed = parsed;
-        stack.push(config.global());
+        stack.push(config.ctx());
     }
 
     private int get() throws IOException {
@@ -232,6 +233,8 @@ public class Parser {
                 case COMMENT:
                     if (chr == '#')
                         mode = ParserMode.NORMAL;
+                    else if (chr == '\n')
+                        newline();
                     break;
 
                 case STRING:
@@ -346,7 +349,7 @@ public class Parser {
     private Type nextType(final boolean unsafe) throws IOException {
         if (nextIfAt("struct")) {
             if (!nextIfAt("{"))
-                return nextType(StructType.getOpaque());
+                return nextType(StructType.get(stack.peek()));
             final List<Type> elements = new ArrayList<>();
             while (!nextIfAt("}")) {
                 final var type = nextType();
@@ -354,19 +357,19 @@ public class Parser {
                 if (!at("}"))
                     expect(",");
             }
-            return nextType(StructType.get(elements.toArray(Type[]::new)));
+            return nextType(StructType.get(stack.peek(), elements.toArray(Type[]::new)));
         }
 
         if (unsafe) {
             if (!at(TokenType.ID))
                 throw new QScriptException(token.location(), "expected id");
             final var id = token.value();
-            if (!Type.exists(id))
+            if (!Type.exists(stack.peek(), id))
                 return null;
         }
 
         final var base = expect(TokenType.ID).value();
-        return nextType(Type.get(base));
+        return nextType(Type.get(stack.peek(), base));
     }
 
     private Type nextType(final Type base) throws IOException {
@@ -436,7 +439,7 @@ public class Parser {
         }
 
         if (nextIfAt("=")) {
-            final var init = nextExpr(type);
+            final var init = nextBinary(type);
             if (type == null)
                 type = init.getType();
             stack.peek().declareSymbol(type, name);
@@ -473,7 +476,7 @@ public class Parser {
             stack.peek().declareSymbol(funtype, name);
 
             if (at("{")) {
-                stack.push(new State(stack.peek()));
+                stack.push(new Context(stack.peek()));
 
                 for (final var arg : args)
                     stack.peek().declareSymbol(arg.type(), arg.name());
@@ -501,7 +504,7 @@ public class Parser {
         expect("as");
         final var type = nextType();
 
-        Type.useAs(id, type);
+        Type.useAs(stack.peek(), id, type);
     }
 
     private void nextInclude() throws IOException {
@@ -518,7 +521,7 @@ public class Parser {
     private WhileExpr nextWhile() throws IOException {
         final var loc = expect("while").location();
 
-        final var condition = nextExpr(Type.getInt1());
+        final var condition = nextBinary(Type.getInt1(stack.peek()));
         final var loop = nextExpr(null);
 
         return WhileExpr.create(loc, condition, loop);
@@ -527,7 +530,7 @@ public class Parser {
     private IfExpr nextIf() throws IOException {
         final var loc = expect("if").location();
 
-        final var condition = nextExpr(Type.getInt1());
+        final var condition = nextBinary(Type.getInt1(stack.peek()));
         final var thendo = nextExpr(null);
 
         if (nextIfAt("else")) {
@@ -544,7 +547,7 @@ public class Parser {
         if (nextIfAt("void"))
             return ReturnExpr.create(loc, currentResult);
 
-        final var expression = nextExpr(currentResult);
+        final var expression = nextBinary(currentResult);
         return ReturnExpr.create(loc, currentResult, expression);
     }
 
@@ -552,7 +555,7 @@ public class Parser {
         final var loc = expect("{").location();
         final List<Expression> expressions = new ArrayList<>();
 
-        stack.push(new State(stack.peek()));
+        stack.push(new Context(stack.peek()));
         while (!nextIfAt("}")) {
             final var expression = nextExpr(null);
             expressions.add(expression);
@@ -584,7 +587,7 @@ public class Parser {
     }
 
     private Expression nextCall(final Type expected) throws IOException {
-        var expr = nextUnary(expected);
+        var expr = nextIndex(expected);
 
         while (at("(")) {
             final var loc = skip().location();
@@ -593,13 +596,27 @@ public class Parser {
 
             final List<Expression> args = new ArrayList<>();
             while (!nextIfAt(")")) {
-                final var arg = nextExpr(calleeType.getArg(args.size()));
+                final var arg = nextBinary(calleeType.getArg(args.size()));
                 args.add(arg);
                 if (!at(")"))
                     expect(",");
             }
 
             expr = CallExpr.create(loc, calleeType.getResult(), expr, args.toArray(Expression[]::new));
+        }
+
+        return expr;
+    }
+
+    private Expression nextIndex(final Type expected) throws IOException {
+        var expr = nextUnary(expected);
+
+        while (at("[")) {
+            final var loc = skip().location();
+            final var index = nextBinary(Type.getInt64(stack.peek()));
+            expect("]");
+
+            expr = IndexExpr.create(loc, expr, index);
         }
 
         return expr;
@@ -626,21 +643,21 @@ public class Parser {
 
         if (nextIfAt("$")) {
             expect("(");
-            final var type = (FunctionType) expected;
+            final var fntype = (FunctionType) ((PointerType) expected).getBase();
 
-            stack.push(new State(stack.peek()));
+            stack.push(new Context(stack.peek()));
 
             final List<String> argnames = new ArrayList<>();
             while (!nextIfAt(")")) {
                 final var argname = expect(TokenType.ID).value();
-                stack.peek().declareSymbol(type.getArg(argnames.size()), argname);
+                stack.peek().declareSymbol(fntype.getArg(argnames.size()), argname);
                 argnames.add(argname);
                 if (!at(")"))
                     expect(",");
             }
 
             final var bkpResult = currentResult;
-            currentResult = type.getResult();
+            currentResult = fntype.getResult();
             final var body = nextCompound();
             currentResult = bkpResult;
 
@@ -648,15 +665,29 @@ public class Parser {
 
             return FunctionExpr.create(
                     loc,
-                    type,
+                    fntype,
                     argnames.toArray(String[]::new),
                     body);
         }
 
         if (nextIfAt("(")) {
-            final var expression = nextExpr(expected);
+            final var expression = nextBinary(expected);
             expect(")");
             return expression;
+        }
+
+        if (nextIfAt("{")) {
+            final var type = (StructType) expected;
+
+            final List<Expression> args = new ArrayList<>();
+            while (!nextIfAt("}")) {
+                final var arg = nextBinary(type.getElement(args.size()));
+                args.add(arg);
+                if (!at("}"))
+                    expect(",");
+            }
+
+            return StructInitExpr.create(loc, type, args.toArray(Expression[]::new));
         }
 
         if (at(TokenType.ID)) {
@@ -665,17 +696,17 @@ public class Parser {
         }
 
         if (at(TokenType.INT))
-            return IntExpr.create(loc, Type.getInt64(), Long.valueOf(skip().value()));
+            return IntExpr.create(loc, Type.getInt64(stack.peek()), Long.valueOf(skip().value()));
 
         if (at(TokenType.FLOAT))
-            return FloatExpr.create(loc, Type.getFlt64(), Double.valueOf(skip().value()));
+            return FloatExpr.create(loc, Type.getFlt64(stack.peek()), Double.valueOf(skip().value()));
 
         if (at(TokenType.STRING))
-            return StringExpr.create(loc, Type.getInt8Ptr(), skip().value());
+            return StringExpr.create(loc, Type.getInt8Ptr(stack.peek()), skip().value());
 
         if (at(TokenType.OPERATOR)) {
             final var operator = skip().value();
-            final var operand = nextExpr(expected);
+            final var operand = nextCall(expected);
             return UnaryExpr.createL(loc, operator, operand);
         }
 

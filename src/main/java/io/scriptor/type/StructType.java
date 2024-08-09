@@ -1,8 +1,13 @@
 package io.scriptor.type;
 
+import io.scriptor.frontend.Context;
+
 public class StructType extends Type {
 
     private static String makeId(final Type[] elements) {
+        if (elements.length == 0)
+            return "{}";
+
         final var builder = new StringBuilder()
                 .append("{ ");
 
@@ -17,30 +22,22 @@ public class StructType extends Type {
                 .toString();
     }
 
-    public static StructType get(final Type... elements) {
+    public static StructType get(final Context ctx, final Type... elements) {
         final var id = makeId(elements);
-        if (Type.exists(id))
-            return Type.get(id);
+        if (Type.exists(ctx, id))
+            return Type.get(ctx, id);
 
         int size = 0;
         for (final var element : elements)
             size += element.getSize();
 
-        return new StructType(id, size, elements);
-    }
-
-    public static StructType getOpaque() {
-        final var id = "{}";
-        if (Type.exists(id))
-            return Type.get(id);
-
-        return new StructType(id, 0, null);
+        return new StructType(ctx, id, size, elements);
     }
 
     private final Type[] elements;
 
-    protected StructType(final String id, final int size, final Type[] elements) {
-        super(id, IS_STRUCT, size);
+    protected StructType(final Context ctx, final String id, final int size, final Type[] elements) {
+        super(ctx, id, IS_STRUCT, size);
         this.elements = elements;
     }
 

@@ -7,16 +7,19 @@ import org.jline.reader.LineReaderBuilder;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 
+import io.scriptor.backend.Builder;
+import io.scriptor.frontend.Context;
 import io.scriptor.frontend.Parser;
 import io.scriptor.frontend.ParserConfig;
-import io.scriptor.frontend.State;
 import io.scriptor.frontend.expression.Expression;
 import io.scriptor.util.QScriptException;
 import io.scriptor.util.StringStream;
 
 public class ShellSession implements AutoCloseable {
 
-    private final State global = new State();
+    private final Context ctx = new Context();
+    private final Builder builder = new Builder(ctx,"shell");
+
     private final Terminal terminal;
     private final LineReader reader;
 
@@ -36,7 +39,7 @@ public class ShellSession implements AutoCloseable {
                 continue;
 
             try {
-                Parser.parse(new ParserConfig(null, this::callback, global, new StringStream(line)));
+                Parser.parse(new ParserConfig(ctx, this::callback, null, new StringStream(line)));
             } catch (final QScriptException e) {
                 terminal.writer().println(e.getMessage());
             }
@@ -45,7 +48,8 @@ public class ShellSession implements AutoCloseable {
         return this;
     }
 
-    private void callback(final Expression expression) {
+    private void callback(final Expression expr) {
+        builder.genIR(expr);
     }
 
     @Override
