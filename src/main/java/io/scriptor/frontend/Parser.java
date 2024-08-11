@@ -18,6 +18,7 @@ import java.util.function.Function;
 
 import io.scriptor.frontend.expression.BinaryExpression;
 import io.scriptor.frontend.expression.CallExpression;
+import io.scriptor.frontend.expression.CharExpression;
 import io.scriptor.frontend.expression.Expression;
 import io.scriptor.frontend.expression.FloatExpression;
 import io.scriptor.frontend.expression.FunctionExpression;
@@ -200,6 +201,11 @@ public class Parser {
                             mode = ParserMode.CHAR;
                             break;
 
+                        case '0':
+                            loc = new SourceLocation(config.file(), row, column);
+                            mode = ParserMode.RADIX;
+                            break;
+
                         default:
                             if (chr <= 0x20) {
                                 if (chr == '\n')
@@ -209,7 +215,7 @@ public class Parser {
 
                             if (isDecDigit(chr)) {
                                 loc = new SourceLocation(config.file(), row, column);
-                                mode = ParserMode.NUMBER;
+                                mode = ParserMode.NUMDEC;
                                 value.append((char) chr);
                                 break;
                             }
@@ -262,15 +268,47 @@ public class Parser {
                     value.append((char) chr);
                     break;
 
-                case NUMBER:
+                case RADIX:
+                    if (chr == 'b' || chr == 'B') {
+                        mode = ParserMode.NUMBIN;
+                        break;
+                    }
+                    if (chr == 'x' || chr == 'X') {
+                        mode = ParserMode.NUMHEX;
+                        break;
+                    }
+                    if (chr == '.') {
+                        mode = ParserMode.NUMDEC;
+                        isfloat = true;
+                        value.append("0.");
+                        break;
+                    }
+                    if (isOctDigit(chr)) {
+                        mode = ParserMode.NUMOCT;
+                        value.append((char) chr);
+                        break;
+                    }
+                    return new Token(loc, TokenType.DECINT, "0");
+
+                case NUMBIN:
+                    break;
+
+                case NUMOCT:
+                    break;
+
+                case NUMDEC:
                     if (chr == '.') {
                         isfloat = true;
                         value.append((char) chr);
                         break;
                     }
-                    if (!isDecDigit(chr))
-                        return new Token(loc, isfloat ? TokenType.FLOAT : TokenType.INT, value.toString());
-                    value.append((char) chr);
+                    if (isDecDigit(chr)) {
+                        value.append((char) chr);
+                        break;
+                    }
+                    return new Token(loc, isfloat ? TokenType.FLOAT : TokenType.DECINT, value.toString());
+
+                case NUMHEX:
                     break;
 
                 case ID:
@@ -299,8 +337,13 @@ public class Parser {
         return token == null;
     }
 
-    private boolean at(final TokenType type) {
-        return token != null && token.type() == type;
+    private boolean at(final TokenType... types) {
+        if (token == null)
+            return false;
+        for (final var type : types)
+            if (token.type() == type)
+                return true;
+        return false;
     }
 
     private boolean at(final String value) {
@@ -393,7 +436,7 @@ public class Parser {
         if (nextIfAt("[")) {
             if (nextIfAt("]"))
                 return nextType(ArrayType.get(base, -1));
-            final var length = Long.parseLong(expect(TokenType.INT).value());
+            final var length = skip().longValue();
             expect("]");
             return nextType(ArrayType.get(base, length));
         }
@@ -761,11 +804,14 @@ public class Parser {
             throw new QScriptException(loc, "no such macro or symbol with name '%s'", name);
         }
 
-        if (at(TokenType.INT))
-            return IntExpression.create(loc, Type.getInt64(stack.peek()), Long.valueOf(skip().value()));
+        if (at(TokenType.BININT, TokenType.OCTINT, TokenType.DECINT, TokenType.HEXINT))
+            return IntExpression.create(loc, Type.getInt64(stack.peek()), skip().longValue());
 
         if (at(TokenType.FLOAT))
-            return FloatExpression.create(loc, Type.getFlt64(stack.peek()), Double.valueOf(skip().value()));
+            return FloatExpression.create(loc, Type.getFlt64(stack.peek()), skip().doubleValue());
+
+        if (at(TokenType.CHAR))
+            return CharExpression.create(loc, Type.getInt8(stack.peek()), skip().charValue());
 
         if (at(TokenType.STRING))
             return StringExpression.create(loc, Type.getInt8Ptr(stack.peek()), skip().value());
