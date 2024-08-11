@@ -1,35 +1,36 @@
-package io.scriptor.frontend.expression;
+package io.scriptor.frontend.statement;
 
 import io.scriptor.frontend.SourceLocation;
+import io.scriptor.frontend.expression.Expression;
 import io.scriptor.type.Type;
 
-public class DefVarExpr extends Expression {
+public class DefVarStatement extends Statement {
 
-    public static DefVarExpr create(
+    public static DefVarStatement create(
             final SourceLocation location,
             final Type type,
             final String name) {
-        return new DefVarExpr(location, type, name, null);
+        return new DefVarStatement(location, type, name, null);
     }
 
-    public static DefVarExpr create(
+    public static DefVarStatement create(
             final SourceLocation location,
             final Type type,
             final String name,
             final Expression init) {
-        return new DefVarExpr(location, type, name, init);
+        return new DefVarStatement(location, type, name, init);
     }
 
     private final Type type;
     private final String name;
     private final Expression init;
 
-    private DefVarExpr(
+    private DefVarStatement(
             final SourceLocation location,
             final Type type,
             final String name,
             final Expression init) {
-        super(location, null);
+        super(location);
         this.type = type;
         this.name = name;
         this.init = init;
@@ -49,11 +50,6 @@ public class DefVarExpr extends Expression {
 
     public boolean hasInit() {
         return init != null;
-    }
-
-    @Override
-    public boolean isConst() {
-        return true;
     }
 
     @Override

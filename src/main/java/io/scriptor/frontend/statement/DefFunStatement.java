@@ -1,4 +1,4 @@
-package io.scriptor.frontend.expression;
+package io.scriptor.frontend.statement;
 
 import java.util.Arrays;
 
@@ -7,9 +7,9 @@ import io.scriptor.frontend.SourceLocation;
 import io.scriptor.type.FunctionType;
 import io.scriptor.type.Type;
 
-public class DefFunExpr extends Expression {
+public class DefFunStatement extends Statement {
 
-    public static DefFunExpr create(
+    public static DefFunStatement create(
             final SourceLocation location,
             final Type result,
             final String name,
@@ -18,30 +18,30 @@ public class DefFunExpr extends Expression {
         return create(location, result, name, args, vararg, null);
     }
 
-    public static DefFunExpr create(
+    public static DefFunStatement create(
             final SourceLocation location,
             final Type result,
             final String name,
             final Arg[] args,
             final boolean vararg,
-            final CompoundExpr body) {
-        return new DefFunExpr(location, result, name, args, vararg, body);
+            final CompoundStatement body) {
+        return new DefFunStatement(location, result, name, args, vararg, body);
     }
 
     private final Type result;
     private final String name;
     private final Arg[] args;
     private final boolean vararg;
-    private final CompoundExpr body;
+    private final CompoundStatement body;
 
-    private DefFunExpr(
+    private DefFunStatement(
             final SourceLocation location,
             final Type result,
             final String name,
             final Arg[] args,
             final boolean vararg,
-            final CompoundExpr body) {
-        super(location, null);
+            final CompoundStatement body) {
+        super(location);
         this.result = result;
         this.name = name;
         this.args = args;
@@ -69,17 +69,12 @@ public class DefFunExpr extends Expression {
         return vararg;
     }
 
-    public CompoundExpr getBody() {
+    public CompoundStatement getBody() {
         return body;
     }
 
     public FunctionType getFunctionType() {
         return FunctionType.get(result, vararg, Arrays.stream(args).map(Arg::type).toArray(Type[]::new));
-    }
-
-    @Override
-    public boolean isConst() {
-        return true;
     }
 
     @Override

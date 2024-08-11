@@ -3,22 +3,22 @@ package io.scriptor.frontend.expression;
 import io.scriptor.frontend.SourceLocation;
 import io.scriptor.type.Type;
 
-public class BinaryExpr extends Expression {
+public class BinaryExpression extends Expression {
 
-    public static BinaryExpr create(
+    public static BinaryExpression create(
             final SourceLocation location,
             final String operator,
             final Expression lhs,
             final Expression rhs) {
         final var type = Type.getHigherOrder(location, lhs.getType(), rhs.getType());
-        return new BinaryExpr(location, type, operator, lhs, rhs);
+        return new BinaryExpression(location, type, operator, lhs, rhs);
     }
 
     private final String operator;
     private final Expression lhs;
     private final Expression rhs;
 
-    private BinaryExpr(
+    private BinaryExpression(
             final SourceLocation location,
             final Type type,
             final String operator,

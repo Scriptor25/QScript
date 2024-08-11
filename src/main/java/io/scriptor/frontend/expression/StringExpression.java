@@ -5,15 +5,15 @@ import static io.scriptor.util.Util.unescape;
 import io.scriptor.frontend.SourceLocation;
 import io.scriptor.type.Type;
 
-public class StringExpr extends Expression {
+public class StringExpression extends Expression {
 
-    public static StringExpr create(final SourceLocation location, final Type type, final String value) {
-        return new StringExpr(location, type, value);
+    public static StringExpression create(final SourceLocation location, final Type type, final String value) {
+        return new StringExpression(location, type, value);
     }
 
     private final String value;
 
-    private StringExpr(final SourceLocation location, final Type type, final String value) {
+    private StringExpression(final SourceLocation location, final Type type, final String value) {
         super(location, type);
         this.value = value;
     }

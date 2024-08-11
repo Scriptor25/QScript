@@ -1,34 +1,35 @@
-package io.scriptor.frontend.expression;
+package io.scriptor.frontend.statement;
 
 import io.scriptor.frontend.SourceLocation;
+import io.scriptor.frontend.expression.Expression;
 
-public class IfExpr extends Expression {
+public class IfStatement extends Statement {
 
-    public static IfExpr create(
+    public static IfStatement create(
             final SourceLocation location,
             final Expression condition,
-            final Expression then) {
-        return new IfExpr(location, condition, then, null);
+            final Statement then) {
+        return new IfStatement(location, condition, then, null);
     }
 
-    public static IfExpr create(
+    public static IfStatement create(
             final SourceLocation location,
             final Expression condition,
-            final Expression then,
-            final Expression else_) {
-        return new IfExpr(location, condition, then, else_);
+            final Statement then,
+            final Statement else_) {
+        return new IfStatement(location, condition, then, else_);
     }
 
     private final Expression condition;
-    private final Expression then;
-    private final Expression else_;
+    private final Statement then;
+    private final Statement else_;
 
-    private IfExpr(
+    private IfStatement(
             final SourceLocation location,
             final Expression condition,
-            final Expression then,
-            final Expression else_) {
-        super(location, null);
+            final Statement then,
+            final Statement else_) {
+        super(location);
         this.condition = condition;
         this.then = then;
         this.else_ = else_;
@@ -38,11 +39,11 @@ public class IfExpr extends Expression {
         return condition;
     }
 
-    public Expression getThen() {
+    public Statement getThen() {
         return then;
     }
 
-    public Expression getElse() {
+    public Statement getElse() {
         return else_;
     }
 

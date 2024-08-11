@@ -3,15 +3,15 @@ package io.scriptor.frontend.expression;
 import io.scriptor.frontend.SourceLocation;
 import io.scriptor.type.Type;
 
-public class IntExpr extends Expression {
+public class IntExpression extends Expression {
 
-    public static IntExpr create(final SourceLocation location, final Type type, final long value) {
-        return new IntExpr(location, type, value);
+    public static IntExpression create(final SourceLocation location, final Type type, final long value) {
+        return new IntExpression(location, type, value);
     }
 
     private final long value;
 
-    private IntExpr(final SourceLocation location, final Type type, final long value) {
+    private IntExpression(final SourceLocation location, final Type type, final long value) {
         super(location, type);
         this.value = value;
     }

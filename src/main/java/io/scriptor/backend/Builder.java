@@ -37,14 +37,12 @@ import static org.bytedeco.llvm.global.LLVM.LLVMCodeGenLevelDefault;
 import static org.bytedeco.llvm.global.LLVM.LLVMCodeModelDefault;
 import static org.bytedeco.llvm.global.LLVM.LLVMConstInt;
 import static org.bytedeco.llvm.global.LLVM.LLVMConstReal;
-import static org.bytedeco.llvm.global.LLVM.LLVMContextCreate;
 import static org.bytedeco.llvm.global.LLVM.LLVMCountBasicBlocks;
 import static org.bytedeco.llvm.global.LLVM.LLVMCreateBuilderInContext;
 import static org.bytedeco.llvm.global.LLVM.LLVMCreateFunctionPassManagerForModule;
 import static org.bytedeco.llvm.global.LLVM.LLVMCreateTargetMachine;
 import static org.bytedeco.llvm.global.LLVM.LLVMDoubleTypeInContext;
 import static org.bytedeco.llvm.global.LLVM.LLVMDumpModule;
-import static org.bytedeco.llvm.global.LLVM.LLVMDumpValue;
 import static org.bytedeco.llvm.global.LLVM.LLVMFloatTypeInContext;
 import static org.bytedeco.llvm.global.LLVM.LLVMFunctionType;
 import static org.bytedeco.llvm.global.LLVM.LLVMGetBasicBlockParent;
@@ -87,6 +85,7 @@ import static org.bytedeco.llvm.global.LLVM.LLVMSetValueName;
 import static org.bytedeco.llvm.global.LLVM.LLVMStructTypeInContext;
 import static org.bytedeco.llvm.global.LLVM.LLVMTargetMachineEmitToFile;
 import static org.bytedeco.llvm.global.LLVM.LLVMVerifyFunction;
+import static org.bytedeco.llvm.global.LLVM.LLVMVerifyModule;
 import static org.bytedeco.llvm.global.LLVM.LLVMVoidTypeInContext;
 
 import java.util.HashMap;
@@ -103,23 +102,24 @@ import org.bytedeco.llvm.LLVM.LLVMTypeRef;
 import org.bytedeco.llvm.LLVM.LLVMValueRef;
 
 import io.scriptor.frontend.Context;
-import io.scriptor.frontend.expression.BinaryExpr;
-import io.scriptor.frontend.expression.CallExpr;
-import io.scriptor.frontend.expression.CompoundExpr;
-import io.scriptor.frontend.expression.DefFunExpr;
-import io.scriptor.frontend.expression.DefVarExpr;
+import io.scriptor.frontend.expression.BinaryExpression;
+import io.scriptor.frontend.expression.CallExpression;
 import io.scriptor.frontend.expression.Expression;
-import io.scriptor.frontend.expression.FloatExpr;
-import io.scriptor.frontend.expression.FunctionExpr;
-import io.scriptor.frontend.expression.IDExpr;
-import io.scriptor.frontend.expression.IfExpr;
-import io.scriptor.frontend.expression.IndexExpr;
-import io.scriptor.frontend.expression.InitListExpr;
-import io.scriptor.frontend.expression.IntExpr;
-import io.scriptor.frontend.expression.ReturnExpr;
-import io.scriptor.frontend.expression.StringExpr;
-import io.scriptor.frontend.expression.UnaryExpr;
-import io.scriptor.frontend.expression.WhileExpr;
+import io.scriptor.frontend.expression.FloatExpression;
+import io.scriptor.frontend.expression.FunctionExpression;
+import io.scriptor.frontend.expression.IndexExpression;
+import io.scriptor.frontend.expression.InitListExpression;
+import io.scriptor.frontend.expression.IntExpression;
+import io.scriptor.frontend.expression.StringExpression;
+import io.scriptor.frontend.expression.SymbolExpression;
+import io.scriptor.frontend.expression.UnaryExpression;
+import io.scriptor.frontend.statement.CompoundStatement;
+import io.scriptor.frontend.statement.DefFunStatement;
+import io.scriptor.frontend.statement.DefVarStatement;
+import io.scriptor.frontend.statement.IfStatement;
+import io.scriptor.frontend.statement.ReturnStatement;
+import io.scriptor.frontend.statement.Statement;
+import io.scriptor.frontend.statement.WhileStatement;
 import io.scriptor.type.ArrayType;
 import io.scriptor.type.FunctionType;
 import io.scriptor.type.PointerType;
@@ -130,20 +130,26 @@ import io.scriptor.util.QScriptException;
 public class Builder {
 
     public static void mergeAndEmitToFile(final Builder[] builders, final String filename) {
-        LLVMModuleRef module = null;
-        for (final var builder : builders) {
-            builder.dumpModule();
-            if (module == null) {
-                module = builder.module;
-            } else {
-                final var error = LLVMLinkModules2(module, builder.module);
-                if (error != 0) {
-                    throw new IllegalStateException("failed to link modules");
-                }
-            }
+        final var mainModule = builders[0].module;
+        final var mainName = builders[0].filename;
+        for (int i = 1; i < builders.length; ++i) {
+            final var module = builders[i].module;
+            final var name = builders[i].filename;
+            final var error = new PointerPointer<>();
+            if (LLVMVerifyModule(module, LLVMPrintMessageAction, error) != 0)
+                throw new QScriptException(
+                        "failed to verify module '%s': %s",
+                        name,
+                        !error.isNull() ? error.getString(0) : "no detail");
+            if (LLVMLinkModules2(mainModule, module) != 0)
+                throw new QScriptException("failed to link against '%s's", name);
+            if (LLVMVerifyModule(mainModule, LLVMPrintMessageAction, error) != 0)
+                throw new QScriptException(
+                        "failed to verify module '%s': %s",
+                        mainName,
+                        !error.isNull() ? error.getString(0) : "no detail");
         }
-        LLVMDumpModule(module);
-        emitToFile(module, filename);
+        emitToFile(mainModule, filename);
     }
 
     private static void emitToFile(final LLVMModuleRef module, final String filename) {
@@ -158,7 +164,10 @@ public class Builder {
         final var error = new PointerPointer<>();
         final var target = new LLVMTargetRef();
         if (LLVMGetTargetFromTriple(triple, target, error) != 0) {
-            throw new IllegalStateException(error.getString(0));
+            throw new QScriptException(
+                    "failed to get target from triple '%s': %s",
+                    triple.getString(),
+                    error.getString(0));
         }
 
         final var cpu = "generic";
@@ -174,27 +183,29 @@ public class Builder {
                 LLVMCodeModelDefault);
 
         if (LLVMTargetMachineEmitToFile(machine, module, filename, LLVMObjectFile, error.asByteBuffer()) != 0) {
-            throw new IllegalStateException(error.getString(0));
+            throw new QScriptException("failed to emit to file '%s': %s", filename, error.getString(0));
         }
     }
 
+    private final String filename;
     private final Context ctx;
+
     private final Stack<Map<String, Value>> stack = new Stack<>();
 
     private final LLVMContextRef context;
     private final LLVMBuilderRef builder;
     private final LLVMModuleRef module;
-
     private final LLVMPassManagerRef fpm;
 
     public Builder(final Context ctx, final String filename) {
+        this.filename = filename;
         this.ctx = ctx;
+
         stack.push(new HashMap<>());
 
-        this.context = LLVMContextCreate();
+        this.context = ctx.getLLVM();
         this.builder = LLVMCreateBuilderInContext(context);
         this.module = LLVMModuleCreateWithNameInContext(filename, context);
-
         this.fpm = LLVMCreateFunctionPassManagerForModule(module);
         // LLVMAddInstructionCombiningPass(fpm);
         // LLVMAddReassociatePass(fpm);
@@ -296,11 +307,11 @@ public class Builder {
             }
         }
 
-        throw new UnsupportedOperationException();
+        throw new QScriptException("cannot cast from '%s' to '%s'", vtype, type);
     }
 
     public Value createEQ(final Value left, final Value right) {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     public Value createNE(final Value left, final Value right) {
@@ -316,7 +327,7 @@ public class Builder {
             return RValue.create(this, Type.getInt1(ctx), result);
         }
 
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     public Value createLT(final Value left, final Value right) {
@@ -332,31 +343,31 @@ public class Builder {
             return RValue.create(this, Type.getInt1(ctx), result);
         }
 
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     public Value createGT(final Value left, final Value right) {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     public Value createLE(final Value left, final Value right) {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     public Value createGE(final Value left, final Value right) {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     public Value createLAnd(final Value left, final Value right) {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     public Value createLOr(final Value left, final Value right) {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     public Value createLXOr(final Value left, final Value right) {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     public Value createAdd(final Value left, final Value right) {
@@ -372,7 +383,7 @@ public class Builder {
             return RValue.create(this, type, result);
         }
 
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     public Value createSub(final Value left, final Value right) {
@@ -388,7 +399,7 @@ public class Builder {
             return RValue.create(this, type, result);
         }
 
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     public Value createMul(final Value left, final Value right) {
@@ -404,7 +415,7 @@ public class Builder {
             return RValue.create(this, type, result);
         }
 
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     public Value createDiv(final Value left, final Value right) {
@@ -420,35 +431,35 @@ public class Builder {
             return RValue.create(this, type, result);
         }
 
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     public Value createRem(final Value left, final Value right) {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     public Value createAnd(final Value left, final Value right) {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     public Value createOr(final Value left, final Value right) {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     public Value createXOr(final Value left, final Value right) {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     public Value createNot(final Value value) {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     public Value createNeg(final Value value) {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     public Value createLNeg(final Value value) {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     public LLVMTypeRef genIR(final Type type) {
@@ -497,44 +508,65 @@ public class Builder {
         throw new QScriptException("no genIR for class '%s': %s", type.getClass(), type);
     }
 
+    public void genIR(final Statement stmt) {
+        if (stmt instanceof Expression e) {
+            genIR(e);
+            return;
+        }
+        if (stmt instanceof CompoundStatement s) {
+            genIR(s);
+            return;
+        }
+        if (stmt instanceof DefFunStatement s) {
+            genIR(s);
+            return;
+        }
+        if (stmt instanceof DefVarStatement s) {
+            genIR(s);
+            return;
+        }
+        if (stmt instanceof IfStatement s) {
+            genIR(s);
+            return;
+        }
+        if (stmt instanceof ReturnStatement s) {
+            genIR(s);
+            return;
+        }
+        if (stmt instanceof WhileStatement s) {
+            genIR(s);
+            return;
+        }
+
+        throw new QScriptException(stmt.getLocation(), "no genIR for class '%s':\n%s", stmt.getClass(), stmt);
+    }
+
     public Value genIR(final Expression expr) {
-        if (expr instanceof BinaryExpr e)
+        if (expr instanceof BinaryExpression e)
             return genIR(e);
-        if (expr instanceof CallExpr e)
+        if (expr instanceof CallExpression e)
             return genIR(e);
-        if (expr instanceof CompoundExpr e)
+        if (expr instanceof FloatExpression e)
             return genIR(e);
-        if (expr instanceof DefFunExpr e)
+        if (expr instanceof FunctionExpression e)
             return genIR(e);
-        if (expr instanceof DefVarExpr e)
+        if (expr instanceof SymbolExpression e)
             return genIR(e);
-        if (expr instanceof FloatExpr e)
+        if (expr instanceof IndexExpression e)
             return genIR(e);
-        if (expr instanceof FunctionExpr e)
+        if (expr instanceof IntExpression e)
             return genIR(e);
-        if (expr instanceof IDExpr e)
+        if (expr instanceof StringExpression e)
             return genIR(e);
-        if (expr instanceof IfExpr e)
+        if (expr instanceof InitListExpression e)
             return genIR(e);
-        if (expr instanceof IndexExpr e)
-            return genIR(e);
-        if (expr instanceof IntExpr e)
-            return genIR(e);
-        if (expr instanceof ReturnExpr e)
-            return genIR(e);
-        if (expr instanceof StringExpr e)
-            return genIR(e);
-        if (expr instanceof InitListExpr e)
-            return genIR(e);
-        if (expr instanceof UnaryExpr e)
-            return genIR(e);
-        if (expr instanceof WhileExpr e)
+        if (expr instanceof UnaryExpression e)
             return genIR(e);
 
         throw new QScriptException(expr.getLocation(), "no genIR for class '%s':\n%s", expr.getClass(), expr);
     }
 
-    private Value genIR(final BinaryExpr expr) {
+    private Value genIR(final BinaryExpression expr) {
         var op = expr.getOperator();
 
         if ("=".equals(op)) {
@@ -595,10 +627,15 @@ public class Builder {
             return result;
         }
 
-        throw new UnsupportedOperationException();
+        throw new QScriptException(
+                expr.getLocation(),
+                "no such operator '%s %s %s'",
+                left.getType(),
+                expr.getOperator(),
+                right.getType());
     }
 
-    private Value genIR(final CallExpr expr) {
+    private Value genIR(final CallExpression expr) {
         final var callee = genIR(expr.getCallee());
         final var fnty = (FunctionType) callee.getType();
         final var args = new PointerPointer<LLVMValueRef>(expr.getArgCount());
@@ -614,42 +651,41 @@ public class Builder {
         return RValue.create(this, expr.getType(), result);
     }
 
-    private Value genIR(final CompoundExpr expr) {
+    private void genIR(final CompoundStatement expr) {
         stack.push(new HashMap<>());
-        for (int i = 0; i < expr.getExprCount(); ++i)
-            genIR(expr.getExpr(i));
+        for (int i = 0; i < expr.getCount(); ++i)
+            genIR(expr.get(i));
         stack.pop();
-        return null;
     }
 
-    private Value genIR(final DefFunExpr expr) {
-        final var ft = genIR(expr.getFunctionType());
+    private void genIR(final DefFunStatement stmt) {
+        final var ft = genIR(stmt.getFunctionType());
 
-        var f = LLVMGetNamedFunction(module, expr.getName());
+        var f = LLVMGetNamedFunction(module, stmt.getName());
         if (f == null) {
-            f = LLVMAddFunction(module, expr.getName(), ft);
+            f = LLVMAddFunction(module, stmt.getName(), ft);
             if (f == null)
                 throw new QScriptException(
-                        expr.getLocation(),
+                        stmt.getLocation(),
                         "failed to create function '%s':\n%s",
-                        expr.getName(),
-                        expr);
+                        stmt.getName(),
+                        stmt);
         }
 
-        stack.peek().put(expr.getName(), RValue.create(this, expr.getFunctionType(), f));
+        stack.peek().put(stmt.getName(), RValue.create(this, stmt.getFunctionType(), f));
 
-        if (expr.getBody() == null)
-            return null;
+        if (stmt.getBody() == null)
+            return;
 
         if (LLVMCountBasicBlocks(f) != 0)
-            throw new QScriptException(expr.getLocation(), "cannot redefine function '%s'", expr.getName());
+            throw new QScriptException(stmt.getLocation(), "cannot redefine function '%s'", stmt.getName());
 
         final var entry = LLVMAppendBasicBlockInContext(context, f, "entry");
         LLVMPositionBuilderAtEnd(builder, entry);
 
         stack.push(new HashMap<>());
-        for (int i = 0; i < expr.getArgCount(); ++i) {
-            final var arg = expr.getArg(i);
+        for (int i = 0; i < stmt.getArgCount(); ++i) {
+            final var arg = stmt.getArg(i);
 
             final var llvmarg = LLVMGetParam(f, i);
             LLVMSetValueName(llvmarg, arg.name());
@@ -658,65 +694,62 @@ public class Builder {
             stack.peek().put(arg.name(), value);
         }
 
-        genIR(expr.getBody());
+        genIR(stmt.getBody());
 
         LLVMClearInsertionPosition(builder);
         stack.pop();
 
         if (LLVMVerifyFunction(f, LLVMPrintMessageAction) != 0) {
-            LLVMDumpValue(f);
-            throw new UnsupportedOperationException();
+            throw new QScriptException(stmt.getLocation(), "failed to verify function");
         }
 
         LLVMRunFunctionPassManager(fpm, f);
-        return null;
     }
 
-    private Value genIR(final DefVarExpr expr) {
-        final var name = expr.getName();
+    private void genIR(final DefVarStatement stmt) {
+        final var name = stmt.getName();
 
         if (isGlobal()) {
-            final var vt = genIR(expr.getType());
+            final var vt = genIR(stmt.getType());
 
             final var ptr = LLVMAddGlobal(module, vt, name);
-            final var value = LValue.direct(this, expr.getType(), ptr);
+            final var value = LValue.direct(this, stmt.getType(), ptr);
 
-            if (expr.hasInit()) {
-                if (expr.getInit().isConst()) {
-                    final var init = genIR(expr.getInit());
+            if (stmt.hasInit()) {
+                if (stmt.getInit().isConst()) {
+                    final var init = genIR(stmt.getInit());
                     LLVMSetInitializer(ptr, init.get());
                 } else {
-                    throw new UnsupportedOperationException();
+                    throw new QScriptException(stmt.getLocation(), "global initializer must be constant");
                 }
             }
 
             stack.peek().put(name, value);
-            return null;
+            return;
         }
 
         final Value value;
-        if (expr.hasInit()) {
-            final var init = createCast(genIR(expr.getInit()), expr.getType());
+        if (stmt.hasInit()) {
+            final var init = createCast(genIR(stmt.getInit()), stmt.getType());
             value = LValue.copy(this, init);
         } else {
-            value = LValue.alloca(this, expr.getType());
+            value = LValue.alloca(this, stmt.getType());
         }
 
         stack.peek().put(name, value);
-        return null;
     }
 
-    private Value genIR(final FloatExpr expr) {
+    private Value genIR(final FloatExpression expr) {
         final var type = genIR(expr.getType());
         final var value = LLVMConstReal(type, expr.getValue());
         return RValue.create(this, expr.getType(), value);
     }
 
-    private Value genIR(final FunctionExpr expr) {
-        throw new UnsupportedOperationException();
+    private Value genIR(final FunctionExpression expr) {
+        throw new QScriptException(expr.getLocation(), "TODO");
     }
 
-    private Value genIR(final IDExpr expr) {
+    private Value genIR(final SymbolExpression expr) {
         final var id = expr.getId();
         for (int i = stack.size() - 1; i >= 0; --i) {
             final var vars = stack.get(i);
@@ -724,10 +757,10 @@ public class Builder {
                 return vars.get(id);
         }
 
-        throw new UnsupportedOperationException();
+        throw new QScriptException(expr.getLocation(), "undefined symbol '%s'", expr.getId());
     }
 
-    private Value genIR(final IfExpr expr) {
+    private void genIR(final IfStatement expr) {
 
         final var f = LLVMGetBasicBlockParent(LLVMGetInsertBlock(builder));
         final var head = LLVMAppendBasicBlockInContext(context, f, "head");
@@ -754,11 +787,9 @@ public class Builder {
         }
 
         LLVMPositionBuilderAtEnd(builder, end);
-
-        return null;
     }
 
-    private Value genIR(final IndexExpr expr) {
+    private Value genIR(final IndexExpression expr) {
         final var ptr = genIR(expr.getPtr());
         final var index = genIR(expr.getIndex());
 
@@ -784,32 +815,35 @@ public class Builder {
             return LValue.direct(this, type.getBase(), gep);
         }
 
-        throw new UnsupportedOperationException();
+        throw new QScriptException(
+                expr.getLocation(),
+                "type must be an array or pointer type, but is '%s'",
+                arraytype);
     }
 
-    private Value genIR(final IntExpr expr) {
+    private Value genIR(final IntExpression expr) {
         final var type = genIR(expr.getType());
         final var value = LLVMConstInt(type, expr.getValue(), 1);
         return RValue.create(this, expr.getType(), value);
     }
 
-    private Value genIR(final ReturnExpr expr) {
+    private void genIR(final ReturnStatement expr) {
         if (!expr.hasExpr()) {
             LLVMBuildRetVoid(builder);
-            return null;
+            return;
         }
 
         final var value = createCast(genIR(expr.getExpr()), expr.getResult());
         LLVMBuildRet(builder, value.get());
-        return null;
+        return;
     }
 
-    private Value genIR(final StringExpr expr) {
+    private Value genIR(final StringExpression expr) {
         final var value = LLVMBuildGlobalStringPtr(builder, expr.getValue(), "");
         return RValue.create(this, expr.getType(), value);
     }
 
-    private Value genIR(final InitListExpr expr) {
+    private Value genIR(final InitListExpression expr) {
         if (expr.getType() instanceof StructType type) {
             final var llvmtype = genIR(type);
             final var ptr = createAlloca(llvmtype);
@@ -839,10 +873,13 @@ public class Builder {
             return LValue.direct(this, type, ptr);
         }
 
-        throw new UnsupportedOperationException();
+        throw new QScriptException(
+                expr.getLocation(),
+                "type must be an array or struct type, but is '%s'",
+                expr.getType());
     }
 
-    private Value genIR(final UnaryExpr expr) {
+    private Value genIR(final UnaryExpression expr) {
         final var op = expr.getOperator();
         final var value = genIR(expr.getOperand());
 
@@ -876,10 +913,14 @@ public class Builder {
             return result;
         }
 
-        throw new UnsupportedOperationException();
+        throw new QScriptException(
+                expr.getLocation(),
+                "no such operator '%s%s'",
+                op,
+                value.getType());
     }
 
-    private Value genIR(final WhileExpr expr) {
+    private void genIR(final WhileStatement expr) {
 
         final var f = LLVMGetBasicBlockParent(LLVMGetInsertBlock(builder));
         final var head = LLVMAppendBasicBlockInContext(context, f, "head");
@@ -897,7 +938,5 @@ public class Builder {
         LLVMBuildBr(builder, head);
 
         LLVMPositionBuilderAtEnd(builder, end);
-
-        return null;
     }
 }

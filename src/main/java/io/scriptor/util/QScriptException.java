@@ -4,6 +4,10 @@ import io.scriptor.frontend.SourceLocation;
 
 public class QScriptException extends RuntimeException {
 
+    public QScriptException() {
+        super();
+    }
+
     public QScriptException(final String format, final Object... args) {
         super(format.formatted(args));
     }

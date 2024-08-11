@@ -3,20 +3,20 @@ package io.scriptor.frontend.expression;
 import io.scriptor.frontend.SourceLocation;
 import io.scriptor.type.Type;
 
-public class CallExpr extends Expression {
+public class CallExpression extends Expression {
 
-    public static CallExpr create(
+    public static CallExpression create(
             final SourceLocation location,
             final Type result,
             final Expression callee,
             final Expression[] args) {
-        return new CallExpr(location, result, callee, args);
+        return new CallExpression(location, result, callee, args);
     }
 
     private final Expression callee;
     private final Expression[] args;
 
-    private CallExpr(
+    private CallExpression(
             final SourceLocation location,
             final Type result,
             final Expression callee,

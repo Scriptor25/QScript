@@ -1,27 +1,28 @@
 package io.scriptor.frontend.expression;
 
 import io.scriptor.frontend.SourceLocation;
+import io.scriptor.frontend.statement.CompoundStatement;
 import io.scriptor.type.Type;
 import io.scriptor.util.QScriptException;
 
-public class FunctionExpr extends Expression {
+public class FunctionExpression extends Expression {
 
-    public static FunctionExpr create(
+    public static FunctionExpression create(
             final SourceLocation location,
             final Type type,
             final String[] args,
-            final CompoundExpr body) {
-        return new FunctionExpr(location, type, args, body);
+            final CompoundStatement body) {
+        return new FunctionExpression(location, type, args, body);
     }
 
     private final String[] args;
-    private final CompoundExpr body;
+    private final CompoundStatement body;
 
-    private FunctionExpr(
+    private FunctionExpression(
             final SourceLocation location,
             final Type type,
             final String[] args,
-            final CompoundExpr body) {
+            final CompoundStatement body) {
         super(location, type);
 
         if (type == null)
@@ -39,7 +40,7 @@ public class FunctionExpr extends Expression {
         return args[index];
     }
 
-    public CompoundExpr getBody() {
+    public CompoundStatement getBody() {
         return body;
     }
 

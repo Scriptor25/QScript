@@ -1,20 +1,16 @@
 package io.scriptor.frontend.expression;
 
 import io.scriptor.frontend.SourceLocation;
+import io.scriptor.frontend.statement.Statement;
 import io.scriptor.type.Type;
 
-public abstract class Expression {
+public abstract class Expression extends Statement {
 
-    private final SourceLocation location;
     private final Type type;
 
     protected Expression(final SourceLocation location, final Type type) {
-        this.location = location;
+        super(location);
         this.type = type;
-    }
-
-    public SourceLocation getLocation() {
-        return location;
     }
 
     public Type getType() {
@@ -24,6 +20,4 @@ public abstract class Expression {
     public boolean isConst() {
         return false;
     }
-
-    public abstract String toString();
 }

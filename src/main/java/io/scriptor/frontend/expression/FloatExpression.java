@@ -3,15 +3,15 @@ package io.scriptor.frontend.expression;
 import io.scriptor.frontend.SourceLocation;
 import io.scriptor.type.Type;
 
-public class FloatExpr extends Expression {
+public class FloatExpression extends Expression {
 
-    public static FloatExpr create(final SourceLocation location, final Type type, final double value) {
-        return new FloatExpr(location, type, value);
+    public static FloatExpression create(final SourceLocation location, final Type type, final double value) {
+        return new FloatExpression(location, type, value);
     }
 
     private final double value;
 
-    private FloatExpr(final SourceLocation location, final Type type, final double value) {
+    private FloatExpression(final SourceLocation location, final Type type, final double value) {
         super(location, type);
         this.value = value;
     }

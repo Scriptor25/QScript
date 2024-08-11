@@ -1,31 +1,32 @@
-package io.scriptor.frontend.expression;
+package io.scriptor.frontend.statement;
 
 import io.scriptor.frontend.SourceLocation;
+import io.scriptor.frontend.expression.Expression;
 import io.scriptor.type.Type;
 
-public class ReturnExpr extends Expression {
+public class ReturnStatement extends Statement {
 
-    public static ReturnExpr create(
+    public static ReturnStatement create(
             final SourceLocation location,
             final Type result,
             final Expression expression) {
-        return new ReturnExpr(location, result, expression);
+        return new ReturnStatement(location, result, expression);
     }
 
-    public static ReturnExpr create(
+    public static ReturnStatement create(
             final SourceLocation location,
             final Type result) {
-        return new ReturnExpr(location, result, null);
+        return new ReturnStatement(location, result, null);
     }
 
     private final Type result;
     private final Expression expression;
 
-    private ReturnExpr(
+    private ReturnStatement(
             final SourceLocation location,
             final Type result,
             final Expression expression) {
-        super(location, null);
+        super(location);
         this.result = result;
         this.expression = expression;
     }

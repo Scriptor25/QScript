@@ -1,56 +1,66 @@
 package io.scriptor;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.scriptor.session.FileSession;
-import io.scriptor.session.ShellSession;
+import io.scriptor.backend.Builder;
+import io.scriptor.frontend.Context;
+import io.scriptor.frontend.Parser;
+import io.scriptor.frontend.ParserConfig;
 
 public class Main {
 
-    @SuppressWarnings("resource")
-    public static void main(final String[] args) throws IOException {
-        if (args.length == 0) {
-            new ShellSession()
-                    .run()
-                    .close();
-            return;
+    public static void compileFiles(
+            final String[] inputFilenames,
+            final String[] includeDirs,
+            final String outputFilename)
+            throws IOException {
+
+        final var builders = new Builder[inputFilenames.length];
+
+        final var ctx = new Context();
+        for (int i = 0; i < inputFilenames.length; ++i) {
+            ctx.clear();
+
+            final var inputFilename = inputFilenames[i];
+            final var builder = new Builder(ctx, inputFilename);
+            final var file = new File(inputFilename);
+            final var config = new ParserConfig(ctx, builder::genIR, file, includeDirs, new FileInputStream(file));
+            Parser.parse(config);
+
+            builders[i] = builder;
         }
 
-        String out = null;
-        List<String> in = new ArrayList<>();
+        Builder.mergeAndEmitToFile(builders, outputFilename);
+    }
+
+    public static void main(final String[] args) throws IOException {
+        String outputFilename = null;
+        List<String> includeDirs = new ArrayList<>();
+        List<String> inputFilenames = new ArrayList<>();
 
         for (int i = 0; i < args.length; ++i) {
             if ("-o".equals(args[i])) {
-                out = args[++i];
+                outputFilename = args[++i];
+                continue;
+            }
+            if ("-i".equals(args[i])) {
+                includeDirs.add(args[++i]);
                 continue;
             }
 
-            in.add(args[i]);
+            inputFilenames.add(args[i]);
         }
 
-        if (in.isEmpty())
+        if (inputFilenames.isEmpty())
             throw new IllegalStateException("no input filename specified");
 
-        if (in.size() == 1) {
-            if (out == null)
-                out = "output.o";
-            FileSession.create(in.get(0), out);
-            return;
-        }
+        if (outputFilename == null)
+            outputFilename = "a.out";
 
-        if (out == null)
-            out = "output";
-
-        new File(out).mkdirs();
-
-        for (final var infilename : in) {
-            var name = new File(infilename).getName();
-            name = name.substring(0, name.lastIndexOf('.'));
-            final var outfilename = out + "/" + name + ".o";
-            FileSession.create(infilename, outfilename);
-        }
+        compileFiles(inputFilenames.toArray(String[]::new), includeDirs.toArray(String[]::new), outputFilename);
     }
 }

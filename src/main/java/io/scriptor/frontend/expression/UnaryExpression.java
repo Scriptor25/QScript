@@ -4,27 +4,27 @@ import static io.scriptor.util.Util.getUnOpResult;
 
 import io.scriptor.frontend.SourceLocation;
 
-public class UnaryExpr extends Expression {
+public class UnaryExpression extends Expression {
 
-    public static UnaryExpr createR(
+    public static UnaryExpression createR(
             final SourceLocation location,
             final String operator,
             final Expression operand) {
-        return new UnaryExpr(location, true, operator, operand);
+        return new UnaryExpression(location, true, operator, operand);
     }
 
-    public static UnaryExpr createL(
+    public static UnaryExpression createL(
             final SourceLocation location,
             final String operator,
             final Expression operand) {
-        return new UnaryExpr(location, false, operator, operand);
+        return new UnaryExpression(location, false, operator, operand);
     }
 
     private final boolean right;
     private final String operator;
     private final Expression operand;
 
-    private UnaryExpr(
+    private UnaryExpression(
             final SourceLocation location,
             final boolean right,
             final String operator,

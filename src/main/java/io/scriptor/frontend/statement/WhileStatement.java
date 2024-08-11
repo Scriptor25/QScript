@@ -1,24 +1,25 @@
-package io.scriptor.frontend.expression;
+package io.scriptor.frontend.statement;
 
 import io.scriptor.frontend.SourceLocation;
+import io.scriptor.frontend.expression.Expression;
 
-public class WhileExpr extends Expression {
+public class WhileStatement extends Statement {
 
-    public static WhileExpr create(
+    public static WhileStatement create(
             final SourceLocation location,
             final Expression condition,
-            final Expression loop) {
-        return new WhileExpr(location, condition, loop);
+            final Statement loop) {
+        return new WhileStatement(location, condition, loop);
     }
 
     private final Expression condition;
-    private final Expression loop;
+    private final Statement loop;
 
-    private WhileExpr(
+    private WhileStatement(
             final SourceLocation location,
             final Expression condition,
-            final Expression loop) {
-        super(location, null);
+            final Statement loop) {
+        super(location);
         this.condition = condition;
         this.loop = loop;
     }
@@ -27,7 +28,7 @@ public class WhileExpr extends Expression {
         return condition;
     }
 
-    public Expression getLoop() {
+    public Statement getLoop() {
         return loop;
     }
 
