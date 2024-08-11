@@ -14,7 +14,7 @@ If you want to use it for a project: dont. Just for fun: definitly. Or maybe. Mo
 
 ## Examples
 
-You can find some examples in the [examples]("examples/") directory: there is the classical [fibonacci]("examples/fib/") program, which computes the fibonacci number for a given input number; the other examples (just called [test]("examples/test/")) is just a test project which will contain different things everytime I test something else.
+You can find some examples in the [examples](examples/) directory: there is the classical [fibonacci](examples/fib/) program, which computes the fibonacci number for a given input number; the other examples (just called [test](examples/test/)) is just a test project which will contain different things everytime I test something else.
 
 ## Usage
 
