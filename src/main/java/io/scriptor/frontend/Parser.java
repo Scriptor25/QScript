@@ -420,12 +420,16 @@ public class Parser {
     }
 
     private Statement nextStatement() throws IOException {
-        if (at("use")) {
-            nextUse();
-            return null;
-        }
         if (at("include")) {
             nextInclude();
+            return null;
+        }
+        if (at("macro")) {
+            nextMacro();
+            return null;
+        }
+        if (at("use")) {
+            nextUse();
             return null;
         }
 
@@ -440,16 +444,15 @@ public class Parser {
         if (at("while"))
             return nextWhile();
 
+        if (at(TokenType.ID)) {
+            final var name = token.value();
+            if (stack.peek().existsMacro(name)) {
+                skip();
+                return stack.peek().getMacro(name);
+            }
+        }
+
         return nextExpr(null);
-    }
-
-    private void nextUse() throws IOException {
-        expect("use");
-        final var id = expect(TokenType.ID).value();
-        expect("as");
-        final var type = nextType();
-
-        Type.useAs(stack.peek(), id, type);
     }
 
     private void nextInclude() throws IOException {
@@ -469,6 +472,23 @@ public class Parser {
         }
 
         parse(new ParserConfig(config, file, new FileInputStream(file)), parsed);
+    }
+
+    private void nextMacro() throws IOException {
+        expect("macro");
+        final var name = expect(TokenType.ID).value();
+        final var stmt = nextStatement();
+
+        stack.peek().putMacro(name, stmt);
+    }
+
+    private void nextUse() throws IOException {
+        expect("use");
+        final var id = expect(TokenType.ID).value();
+        expect("as");
+        final var type = nextType();
+
+        Type.useAs(stack.peek(), id, type);
     }
 
     private CompoundStatement nextCompound() throws IOException {
@@ -498,7 +518,7 @@ public class Parser {
         }
 
         if (nextIfAt("=")) {
-            final var init = nextBinary(type);
+            final var init = nextExpr(type);
             if (type == null)
                 type = init.getType();
             stack.peek().declareSymbol(type, name);
@@ -728,8 +748,17 @@ public class Parser {
         }
 
         if (at(TokenType.ID)) {
-            final var id = skip().value();
-            return SymbolExpression.create(loc, stack.peek(), id);
+            final var name = skip().value();
+            if (stack.peek().existsMacro(name)) {
+                return stack.peek().getMacro(name);
+            }
+
+            if (stack.peek().existsSymbol(name)) {
+                final var sym = stack.peek().getSymbol(name);
+                return SymbolExpression.create(loc, sym.type(), sym.name());
+            }
+
+            throw new QScriptException(loc, "no such macro or symbol with name '%s'", name);
         }
 
         if (at(TokenType.INT))

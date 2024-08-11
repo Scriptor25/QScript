@@ -8,6 +8,7 @@ import java.util.Map;
 
 import org.bytedeco.llvm.LLVM.LLVMContextRef;
 
+import io.scriptor.frontend.statement.Statement;
 import io.scriptor.type.Type;
 import io.scriptor.util.QScriptException;
 
@@ -19,6 +20,7 @@ public class Context {
 
     private final Map<String, Type> types;
     private final Map<String, Symbol> symbols = new HashMap<>();
+    private final Map<String, Statement> marcos = new HashMap<>();
 
     public Context() {
         this.llvm = LLVMContextCreate();
@@ -55,33 +57,68 @@ public class Context {
         new Type(this, "f64", Type.IS_FLOAT, 64);
 
         symbols.clear();
+        marcos.clear();
     }
 
-    public void putType(final String id, final Type type) {
-        types.put(id, type);
+    public void putType(final String name, final Type type) {
+        types.put(name, type);
     }
 
-    public boolean existsType(final String id) {
-        return types.containsKey(id);
+    public boolean existsType(final String name) {
+        return types.containsKey(name);
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends Type> T getType(final String id) {
-        if (!existsType(id))
-            throw new QScriptException("no such type with id '%s'", id);
-        return (T) types.get(id);
+    public <T extends Type> T getType(final String name) {
+        if (!existsType(name))
+            throw new QScriptException("no such type '%s'", name);
+        return (T) types.get(name);
     }
 
-    public Symbol declareSymbol(final Type type, final String id) {
-        return symbols.computeIfAbsent(id, key -> new Symbol(id, type));
+    public boolean existsSymbol(final String name) {
+        if (symbols.containsKey(name))
+            return true;
+        if (parent == null)
+            return false;
+        return true;
     }
 
-    public Symbol getSymbol(final SourceLocation location, final String id) {
-        if (!symbols.containsKey(id)) {
-            if (parent != null)
-                return parent.getSymbol(location, id);
-            throw new QScriptException(location, "undefined symbol '%s'", id);
-        }
-        return symbols.get(id);
+    public Symbol declareSymbol(final Type type, final String name) {
+        return symbols.computeIfAbsent(name, key -> new Symbol(name, type));
+    }
+
+    public Symbol getSymbol(final String name) {
+        if (symbols.containsKey(name))
+            return symbols.get(name);
+        if (parent == null)
+            throw new QScriptException("undefined symbol '%s'", name);
+        return parent.getSymbol(name);
+    }
+
+    public void putMacro(final String name, final Statement stmt) {
+        if (existsMacro(name))
+            System.err.printf(
+                    "warning: overriding macro '%s' at %s, first defined at %s\n",
+                    name,
+                    stmt.getLocation(),
+                    getMacro(name).getLocation());
+        marcos.put(name, stmt);
+    }
+
+    public boolean existsMacro(final String name) {
+        if (marcos.containsKey(name))
+            return true;
+        if (parent == null)
+            return false;
+        return parent.existsMacro(name);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <S extends Statement> S getMacro(final String name) {
+        if (marcos.containsKey(name))
+            return (S) marcos.get(name);
+        if (parent == null)
+            throw new QScriptException("undefined macro '%s'", name);
+        return parent.getMacro(name);
     }
 }
