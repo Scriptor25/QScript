@@ -1,7 +1,9 @@
 package io.scriptor.frontend;
 
+import static io.scriptor.util.Util.isBinDigit;
 import static io.scriptor.util.Util.isCompOP;
 import static io.scriptor.util.Util.isDecDigit;
+import static io.scriptor.util.Util.isHexDigit;
 import static io.scriptor.util.Util.isID;
 import static io.scriptor.util.Util.isOP;
 import static io.scriptor.util.Util.isOctDigit;
@@ -291,10 +293,18 @@ public class Parser {
                     return new Token(loc, TokenType.DECINT, "0");
 
                 case NUMBIN:
-                    break;
+                    if (isBinDigit(chr) || chr == 'u') {
+                        value.append((char) chr);
+                        break;
+                    }
+                    return new Token(loc, TokenType.BININT, value.toString());
 
                 case NUMOCT:
-                    break;
+                    if (isOctDigit(chr) || chr == 'u') {
+                        value.append((char) chr);
+                        break;
+                    }
+                    return new Token(loc, TokenType.OCTINT, value.toString());
 
                 case NUMDEC:
                     if (chr == '.') {
@@ -302,14 +312,18 @@ public class Parser {
                         value.append((char) chr);
                         break;
                     }
-                    if (isDecDigit(chr)) {
+                    if (isDecDigit(chr) || chr == 'u') {
                         value.append((char) chr);
                         break;
                     }
                     return new Token(loc, isfloat ? TokenType.FLOAT : TokenType.DECINT, value.toString());
 
                 case NUMHEX:
-                    break;
+                    if (isHexDigit(chr) || chr == 'u') {
+                        value.append((char) chr);
+                        break;
+                    }
+                    return new Token(loc, TokenType.HEXINT, value.toString());
 
                 case ID:
                     if (!isID(chr))
@@ -395,6 +409,14 @@ public class Parser {
         return tk;
     }
 
+    private boolean nextIfAt(final TokenType type) throws IOException {
+        if (at(type)) {
+            next();
+            return true;
+        }
+        return false;
+    }
+
     private boolean nextIfAt(final String value) throws IOException {
         if (at(value)) {
             next();
@@ -414,6 +436,7 @@ public class Parser {
             final List<Type> elements = new ArrayList<>();
             while (!nextIfAt("}")) {
                 final var type = nextType();
+                nextIfAt(TokenType.ID);
                 elements.add(type);
                 if (!at("}"))
                     expect(",");
@@ -425,8 +448,8 @@ public class Parser {
         if (unsafe && !Type.exists(stack.peek(), base))
             return null;
 
-        skip();
-        return nextType(Type.get(stack.peek(), base));
+        final var loc = skip().location();
+        return nextType(Type.get(loc, stack.peek(), base));
     }
 
     private Type nextType(final Type base) throws IOException {
@@ -452,6 +475,7 @@ public class Parser {
                 }
 
                 final var arg = nextType();
+                nextIfAt(TokenType.ID);
                 args.add(arg);
                 if (!at(")"))
                     expect(",");
@@ -490,8 +514,8 @@ public class Parser {
         if (at(TokenType.ID)) {
             final var name = token.value();
             if (stack.peek().existsMacro(name)) {
-                skip();
-                return stack.peek().getMacro(name);
+                final var loc = skip().location();
+                return stack.peek().getMacro(loc, name);
             }
         }
 
@@ -775,7 +799,7 @@ public class Parser {
                     return type.getBase();
                 if (expected instanceof StructType type)
                     return type.getElement(i);
-                throw new QScriptException();
+                throw new QScriptException(loc, "not a suitable type");
             };
 
             final List<Expression> args = new ArrayList<>();
@@ -793,11 +817,11 @@ public class Parser {
         if (at(TokenType.ID)) {
             final var name = skip().value();
             if (stack.peek().existsMacro(name)) {
-                return stack.peek().getMacro(name);
+                return stack.peek().getMacro(loc, name);
             }
 
             if (stack.peek().existsSymbol(name)) {
-                final var sym = stack.peek().getSymbol(name);
+                final var sym = stack.peek().getSymbol(loc, name);
                 return SymbolExpression.create(loc, sym.type(), sym.name());
             }
 

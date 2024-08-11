@@ -22,16 +22,16 @@ public class Type {
         return ctx.existsType(id);
     }
 
-    public static <T extends Type> T get(final Context ctx, final String id) {
-        return ctx.getType(id);
+    public static <T extends Type> T get(final SourceLocation sl, final Context ctx, final String id) {
+        return ctx.getType(sl, id);
     }
 
     public static Type getVoid(final Context ctx) {
-        return get(ctx, "void");
+        return get(null, ctx, "void");
     }
 
-    public static Type getIntN(final Context ctx, final int size) {
-        return get(ctx, switch (size) {
+    public static Type getIntN(final SourceLocation sl, final Context ctx, final int size) {
+        return get(sl, ctx, switch (size) {
             case 1 -> "i1";
             case 8 -> "i8";
             case 16 -> "i16";
@@ -41,8 +41,8 @@ public class Type {
         });
     }
 
-    public static Type getFltN(final Context ctx, final int size) {
-        return get(ctx, switch (size) {
+    public static Type getFltN(final SourceLocation sl, final Context ctx, final int size) {
+        return get(sl, ctx, switch (size) {
             case 32 -> "f32";
             case 64 -> "f64";
             default -> null;
@@ -50,31 +50,31 @@ public class Type {
     }
 
     public static Type getInt1(final Context ctx) {
-        return get(ctx, "i1");
+        return get(null, ctx, "i1");
     }
 
     public static Type getInt8(final Context ctx) {
-        return get(ctx, "i8");
+        return get(null, ctx, "i8");
     }
 
     public static Type getInt16(final Context ctx) {
-        return get(ctx, "i16");
+        return get(null, ctx, "i16");
     }
 
     public static Type getInt32(final Context ctx) {
-        return get(ctx, "i32");
+        return get(null, ctx, "i32");
     }
 
     public static Type getInt64(final Context ctx) {
-        return get(ctx, "i64");
+        return get(null, ctx, "i64");
     }
 
     public static Type getFlt32(final Context ctx) {
-        return get(ctx, "f32");
+        return get(null, ctx, "f32");
     }
 
     public static Type getFlt64(final Context ctx) {
-        return get(ctx, "f64");
+        return get(null, ctx, "f64");
     }
 
     public static Type getVoidPtr(final Context ctx) {
@@ -85,7 +85,7 @@ public class Type {
         return PointerType.get(getInt8(ctx));
     }
 
-    public static Type getHigherOrder(final SourceLocation location, final Type a, final Type b) {
+    public static Type getHigherOrder(final SourceLocation sl, final Type a, final Type b) {
         if (a == b)
             return a;
 
@@ -125,12 +125,12 @@ public class Type {
                 return b;
         }
 
-        throw new QScriptException(location, "cannot determine higher order type from %s and %s", a, b);
+        throw new QScriptException(sl, "cannot determine higher order type from %s and %s", a, b);
     }
 
-    public static Type getNative(final Context ctx, final Class<?> clazz) {
+    public static Type getNative(final SourceLocation sl, final Context ctx, final Class<?> clazz) {
         if (clazz.isArray()) {
-            final var base = getNative(ctx, clazz.getComponentType());
+            final var base = getNative(sl, ctx, clazz.getComponentType());
             return PointerType.get(base);
         }
 
@@ -154,7 +154,7 @@ public class Type {
         if (CharSequence.class.isAssignableFrom(clazz))
             return Type.getInt8Ptr(ctx);
 
-        return Type.get(ctx, clazz.getSimpleName());
+        return Type.get(sl, ctx, clazz.getSimpleName());
     }
 
     private final Context ctx;

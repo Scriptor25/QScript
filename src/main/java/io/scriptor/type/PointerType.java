@@ -8,7 +8,7 @@ public class PointerType extends Type {
         final var ctx = base.getCtx();
         final var id = base.getId() + '*';
         if (Type.exists(ctx, id))
-            return Type.get(ctx, id);
+            return Type.get(null, ctx, id);
 
         return new PointerType(ctx, id, base);
     }

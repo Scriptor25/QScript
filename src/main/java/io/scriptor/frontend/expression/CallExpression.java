@@ -7,10 +7,10 @@ public class CallExpression extends Expression {
 
     public static CallExpression create(
             final SourceLocation location,
-            final Type result,
+            final Type type,
             final Expression callee,
             final Expression[] args) {
-        return new CallExpression(location, result, callee, args);
+        return new CallExpression(location, type, callee, args);
     }
 
     private final Expression callee;
@@ -18,10 +18,10 @@ public class CallExpression extends Expression {
 
     private CallExpression(
             final SourceLocation location,
-            final Type result,
+            final Type type,
             final Expression callee,
             final Expression[] args) {
-        super(location, result);
+        super(location, type);
         this.callee = callee;
         this.args = args;
     }

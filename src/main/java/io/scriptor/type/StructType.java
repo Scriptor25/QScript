@@ -25,7 +25,7 @@ public class StructType extends Type {
     public static StructType get(final Context ctx, final Type... elements) {
         final var id = makeId(elements);
         if (Type.exists(ctx, id))
-            return Type.get(ctx, id);
+            return Type.get(null, ctx, id);
 
         int size = 0;
         for (final var element : elements)

@@ -33,7 +33,7 @@ public class FunctionType extends Type {
         final var ctx = result.getCtx();
         final var id = makeId(result, vararg, args);
         if (Type.exists(ctx, id))
-            return Type.get(ctx, id);
+            return Type.get(null, ctx, id);
 
         return new FunctionType(ctx, id, result, vararg, args);
     }

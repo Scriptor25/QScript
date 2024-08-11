@@ -8,7 +8,7 @@ public class ArrayType extends Type {
         final var ctx = base.getCtx();
         final var id = "%s[%d]".formatted(base, length);
         if (Type.exists(ctx, id))
-            return Type.get(ctx, id);
+            return Type.get(null, ctx, id);
 
         return new ArrayType(ctx, id, base, length);
     }

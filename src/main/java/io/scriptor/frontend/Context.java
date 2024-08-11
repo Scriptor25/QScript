@@ -69,9 +69,9 @@ public class Context {
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends Type> T getType(final String name) {
+    public <T extends Type> T getType(final SourceLocation sl, final String name) {
         if (!existsType(name))
-            throw new QScriptException("no such type '%s'", name);
+            throw new QScriptException(sl, "no such type '%s'", name);
         return (T) types.get(name);
     }
 
@@ -80,19 +80,19 @@ public class Context {
             return true;
         if (parent == null)
             return false;
-        return true;
+        return parent.existsSymbol(name);
     }
 
     public Symbol declareSymbol(final Type type, final String name) {
         return symbols.computeIfAbsent(name, key -> new Symbol(name, type));
     }
 
-    public Symbol getSymbol(final String name) {
+    public Symbol getSymbol(final SourceLocation sl, final String name) {
         if (symbols.containsKey(name))
             return symbols.get(name);
         if (parent == null)
-            throw new QScriptException("undefined symbol '%s'", name);
-        return parent.getSymbol(name);
+            throw new QScriptException(sl, "undefined symbol '%s'", name);
+        return parent.getSymbol(sl, name);
     }
 
     public void putMacro(final String name, final Statement stmt) {
@@ -101,7 +101,7 @@ public class Context {
                     "warning: overriding macro '%s' at %s, first defined at %s\n",
                     name,
                     stmt.getLocation(),
-                    getMacro(name).getLocation());
+                    getMacro(stmt.getLocation(), name).getLocation());
         marcos.put(name, stmt);
     }
 
@@ -114,11 +114,11 @@ public class Context {
     }
 
     @SuppressWarnings("unchecked")
-    public <S extends Statement> S getMacro(final String name) {
+    public <S extends Statement> S getMacro(final SourceLocation sl, final String name) {
         if (marcos.containsKey(name))
             return (S) marcos.get(name);
         if (parent == null)
-            throw new QScriptException("undefined macro '%s'", name);
-        return parent.getMacro(name);
+            throw new QScriptException(sl, "undefined macro '%s'", name);
+        return parent.getMacro(sl, name);
     }
 }

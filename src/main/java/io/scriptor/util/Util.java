@@ -4,6 +4,10 @@ import io.scriptor.type.Type;
 
 public class Util {
 
+    public static boolean isBinDigit(final int c) {
+        return 0x30 <= c && c <= 0x31;
+    }
+
     public static boolean isOctDigit(final int c) {
         return 0x30 <= c && c <= 0x37;
     }

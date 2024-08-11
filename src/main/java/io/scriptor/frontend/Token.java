@@ -12,17 +12,26 @@ public record Token(SourceLocation location, TokenType type, String value) {
     }
 
     public long longValue() {
-        return switch (type) {
-            case BININT -> Long.parseLong(value, 2);
-            case OCTINT -> Long.parseLong(value, 8);
-            case DECINT -> Long.parseLong(value, 10);
-            case HEXINT -> Long.parseLong(value, 16);
+        var val = value;
+        final var u = val.endsWith("u");
+        if (u)
+            val = val.substring(0, val.length() - 1);
+
+        final var radix = switch (type) {
+            case BININT -> 2;
+            case OCTINT -> 8;
+            case DECINT -> 10;
+            case HEXINT -> 16;
             default -> throw new QScriptException(
                     location,
                     "trying to get integer value from non-integer token: '%s' (%s)",
                     value,
                     type);
         };
+
+        return u
+                ? Long.parseUnsignedLong(val, radix)
+                : Long.parseLong(value, radix);
     }
 
     public double doubleValue() {

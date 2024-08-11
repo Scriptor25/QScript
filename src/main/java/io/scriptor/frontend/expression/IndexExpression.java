@@ -18,7 +18,7 @@ public class IndexExpression extends Expression {
         else if (ptr.getType() instanceof ArrayType type)
             base = type.getBase();
         else
-            throw new QScriptException();
+            throw new QScriptException(location, "not a suitable type");
 
         return new IndexExpression(location, base, ptr, index);
     }
