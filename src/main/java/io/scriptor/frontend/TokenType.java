@@ -1,7 +1,7 @@
 package io.scriptor.frontend;
 
 public enum TokenType {
-    ID,
+    NAME,
     BININT,
     OCTINT,
     DECINT,

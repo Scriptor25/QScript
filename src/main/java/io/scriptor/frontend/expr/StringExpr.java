@@ -1,19 +1,19 @@
-package io.scriptor.frontend.expression;
+package io.scriptor.frontend.expr;
 
 import static io.scriptor.util.Util.unescape;
 
 import io.scriptor.frontend.SourceLocation;
 import io.scriptor.type.Type;
 
-public class StringExpression extends Expression {
+public class StringExpr extends Expr {
 
-    public static StringExpression create(final SourceLocation sl, final Type ty, final String val) {
-        return new StringExpression(sl, ty, val);
+    public static StringExpr create(final SourceLocation sl, final Type ty, final String val) {
+        return new StringExpr(sl, ty, val);
     }
 
     private final String val;
 
-    private StringExpression(final SourceLocation sl, final Type ty, final String val) {
+    private StringExpr(final SourceLocation sl, final Type ty, final String val) {
         super(sl, ty);
         this.val = val;
     }

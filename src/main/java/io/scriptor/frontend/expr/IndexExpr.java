@@ -1,4 +1,4 @@
-package io.scriptor.frontend.expression;
+package io.scriptor.frontend.expr;
 
 import io.scriptor.frontend.SourceLocation;
 import io.scriptor.type.ArrayType;
@@ -6,12 +6,12 @@ import io.scriptor.type.PointerType;
 import io.scriptor.type.Type;
 import io.scriptor.util.QScriptException;
 
-public class IndexExpression extends Expression {
+public class IndexExpr extends Expr {
 
-    public static IndexExpression create(
+    public static IndexExpr create(
             final SourceLocation sl,
-            final Expression ptr,
-            final Expression idx) {
+            final Expr ptr,
+            final Expr idx) {
         final Type ty;
         if (ptr.getTy() instanceof PointerType type)
             ty = type.getBase();
@@ -20,27 +20,27 @@ public class IndexExpression extends Expression {
         else
             throw new QScriptException(sl, "not a suitable type");
 
-        return new IndexExpression(sl, ty, ptr, idx);
+        return new IndexExpr(sl, ty, ptr, idx);
     }
 
-    private final Expression ptr;
-    private final Expression idx;
+    private final Expr ptr;
+    private final Expr idx;
 
-    private IndexExpression(
+    private IndexExpr(
             final SourceLocation sl,
             final Type ty,
-            final Expression ptr,
-            final Expression idx) {
+            final Expr ptr,
+            final Expr idx) {
         super(sl, ty);
         this.ptr = ptr;
         this.idx = idx;
     }
 
-    public Expression getPtr() {
+    public Expr getPtr() {
         return ptr;
     }
 
-    public Expression getIdx() {
+    public Expr getIdx() {
         return idx;
     }
 

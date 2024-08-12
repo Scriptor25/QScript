@@ -83,7 +83,7 @@ public class Util {
     }
 
     public static Type getUnOpResult(final String op, final Type value) {
-        final var state = value.getState();
+        final var state = value.getFrame();
         return switch (op) {
             case "++", "--", "-", "~" -> value;
             case "!" -> Type.getInt1(state);

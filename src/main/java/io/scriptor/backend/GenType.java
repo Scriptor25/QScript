@@ -17,10 +17,6 @@ import org.bytedeco.javacpp.PointerPointer;
 import org.bytedeco.llvm.LLVM.LLVMTypeRef;
 
 import io.scriptor.frontend.SourceLocation;
-import io.scriptor.type.ArrayType;
-import io.scriptor.type.FunctionType;
-import io.scriptor.type.PointerType;
-import io.scriptor.type.StructType;
 import io.scriptor.type.Type;
 import io.scriptor.util.QScriptException;
 
@@ -31,7 +27,7 @@ public class GenType {
             throw new QScriptException(sl, "type must not be null");
 
         if (type.isFunction()) {
-            final var t = (FunctionType) type;
+            final var t = type.asFunction();
             final var rt = genType(sl, t.getResult());
             final var pt = new PointerPointer<LLVMTypeRef>(t.getArgCount());
             for (int i = 0; i < t.getArgCount(); ++i)
@@ -40,18 +36,18 @@ public class GenType {
         }
 
         if (type.isStruct()) {
-            final var t = (StructType) type;
+            final var t = type.asStruct();
             final var et = new PointerPointer<LLVMTypeRef>(t.getElementCount());
             for (int i = 0; i < t.getElementCount(); ++i)
                 et.put(i, genType(sl, t.getElement(i)));
             return LLVMStructTypeInContext(Builder.getContext(), et, t.getElementCount(), 0);
         }
 
-        if (type.isPtr())
-            return LLVMPointerType(genType(sl, ((PointerType) type).getBase()), 0);
+        if (type.isPointer())
+            return LLVMPointerType(genType(sl, type.asPointer().getBase()), 0);
 
         if (type.isArray())
-            return LLVMArrayType2(genType(sl, ((ArrayType) type).getBase()), ((ArrayType) type).getLength());
+            return LLVMArrayType2(genType(sl, type.asArray().getBase()), type.asArray().getLength());
 
         if (type.isVoid())
             return LLVMVoidTypeInContext(Builder.getContext());

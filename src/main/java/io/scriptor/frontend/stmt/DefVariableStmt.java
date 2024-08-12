@@ -1,35 +1,35 @@
-package io.scriptor.frontend.statement;
+package io.scriptor.frontend.stmt;
 
 import io.scriptor.frontend.SourceLocation;
-import io.scriptor.frontend.expression.Expression;
+import io.scriptor.frontend.expr.Expr;
 import io.scriptor.type.Type;
 
-public class DefVarStatement extends Statement {
+public class DefVariableStmt extends Stmt {
 
-    public static DefVarStatement create(
+    public static DefVariableStmt create(
             final SourceLocation sl,
             final Type ty,
             final String name) {
-        return new DefVarStatement(sl, ty, name, null);
+        return new DefVariableStmt(sl, ty, name, null);
     }
 
-    public static DefVarStatement create(
+    public static DefVariableStmt create(
             final SourceLocation sl,
             final Type ty,
             final String name,
-            final Expression init) {
-        return new DefVarStatement(sl, ty, name, init);
+            final Expr init) {
+        return new DefVariableStmt(sl, ty, name, init);
     }
 
     private final Type ty;
     private final String name;
-    private final Expression init;
+    private final Expr init;
 
-    private DefVarStatement(
+    private DefVariableStmt(
             final SourceLocation sl,
             final Type ty,
             final String name,
-            final Expression init) {
+            final Expr init) {
         super(sl);
         this.ty = ty;
         this.name = name;
@@ -44,7 +44,7 @@ public class DefVarStatement extends Statement {
         return name;
     }
 
-    public Expression getInit() {
+    public Expr getInit() {
         return init;
     }
 

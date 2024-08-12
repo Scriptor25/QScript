@@ -1,18 +1,18 @@
-package io.scriptor.frontend.expression;
+package io.scriptor.frontend.expr;
 
 import io.scriptor.frontend.SourceLocation;
 import io.scriptor.type.Type;
 import io.scriptor.util.Util;
 
-public class CharExpression extends Expression {
+public class CharExpr extends Expr {
 
-    public static CharExpression create(final SourceLocation sl, final Type ty, final char val) {
-        return new CharExpression(sl, ty, val);
+    public static CharExpr create(final SourceLocation sl, final Type ty, final char val) {
+        return new CharExpr(sl, ty, val);
     }
 
     private final char val;
 
-    private CharExpression(final SourceLocation sl, final Type ty, final char val) {
+    private CharExpr(final SourceLocation sl, final Type ty, final char val) {
         super(sl, ty);
         this.val = val;
     }

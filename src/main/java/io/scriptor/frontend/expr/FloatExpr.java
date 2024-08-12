@@ -1,17 +1,17 @@
-package io.scriptor.frontend.expression;
+package io.scriptor.frontend.expr;
 
 import io.scriptor.frontend.SourceLocation;
 import io.scriptor.type.Type;
 
-public class FloatExpression extends Expression {
+public class FloatExpr extends Expr {
 
-    public static FloatExpression create(final SourceLocation sl, final Type ty, final double val) {
-        return new FloatExpression(sl, ty, val);
+    public static FloatExpr create(final SourceLocation sl, final Type ty, final double val) {
+        return new FloatExpr(sl, ty, val);
     }
 
     private final double val;
 
-    private FloatExpression(final SourceLocation sl, final Type ty, final double val) {
+    private FloatExpr(final SourceLocation sl, final Type ty, final double val) {
         super(sl, ty);
         this.val = val;
     }

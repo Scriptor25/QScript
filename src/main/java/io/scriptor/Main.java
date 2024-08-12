@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.scriptor.backend.Builder;
-import io.scriptor.frontend.State;
+import io.scriptor.frontend.StackFrame;
 import io.scriptor.frontend.Parser;
 import io.scriptor.frontend.ParserConfig;
 
@@ -22,12 +22,12 @@ public class Main {
 
         Builder main = null;
         for (int i = 0; i < inputFilenames.length; ++i) {
-            final var ctx = new State();
+            final var frame = new StackFrame();
             final var filename = inputFilenames[i];
-            final var builder = new Builder(ctx, filename);
+            final var builder = new Builder(frame, filename);
 
             final var file = new File(filename);
-            final var config = new ParserConfig(ctx, builder::genIR, file, includeDirs, new FileInputStream(file));
+            final var config = new ParserConfig(frame, builder::genIR, file, includeDirs, new FileInputStream(file));
             Parser.parse(config);
 
             if (i == 0) {

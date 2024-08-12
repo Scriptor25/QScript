@@ -1,17 +1,17 @@
-package io.scriptor.frontend.expression;
+package io.scriptor.frontend.expr;
 
 import io.scriptor.frontend.SourceLocation;
 import io.scriptor.type.Type;
 
-public class IntExpression extends Expression {
+public class IntExpr extends Expr {
 
-    public static IntExpression create(final SourceLocation sl, final Type ty, final long val) {
-        return new IntExpression(sl, ty, val);
+    public static IntExpr create(final SourceLocation sl, final Type ty, final long val) {
+        return new IntExpr(sl, ty, val);
     }
 
     private final long val;
 
-    private IntExpression(final SourceLocation sl, final Type ty, final long val) {
+    private IntExpr(final SourceLocation sl, final Type ty, final long val) {
         super(sl, ty);
         this.val = val;
     }

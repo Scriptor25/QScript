@@ -1,11 +1,11 @@
-package io.scriptor.frontend.statement;
+package io.scriptor.frontend.stmt;
 
 import io.scriptor.frontend.SourceLocation;
 
-public class CompoundStatement extends Statement {
+public class CompoundStmt extends Stmt {
 
-    public static CompoundStatement create(final SourceLocation sl, final Statement[] body) {
-        return new CompoundStatement(sl, body);
+    public static CompoundStmt create(final SourceLocation sl, final Stmt[] body) {
+        return new CompoundStmt(sl, body);
     }
 
     private static int depth = 0;
@@ -27,9 +27,9 @@ public class CompoundStatement extends Statement {
         return space();
     }
 
-    private final Statement[] body;
+    private final Stmt[] body;
 
-    private CompoundStatement(final SourceLocation sl, final Statement[] body) {
+    private CompoundStmt(final SourceLocation sl, final Stmt[] body) {
         super(sl);
         this.body = body;
     }
@@ -38,7 +38,7 @@ public class CompoundStatement extends Statement {
         return body.length;
     }
 
-    public Statement get(final int index) {
+    public Stmt get(final int index) {
         return body[index];
     }
 

@@ -1,17 +1,17 @@
-package io.scriptor.frontend.expression;
+package io.scriptor.frontend.expr;
 
 import io.scriptor.frontend.SourceLocation;
 import io.scriptor.type.Type;
 
-public class InitListExpression extends Expression {
+public class InitializerExpr extends Expr {
 
-    public static InitListExpression create(final SourceLocation sl, final Type ty, final Expression... args) {
-        return new InitListExpression(sl, ty, args);
+    public static InitializerExpr create(final SourceLocation sl, final Type ty, final Expr... args) {
+        return new InitializerExpr(sl, ty, args);
     }
 
-    private final Expression[] args;
+    private final Expr[] args;
 
-    private InitListExpression(final SourceLocation sl, final Type ty, final Expression[] args) {
+    private InitializerExpr(final SourceLocation sl, final Type ty, final Expr[] args) {
         super(sl, ty);
         this.args = args;
     }
@@ -20,7 +20,7 @@ public class InitListExpression extends Expression {
         return args.length;
     }
 
-    public Expression getArg(final int i) {
+    public Expr getArg(final int i) {
         return args[i];
     }
 

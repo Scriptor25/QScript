@@ -1,6 +1,6 @@
 package io.scriptor.type;
 
-import io.scriptor.frontend.State;
+import io.scriptor.frontend.StackFrame;
 
 public class StructType extends Type {
 
@@ -22,22 +22,22 @@ public class StructType extends Type {
                 .toString();
     }
 
-    public static StructType get(final State state, final Type... elements) {
+    public static StructType get(final StackFrame frame, final Type... elements) {
         final var id = makeId(elements);
-        if (Type.exists(state, id))
-            return Type.get(null, state, id);
+        if (Type.exists(frame, id))
+            return Type.get(null, frame, id);
 
         int size = 0;
         for (final var element : elements)
             size += element.getSize();
 
-        return new StructType(state, id, size, elements);
+        return new StructType(frame, id, size, elements);
     }
 
     private final Type[] elements;
 
-    protected StructType(final State state, final String id, final int size, final Type[] elements) {
-        super(state, id, IS_STRUCT, size);
+    protected StructType(final StackFrame frame, final String id, final int size, final Type[] elements) {
+        super(frame, id, IS_STRUCT, size);
         this.elements = elements;
     }
 

@@ -1,32 +1,32 @@
-package io.scriptor.frontend.expression;
+package io.scriptor.frontend.expr;
 
 import io.scriptor.frontend.SourceLocation;
 import io.scriptor.type.Type;
 
-public class CallExpression extends Expression {
+public class CallExpr extends Expr {
 
-    public static CallExpression create(
+    public static CallExpr create(
             final SourceLocation sl,
             final Type ty,
-            final Expression callee,
-            final Expression[] args) {
-        return new CallExpression(sl, ty, callee, args);
+            final Expr callee,
+            final Expr[] args) {
+        return new CallExpr(sl, ty, callee, args);
     }
 
-    private final Expression callee;
-    private final Expression[] args;
+    private final Expr callee;
+    private final Expr[] args;
 
-    private CallExpression(
+    private CallExpr(
             final SourceLocation sl,
             final Type ty,
-            final Expression callee,
-            final Expression[] args) {
+            final Expr callee,
+            final Expr[] args) {
         super(sl, ty);
         this.callee = callee;
         this.args = args;
     }
 
-    public Expression getCallee() {
+    public Expr getCallee() {
         return callee;
     }
 
@@ -34,7 +34,7 @@ public class CallExpression extends Expression {
         return args.length;
     }
 
-    public Expression getArg(final int index) {
+    public Expr getArg(final int index) {
         return args[index];
     }
 

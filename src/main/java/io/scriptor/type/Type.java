@@ -1,7 +1,7 @@
 package io.scriptor.type;
 
 import io.scriptor.frontend.SourceLocation;
-import io.scriptor.frontend.State;
+import io.scriptor.frontend.StackFrame;
 import io.scriptor.util.QScriptException;
 
 public class Type {
@@ -14,24 +14,24 @@ public class Type {
     public static final int IS_STRUCT = 32;
     public static final int IS_ARRAY = 64;
 
-    public static void useAs(final State state, final String id, final Type type) {
-        state.putType(id, type);
+    public static void useAs(final StackFrame frame, final String id, final Type type) {
+        frame.putType(id, type);
     }
 
-    public static boolean exists(final State state, final String id) {
-        return state.existsType(id);
+    public static boolean exists(final StackFrame frame, final String id) {
+        return frame.existsType(id);
     }
 
-    public static <T extends Type> T get(final SourceLocation sl, final State state, final String id) {
-        return state.getType(sl, id);
+    public static <T extends Type> T get(final SourceLocation sl, final StackFrame frame, final String id) {
+        return frame.getType(sl, id);
     }
 
-    public static Type getVoid(final State state) {
-        return get(null, state, "void");
+    public static Type getVoid(final StackFrame frame) {
+        return get(null, frame, "void");
     }
 
-    public static Type getIntN(final SourceLocation sl, final State state, final int size) {
-        return get(sl, state, switch (size) {
+    public static Type getIntN(final SourceLocation sl, final StackFrame frame, final int size) {
+        return get(sl, frame, switch (size) {
             case 1 -> "i1";
             case 8 -> "i8";
             case 16 -> "i16";
@@ -41,48 +41,48 @@ public class Type {
         });
     }
 
-    public static Type getFltN(final SourceLocation sl, final State state, final int size) {
-        return get(sl, state, switch (size) {
+    public static Type getFltN(final SourceLocation sl, final StackFrame frame, final int size) {
+        return get(sl, frame, switch (size) {
             case 32 -> "f32";
             case 64 -> "f64";
             default -> null;
         });
     }
 
-    public static Type getInt1(final State state) {
-        return get(null, state, "i1");
+    public static Type getInt1(final StackFrame frame) {
+        return get(null, frame, "i1");
     }
 
-    public static Type getInt8(final State state) {
-        return get(null, state, "i8");
+    public static Type getInt8(final StackFrame frame) {
+        return get(null, frame, "i8");
     }
 
-    public static Type getInt16(final State state) {
-        return get(null, state, "i16");
+    public static Type getInt16(final StackFrame frame) {
+        return get(null, frame, "i16");
     }
 
-    public static Type getInt32(final State state) {
-        return get(null, state, "i32");
+    public static Type getInt32(final StackFrame frame) {
+        return get(null, frame, "i32");
     }
 
-    public static Type getInt64(final State state) {
-        return get(null, state, "i64");
+    public static Type getInt64(final StackFrame frame) {
+        return get(null, frame, "i64");
     }
 
-    public static Type getFlt32(final State state) {
-        return get(null, state, "f32");
+    public static Type getFlt32(final StackFrame frame) {
+        return get(null, frame, "f32");
     }
 
-    public static Type getFlt64(final State state) {
-        return get(null, state, "f64");
+    public static Type getFlt64(final StackFrame frame) {
+        return get(null, frame, "f64");
     }
 
-    public static Type getVoidPtr(final State state) {
-        return PointerType.get(getVoid(state));
+    public static Type getVoidPtr(final StackFrame frame) {
+        return PointerType.get(getVoid(frame));
     }
 
-    public static Type getInt8Ptr(final State state) {
-        return PointerType.get(getInt8(state));
+    public static Type getInt8Ptr(final StackFrame frame) {
+        return PointerType.get(getInt8(frame));
     }
 
     public static Type getHigherOrder(final SourceLocation sl, final Type a, final Type b) {
@@ -99,7 +99,7 @@ public class Type {
             if (b.isFlt())
                 return b;
 
-            if (b.isPtr())
+            if (b.isPointer())
                 return a;
         }
 
@@ -113,11 +113,11 @@ public class Type {
                 return b;
             }
 
-            if (b.isPtr())
+            if (b.isPointer())
                 return a;
         }
 
-        if (a.isPtr()) {
+        if (a.isPointer()) {
             if (b.isInt())
                 return b;
 
@@ -128,43 +128,43 @@ public class Type {
         throw new QScriptException(sl, "cannot determine higher order type from %s and %s", a, b);
     }
 
-    public static Type getNative(final SourceLocation sl, final State state, final Class<?> clazz) {
+    public static Type getNative(final SourceLocation sl, final StackFrame frame, final Class<?> clazz) {
         if (clazz.isArray()) {
-            final var base = getNative(sl, state, clazz.getComponentType());
+            final var base = getNative(sl, frame, clazz.getComponentType());
             return PointerType.get(base);
         }
 
         if (clazz == Void.class || clazz == void.class)
-            return Type.getVoid(state);
+            return Type.getVoid(frame);
         if (clazz == Boolean.class || clazz == boolean.class)
-            return Type.getInt1(state);
+            return Type.getInt1(frame);
         if (clazz == Byte.class || clazz == byte.class)
-            return Type.getInt8(state);
+            return Type.getInt8(frame);
         if (clazz == Short.class || clazz == short.class)
-            return Type.getInt16(state);
+            return Type.getInt16(frame);
         if (clazz == Integer.class || clazz == int.class)
-            return Type.getInt32(state);
+            return Type.getInt32(frame);
         if (clazz == Long.class || clazz == long.class)
-            return Type.getInt64(state);
+            return Type.getInt64(frame);
         if (clazz == Float.class || clazz == float.class)
-            return Type.getFlt32(state);
+            return Type.getFlt32(frame);
         if (clazz == Double.class || clazz == double.class)
-            return Type.getFlt64(state);
+            return Type.getFlt64(frame);
 
         if (CharSequence.class.isAssignableFrom(clazz))
-            return Type.getInt8Ptr(state);
+            return Type.getInt8Ptr(frame);
 
-        return Type.get(sl, state, clazz.getSimpleName());
+        return Type.get(sl, frame, clazz.getSimpleName());
     }
 
-    private final State state;
+    private final StackFrame frame;
     private final String id;
     private final int flags;
     private final long size;
 
-    public Type(final State state, final String id, final int flags, final long size) {
-        state.putType(id, this);
-        this.state = state;
+    public Type(final StackFrame frame, final String id, final int flags, final long size) {
+        frame.putType(id, this);
+        this.frame = frame;
         this.id = id;
         this.flags = flags;
         this.size = size;
@@ -175,8 +175,8 @@ public class Type {
         return id;
     }
 
-    public State getState() {
-        return state;
+    public StackFrame getFrame() {
+        return frame;
     }
 
     public String getId() {
@@ -239,7 +239,7 @@ public class Type {
         return isFlt(64);
     }
 
-    public boolean isPtr() {
+    public boolean isPointer() {
         return (flags & IS_POINTER) != 0;
     }
 
@@ -253,5 +253,29 @@ public class Type {
 
     public boolean isArray() {
         return (flags & IS_ARRAY) != 0;
+    }
+
+    public PointerType asPointer() {
+        if (!isPointer())
+            return null;
+        return (PointerType) this;
+    }
+
+    public FunctionType asFunction() {
+        if (!isFunction())
+            return null;
+        return (FunctionType) this;
+    }
+
+    public StructType asStruct() {
+        if (!isStruct())
+            return null;
+        return (StructType) this;
+    }
+
+    public ArrayType asArray() {
+        if (!isArray())
+            return null;
+        return (ArrayType) this;
     }
 }

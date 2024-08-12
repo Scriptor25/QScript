@@ -3,20 +3,20 @@ package io.scriptor.frontend;
 import java.util.HashMap;
 import java.util.Map;
 
-import io.scriptor.frontend.statement.Statement;
+import io.scriptor.frontend.stmt.Stmt;
 import io.scriptor.type.Type;
 import io.scriptor.util.QScriptException;
 
-public class State {
+public class StackFrame {
 
-    private final State global;
-    private final State parent;
+    private final StackFrame global;
+    private final StackFrame parent;
 
     private final Map<String, Type> types;
-    private final Map<String, Symbol> symbols = new HashMap<>();
-    private final Map<String, Statement> marcos = new HashMap<>();
+    private final Map<String, Stmt> marcos = new HashMap<>();
+    private final Map<String, Type> symbols = new HashMap<>();
 
-    public State() {
+    public StackFrame() {
         this.global = this;
         this.parent = null;
         this.types = new HashMap<>();
@@ -31,13 +31,13 @@ public class State {
         new Type(this, "f64", Type.IS_FLOAT, 64);
     }
 
-    public State(final State parent) {
+    public StackFrame(final StackFrame parent) {
         this.global = parent.global;
         this.parent = parent;
         this.types = parent.types;
     }
 
-    public State getParent() {
+    public StackFrame getParent() {
         return parent;
     }
 
@@ -56,27 +56,7 @@ public class State {
         return (T) types.get(name);
     }
 
-    public boolean existsSymbol(final String name) {
-        if (symbols.containsKey(name))
-            return true;
-        if (parent == null)
-            return false;
-        return parent.existsSymbol(name);
-    }
-
-    public Symbol declareSymbol(final Type type, final String name) {
-        return symbols.computeIfAbsent(name, key -> new Symbol(name, type));
-    }
-
-    public Symbol getSymbol(final SourceLocation sl, final String name) {
-        if (symbols.containsKey(name))
-            return symbols.get(name);
-        if (parent == null)
-            throw new QScriptException(sl, "undefined symbol '%s'", name);
-        return parent.getSymbol(sl, name);
-    }
-
-    public void putMacro(final String name, final Statement stmt) {
+    public void putMacro(final String name, final Stmt stmt) {
         if (existsMacro(name))
             System.err.printf(
                     "warning: overriding macro '%s' at %s, first defined at %s\n",
@@ -95,11 +75,31 @@ public class State {
     }
 
     @SuppressWarnings("unchecked")
-    public <S extends Statement> S getMacro(final SourceLocation sl, final String name) {
+    public <S extends Stmt> S getMacro(final SourceLocation sl, final String name) {
         if (marcos.containsKey(name))
             return (S) marcos.get(name);
         if (parent == null)
             throw new QScriptException(sl, "undefined macro '%s'", name);
         return parent.getMacro(sl, name);
+    }
+
+    public boolean existsSymbol(final String name) {
+        if (symbols.containsKey(name))
+            return true;
+        if (parent == null)
+            return false;
+        return parent.existsSymbol(name);
+    }
+
+    public Type declareSymbol(final String name, final Type ty) {
+        return symbols.computeIfAbsent(name, key -> ty);
+    }
+
+    public Type getSymbol(final SourceLocation sl, final String name) {
+        if (symbols.containsKey(name))
+            return symbols.get(name);
+        if (parent == null)
+            throw new QScriptException(sl, "undefined symbol '%s'", name);
+        return parent.getSymbol(sl, name);
     }
 }

@@ -1,4 +1,4 @@
-package io.scriptor.frontend.statement;
+package io.scriptor.frontend.stmt;
 
 import java.util.Arrays;
 
@@ -7,9 +7,9 @@ import io.scriptor.frontend.SourceLocation;
 import io.scriptor.type.FunctionType;
 import io.scriptor.type.Type;
 
-public class DefFunStatement extends Statement {
+public class DefFunctionStmt extends Stmt {
 
-    public static DefFunStatement create(
+    public static DefFunctionStmt create(
             final SourceLocation sl,
             final Type res,
             final String name,
@@ -18,29 +18,29 @@ public class DefFunStatement extends Statement {
         return create(sl, res, name, args, va, null);
     }
 
-    public static DefFunStatement create(
+    public static DefFunctionStmt create(
             final SourceLocation sl,
             final Type res,
             final String name,
             final Arg[] args,
             final boolean va,
-            final CompoundStatement body) {
-        return new DefFunStatement(sl, res, name, args, va, body);
+            final CompoundStmt body) {
+        return new DefFunctionStmt(sl, res, name, args, va, body);
     }
 
     private final Type res;
     private final String name;
     private final Arg[] args;
     private final boolean va;
-    private final CompoundStatement body;
+    private final CompoundStmt body;
 
-    private DefFunStatement(
+    private DefFunctionStmt(
             final SourceLocation sl,
             final Type res,
             final String name,
             final Arg[] args,
             final boolean va,
-            final CompoundStatement body) {
+            final CompoundStmt body) {
         super(sl);
         this.res = res;
         this.name = name;
@@ -69,7 +69,7 @@ public class DefFunStatement extends Statement {
         return va;
     }
 
-    public CompoundStatement getBody() {
+    public CompoundStmt getBody() {
         return body;
     }
 

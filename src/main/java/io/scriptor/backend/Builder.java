@@ -46,8 +46,8 @@ import org.bytedeco.llvm.LLVM.LLVMTargetRef;
 import org.bytedeco.llvm.LLVM.LLVMTypeRef;
 import org.bytedeco.llvm.LLVM.LLVMValueRef;
 
-import io.scriptor.frontend.State;
-import io.scriptor.frontend.statement.Statement;
+import io.scriptor.frontend.StackFrame;
+import io.scriptor.frontend.stmt.Stmt;
 import io.scriptor.util.QScriptException;
 
 public class Builder {
@@ -78,15 +78,15 @@ public class Builder {
     private boolean validModule = true;
 
     private final String name;
-    private final State state;
+    private final StackFrame frame;
     private final Stack<Map<String, Value>> stack = new Stack<>();
 
     private final LLVMBuilderRef builder;
     private final LLVMModuleRef module;
 
-    public Builder(final State state, final String name) {
+    public Builder(final StackFrame frame, final String name) {
         this.name = name;
-        this.state = state;
+        this.frame = frame;
 
         stack.push(new HashMap<>());
 
@@ -109,8 +109,8 @@ public class Builder {
         return name;
     }
 
-    public State getState() {
-        return state;
+    public StackFrame getFrame() {
+        return frame;
     }
 
     public void push() {
@@ -257,7 +257,7 @@ public class Builder {
         return LLVMBuildStore(builder, v, ptr);
     }
 
-    public void genIR(final Statement stmt) {
+    public void genIR(final Stmt stmt) {
         genStmt(this, stmt);
     }
 }

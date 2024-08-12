@@ -3,7 +3,7 @@ package io.scriptor.type;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
-import io.scriptor.frontend.State;
+import io.scriptor.frontend.StackFrame;
 
 public class FunctionType extends Type {
 
@@ -30,7 +30,7 @@ public class FunctionType extends Type {
     }
 
     public static FunctionType get(final Type result, final boolean vararg, final Type... args) {
-        final var state = result.getState();
+        final var state = result.getFrame();
         final var id = makeId(result, vararg, args);
         if (Type.exists(state, id))
             return Type.get(null, state, id);
@@ -43,12 +43,12 @@ public class FunctionType extends Type {
     private final Type[] args;
 
     protected FunctionType(
-            final State state,
+            final StackFrame frame,
             final String id,
             final Type result,
             final boolean vararg,
             final Type... args) {
-        super(state, id, Type.IS_FUNCTION, 64);
+        super(frame, id, Type.IS_FUNCTION, 64);
         this.result = result;
         this.vararg = vararg;
         this.args = args;

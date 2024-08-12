@@ -1,5 +1,6 @@
 package io.scriptor.backend;
 
+import static io.scriptor.backend.LValue.directL;
 import static io.scriptor.backend.RValue.createR;
 import static org.bytedeco.llvm.global.LLVM.LLVMBuildAdd;
 import static org.bytedeco.llvm.global.LLVM.LLVMBuildAnd;
@@ -43,12 +44,12 @@ public class GenOperation {
 
         if (type.isInt()) {
             final var result = LLVMBuildICmp(b.getBuilder(), LLVMIntEQ, left.get(), right.get(), "");
-            return createR(b, sl, Type.getInt1(b.getState()), result);
+            return createR(b, sl, Type.getInt1(b.getFrame()), result);
         }
 
         if (type.isFlt()) {
             final var result = LLVMBuildFCmp(b.getBuilder(), LLVMRealOEQ, left.get(), right.get(), "");
-            return createR(b, sl, Type.getInt1(b.getState()), result);
+            return createR(b, sl, Type.getInt1(b.getFrame()), result);
         }
 
         return null;
@@ -60,12 +61,12 @@ public class GenOperation {
 
         if (type.isInt()) {
             final var result = LLVMBuildICmp(b.getBuilder(), LLVMIntNE, left.get(), right.get(), "");
-            return createR(b, sl, Type.getInt1(b.getState()), result);
+            return createR(b, sl, Type.getInt1(b.getFrame()), result);
         }
 
         if (type.isFlt()) {
             final var result = LLVMBuildFCmp(b.getBuilder(), LLVMRealONE, left.get(), right.get(), "");
-            return createR(b, sl, Type.getInt1(b.getState()), result);
+            return createR(b, sl, Type.getInt1(b.getFrame()), result);
         }
 
         return null;
@@ -77,12 +78,12 @@ public class GenOperation {
 
         if (type.isInt()) {
             final var result = LLVMBuildICmp(b.getBuilder(), LLVMIntSLT, left.get(), right.get(), "");
-            return createR(b, sl, Type.getInt1(b.getState()), result);
+            return createR(b, sl, Type.getInt1(b.getFrame()), result);
         }
 
         if (type.isFlt()) {
             final var result = LLVMBuildFCmp(b.getBuilder(), LLVMRealOLT, left.get(), right.get(), "");
-            return createR(b, sl, Type.getInt1(b.getState()), result);
+            return createR(b, sl, Type.getInt1(b.getFrame()), result);
         }
 
         return null;
@@ -111,7 +112,7 @@ public class GenOperation {
         final var rb = LLVMBuildIsNotNull(b.getBuilder(), right.get(), "");
 
         final var result = LLVMBuildAnd(b.getBuilder(), lb, rb, "");
-        return createR(b, sl, Type.getInt1(b.getState()), result);
+        return createR(b, sl, Type.getInt1(b.getFrame()), result);
     }
 
     public static Value genLOr(final Builder b, final SourceLocation sl, final Value left, final Value right) {
@@ -219,7 +220,7 @@ public class GenOperation {
         final var boolval = LLVMBuildIsNotNull(b.getBuilder(), val, "");
         final var result = LLVMBuildNot(b.getBuilder(), boolval, "");
 
-        return createR(b, sl, Type.getInt1(b.getState()), result);
+        return createR(b, sl, Type.getInt1(b.getFrame()), result);
     }
 
     public static Value genNeg(final Builder b, final SourceLocation sl, final Value value) {
@@ -240,6 +241,16 @@ public class GenOperation {
         }
 
         return null;
+    }
+
+    public static Value genDeref(final Builder b, final SourceLocation sl, final Value value) {
+        assertUnary(value);
+
+        final var ty = value
+                .getType()
+                .asPointer()
+                .getBase();
+        return directL(b, sl, ty, value.get());
     }
 
     private GenOperation() {

@@ -1,34 +1,34 @@
-package io.scriptor.frontend.expression;
+package io.scriptor.frontend.expr;
 
 import static io.scriptor.util.Util.getUnOpResult;
 
 import io.scriptor.frontend.SourceLocation;
 
-public class UnaryExpression extends Expression {
+public class UnaryExpr extends Expr {
 
-    public static UnaryExpression createR(
+    public static UnaryExpr createR(
             final SourceLocation sl,
             final String op,
-            final Expression val) {
-        return new UnaryExpression(sl, true, op, val);
+            final Expr val) {
+        return new UnaryExpr(sl, true, op, val);
     }
 
-    public static UnaryExpression createL(
+    public static UnaryExpr createL(
             final SourceLocation sl,
             final String op,
-            final Expression val) {
-        return new UnaryExpression(sl, false, op, val);
+            final Expr val) {
+        return new UnaryExpr(sl, false, op, val);
     }
 
     private final boolean right;
     private final String op;
-    private final Expression val;
+    private final Expr val;
 
-    private UnaryExpression(
+    private UnaryExpr(
             final SourceLocation sl,
             final boolean right,
             final String op,
-            final Expression val) {
+            final Expr val) {
         super(sl, getUnOpResult(op, val.getTy()));
         this.right = right;
         this.op = op;
@@ -43,7 +43,7 @@ public class UnaryExpression extends Expression {
         return op;
     }
 
-    public Expression getVal() {
+    public Expr getVal() {
         return val;
     }
 

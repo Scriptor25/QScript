@@ -29,45 +29,45 @@ import static org.bytedeco.llvm.global.LLVM.LLVMSetInitializer;
 import static org.bytedeco.llvm.global.LLVM.LLVMSetValueName;
 import static org.bytedeco.llvm.global.LLVM.LLVMVerifyFunction;
 
-import io.scriptor.frontend.expression.Expression;
-import io.scriptor.frontend.statement.CompoundStatement;
-import io.scriptor.frontend.statement.DefFunStatement;
-import io.scriptor.frontend.statement.DefVarStatement;
-import io.scriptor.frontend.statement.IfStatement;
-import io.scriptor.frontend.statement.ReturnStatement;
-import io.scriptor.frontend.statement.Statement;
-import io.scriptor.frontend.statement.WhileStatement;
+import io.scriptor.frontend.expr.Expr;
+import io.scriptor.frontend.stmt.CompoundStmt;
+import io.scriptor.frontend.stmt.DefFunctionStmt;
+import io.scriptor.frontend.stmt.DefVariableStmt;
+import io.scriptor.frontend.stmt.IfStmt;
+import io.scriptor.frontend.stmt.ReturnStmt;
+import io.scriptor.frontend.stmt.Stmt;
+import io.scriptor.frontend.stmt.WhileStmt;
 import io.scriptor.type.PointerType;
 import io.scriptor.util.QScriptException;
 
 public class GenStatement {
 
-    public static void genStmt(final Builder b, final Statement stmt) {
-        if (stmt instanceof Expression e) {
+    public static void genStmt(final Builder b, final Stmt stmt) {
+        if (stmt instanceof Expr e) {
             genExpr(b, e);
             return;
         }
-        if (stmt instanceof CompoundStatement s) {
+        if (stmt instanceof CompoundStmt s) {
             genStmt(b, s);
             return;
         }
-        if (stmt instanceof DefFunStatement s) {
+        if (stmt instanceof DefFunctionStmt s) {
             genStmt(b, s);
             return;
         }
-        if (stmt instanceof DefVarStatement s) {
+        if (stmt instanceof DefVariableStmt s) {
             genStmt(b, s);
             return;
         }
-        if (stmt instanceof IfStatement s) {
+        if (stmt instanceof IfStmt s) {
             genStmt(b, s);
             return;
         }
-        if (stmt instanceof ReturnStatement s) {
+        if (stmt instanceof ReturnStmt s) {
             genStmt(b, s);
             return;
         }
-        if (stmt instanceof WhileStatement s) {
+        if (stmt instanceof WhileStmt s) {
             genStmt(b, s);
             return;
         }
@@ -75,7 +75,7 @@ public class GenStatement {
         throw new QScriptException(stmt.getSl(), "no genIR for class '%s':\n%s", stmt.getClass(), stmt);
     }
 
-    public static void genStmt(final Builder b, final CompoundStatement stmt) {
+    public static void genStmt(final Builder b, final CompoundStmt stmt) {
         b.push();
 
         for (int i = 0; i < stmt.getCount(); ++i)
@@ -84,7 +84,7 @@ public class GenStatement {
         b.pop();
     }
 
-    public static void genStmt(final Builder b, final DefFunStatement stmt) {
+    public static void genStmt(final Builder b, final DefFunctionStmt stmt) {
         final var sl = stmt.getSl();
         final var ft = genType(sl, stmt.getFunctionType());
 
@@ -147,7 +147,7 @@ public class GenStatement {
         }
     }
 
-    public static void genStmt(final Builder b, final DefVarStatement stmt) {
+    public static void genStmt(final Builder b, final DefVariableStmt stmt) {
         final var sl = stmt.getSl();
         final var name = stmt.getName();
 
@@ -181,7 +181,7 @@ public class GenStatement {
         b.put(name, value);
     }
 
-    public static void genStmt(final Builder b, final IfStatement stmt) {
+    public static void genStmt(final Builder b, final IfStmt stmt) {
 
         final var f = LLVMGetBasicBlockParent(LLVMGetInsertBlock(b.getBuilder()));
         final var headbb = LLVMAppendBasicBlockInContext(Builder.getContext(), f, "head");
@@ -210,7 +210,7 @@ public class GenStatement {
         LLVMPositionBuilderAtEnd(b.getBuilder(), endbb);
     }
 
-    public static void genStmt(final Builder b, final ReturnStatement stmt) {
+    public static void genStmt(final Builder b, final ReturnStmt stmt) {
         if (!stmt.hasVal()) {
             LLVMBuildRetVoid(b.getBuilder());
             return;
@@ -221,7 +221,7 @@ public class GenStatement {
         return;
     }
 
-    public static void genStmt(final Builder b, final WhileStatement stmt) {
+    public static void genStmt(final Builder b, final WhileStmt stmt) {
 
         final var f = LLVMGetBasicBlockParent(LLVMGetInsertBlock(b.getBuilder()));
         final var head = LLVMAppendBasicBlockInContext(Builder.getContext(), f, "head");

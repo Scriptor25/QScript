@@ -36,19 +36,18 @@ import static org.bytedeco.llvm.global.LLVM.LLVMInt32TypeInContext;
 import org.bytedeco.javacpp.PointerPointer;
 import org.bytedeco.llvm.LLVM.LLVMValueRef;
 
-import io.scriptor.frontend.expression.BinaryExpression;
-import io.scriptor.frontend.expression.CallExpression;
-import io.scriptor.frontend.expression.Expression;
-import io.scriptor.frontend.expression.FloatExpression;
-import io.scriptor.frontend.expression.FunctionExpression;
-import io.scriptor.frontend.expression.IndexExpression;
-import io.scriptor.frontend.expression.InitListExpression;
-import io.scriptor.frontend.expression.IntExpression;
-import io.scriptor.frontend.expression.StringExpression;
-import io.scriptor.frontend.expression.SymbolExpression;
-import io.scriptor.frontend.expression.UnaryExpression;
+import io.scriptor.frontend.expr.BinaryExpr;
+import io.scriptor.frontend.expr.CallExpr;
+import io.scriptor.frontend.expr.Expr;
+import io.scriptor.frontend.expr.FloatExpr;
+import io.scriptor.frontend.expr.FunctionExpr;
+import io.scriptor.frontend.expr.IndexExpr;
+import io.scriptor.frontend.expr.InitializerExpr;
+import io.scriptor.frontend.expr.IntExpr;
+import io.scriptor.frontend.expr.StringExpr;
+import io.scriptor.frontend.expr.SymbolExpr;
+import io.scriptor.frontend.expr.UnaryExpr;
 import io.scriptor.type.ArrayType;
-import io.scriptor.type.FunctionType;
 import io.scriptor.type.PointerType;
 import io.scriptor.type.StructType;
 import io.scriptor.type.Type;
@@ -56,32 +55,32 @@ import io.scriptor.util.QScriptException;
 
 public class GenExpression {
 
-    public static Value genExpr(final Builder b, final Expression expr) {
-        if (expr instanceof BinaryExpression e)
+    public static Value genExpr(final Builder b, final Expr expr) {
+        if (expr instanceof BinaryExpr e)
             return genExpr(b, e);
-        if (expr instanceof CallExpression e)
+        if (expr instanceof CallExpr e)
             return genExpr(b, e);
-        if (expr instanceof FloatExpression e)
+        if (expr instanceof FloatExpr e)
             return genExpr(b, e);
-        if (expr instanceof FunctionExpression e)
+        if (expr instanceof FunctionExpr e)
             return genExpr(b, e);
-        if (expr instanceof IndexExpression e)
+        if (expr instanceof IndexExpr e)
             return genExpr(b, e);
-        if (expr instanceof InitListExpression e)
+        if (expr instanceof InitializerExpr e)
             return genExpr(b, e);
-        if (expr instanceof IntExpression e)
+        if (expr instanceof IntExpr e)
             return genExpr(b, e);
-        if (expr instanceof StringExpression e)
+        if (expr instanceof StringExpr e)
             return genExpr(b, e);
-        if (expr instanceof SymbolExpression e)
+        if (expr instanceof SymbolExpr e)
             return genExpr(b, e);
-        if (expr instanceof UnaryExpression e)
+        if (expr instanceof UnaryExpr e)
             return genExpr(b, e);
 
         throw new QScriptException(expr.getSl(), "no genIR for class '%s':\n%s", expr.getClass(), expr);
     }
 
-    public static Value genExpr(final Builder b, final BinaryExpression expr) {
+    public static Value genExpr(final Builder b, final BinaryExpr expr) {
 
         final var sl = expr.getSl();
         var op = expr.getOp();
@@ -152,11 +151,15 @@ public class GenExpression {
                 right.getType());
     }
 
-    public static Value genExpr(final Builder b, final CallExpression expr) {
+    public static Value genExpr(final Builder b, final CallExpr expr) {
         final var sl = expr.getSl();
 
         final var callee = genExpr(b, expr.getCallee());
-        final var fnty = (FunctionType) ((PointerType) callee.getType()).getBase();
+        final var fnty = callee
+                .getType()
+                .asPointer()
+                .getBase()
+                .asFunction();
 
         final var args = new PointerPointer<LLVMValueRef>(expr.getArgCount());
         for (int i = 0; i < expr.getArgCount(); ++i)
@@ -173,18 +176,18 @@ public class GenExpression {
         return createR(b, sl, expr.getTy(), result);
     }
 
-    public static Value genExpr(final Builder b, final FloatExpression expr) {
+    public static Value genExpr(final Builder b, final FloatExpr expr) {
         final var sl = expr.getSl();
         final var type = genType(sl, expr.getTy());
         final var value = LLVMConstReal(type, expr.getVal());
         return createR(b, sl, expr.getTy(), value);
     }
 
-    public static Value genExpr(final Builder b, final FunctionExpression expr) {
+    public static Value genExpr(final Builder b, final FunctionExpr expr) {
         throw new QScriptException(expr.getSl(), "TODO");
     }
 
-    public static Value genExpr(final Builder b, final IndexExpression expr) {
+    public static Value genExpr(final Builder b, final IndexExpr expr) {
 
         final var sl = expr.getSl();
         final var ptr = genExpr(b, expr.getPtr());
@@ -218,7 +221,7 @@ public class GenExpression {
                 arraytype);
     }
 
-    public static Value genExpr(final Builder b, final InitListExpression expr) {
+    public static Value genExpr(final Builder b, final InitializerExpr expr) {
 
         final var sl = expr.getSl();
 
@@ -257,7 +260,7 @@ public class GenExpression {
                 expr.getTy());
     }
 
-    public static Value genExpr(final Builder b, final IntExpression expr) {
+    public static Value genExpr(final Builder b, final IntExpr expr) {
 
         final var sl = expr.getSl();
         final var type = expr.getTy();
@@ -267,12 +270,12 @@ public class GenExpression {
         return createR(b, sl, type, value);
     }
 
-    public static Value genExpr(final Builder b, final StringExpression expr) {
+    public static Value genExpr(final Builder b, final StringExpr expr) {
         final var value = LLVMBuildGlobalStringPtr(b.getBuilder(), expr.getVal(), "");
         return createR(b, expr.getSl(), expr.getTy(), value);
     }
 
-    public static Value genExpr(final Builder b, final SymbolExpression expr) {
+    public static Value genExpr(final Builder b, final SymbolExpr expr) {
         final var name = expr.getName();
         final var value = b.get(name);
         if (value == null)
@@ -280,7 +283,7 @@ public class GenExpression {
         return value;
     }
 
-    public static Value genExpr(final Builder b, final UnaryExpression expr) {
+    public static Value genExpr(final Builder b, final UnaryExpr expr) {
 
         final var sl = expr.getSl();
 

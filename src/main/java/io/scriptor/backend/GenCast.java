@@ -42,7 +42,7 @@ public class GenCast {
                 return createR(b, sl, ty, result);
             }
 
-            if (ty.isPtr()) {
+            if (ty.isPointer()) {
                 final var result = LLVMBuildIntToPtr(b.getBuilder(), llvmvalue, llvmtype, "");
                 return createR(b, sl, ty, result);
             }
@@ -60,13 +60,13 @@ public class GenCast {
             }
         }
 
-        if (vtype.isPtr()) {
+        if (vtype.isPointer()) {
             if (ty.isInt()) {
                 final var result = LLVMBuildPtrToInt(b.getBuilder(), llvmvalue, llvmtype, "");
                 return createR(b, sl, ty, result);
             }
 
-            if (ty.isPtr()) {
+            if (ty.isPointer()) {
                 final var result = LLVMBuildPointerCast(b.getBuilder(), llvmvalue, llvmtype, "");
                 return createR(b, sl, ty, result);
             }

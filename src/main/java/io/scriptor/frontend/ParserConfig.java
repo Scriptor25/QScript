@@ -4,16 +4,16 @@ import java.io.File;
 import java.io.InputStream;
 import java.util.function.Consumer;
 
-import io.scriptor.frontend.statement.Statement;
+import io.scriptor.frontend.stmt.Stmt;
 
 public record ParserConfig(
-        State state,
-        Consumer<Statement> callback,
+        StackFrame frame,
+        Consumer<Stmt> callback,
         File file,
         String[] includeDirs,
         InputStream stream) {
 
     public ParserConfig(final ParserConfig config, final File file, final InputStream stream) {
-        this(config.state, config.callback, file, config.includeDirs, stream);
+        this(config.frame, config.callback, file, config.includeDirs, stream);
     }
 }
