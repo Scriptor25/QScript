@@ -7,6 +7,8 @@ import static io.scriptor.util.Util.isHexDigit;
 import static io.scriptor.util.Util.isID;
 import static io.scriptor.util.Util.isOP;
 import static io.scriptor.util.Util.isOctDigit;
+import static java.util.Optional.empty;
+import static java.util.Optional.of;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -15,6 +17,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 
 import io.scriptor.frontend.expr.BinaryExpr;
@@ -41,7 +44,7 @@ import io.scriptor.type.FunctionType;
 import io.scriptor.type.PointerType;
 import io.scriptor.type.StructType;
 import io.scriptor.type.Type;
-import io.scriptor.util.QScriptException;
+import io.scriptor.util.QScriptError;
 
 public class Parser {
 
@@ -95,8 +98,8 @@ public class Parser {
         parser.next();
         while (!parser.atEOF()) {
             final var stmt = parser.nextStatement();
-            if (stmt != null)
-                config.callback().accept(stmt);
+            if (stmt.isPresent())
+                config.callback().accept(stmt.get());
         }
 
         config.stream().close();
@@ -182,7 +185,7 @@ public class Parser {
         var mode = ParserMode.NORMAL;
         var value = new StringBuilder();
         var isfloat = false;
-        SourceLocation loc = null;
+        SourceLocation sl = null;
 
         while (chr >= 0 || mode != ParserMode.NORMAL) {
             switch (mode) {
@@ -193,17 +196,17 @@ public class Parser {
                             break;
 
                         case '"':
-                            loc = new SourceLocation(config.file(), row, column);
+                            sl = new SourceLocation(config.file(), row, column);
                             mode = ParserMode.STRING;
                             break;
 
                         case '\'':
-                            loc = new SourceLocation(config.file(), row, column);
+                            sl = new SourceLocation(config.file(), row, column);
                             mode = ParserMode.CHAR;
                             break;
 
                         case '0':
-                            loc = new SourceLocation(config.file(), row, column);
+                            sl = new SourceLocation(config.file(), row, column);
                             mode = ParserMode.RADIX;
                             break;
 
@@ -215,30 +218,30 @@ public class Parser {
                             }
 
                             if (isDecDigit(chr)) {
-                                loc = new SourceLocation(config.file(), row, column);
+                                sl = new SourceLocation(config.file(), row, column);
                                 mode = ParserMode.NUMDEC;
                                 value.append((char) chr);
                                 break;
                             }
 
                             if (isID(chr)) {
-                                loc = new SourceLocation(config.file(), row, column);
+                                sl = new SourceLocation(config.file(), row, column);
                                 mode = ParserMode.ID;
                                 value.append((char) chr);
                                 break;
                             }
 
                             if (isOP(chr)) {
-                                loc = new SourceLocation(config.file(), row, column);
+                                sl = new SourceLocation(config.file(), row, column);
                                 mode = ParserMode.OPERATOR;
                                 value.append((char) chr);
                                 break;
                             }
 
-                            loc = new SourceLocation(config.file(), row, column);
+                            sl = new SourceLocation(config.file(), row, column);
                             value.append((char) chr);
                             chr = get();
-                            return new Token(loc, TokenType.OTHER, value.toString());
+                            return new Token(sl, TokenType.OTHER, value.toString());
                     }
                     break;
 
@@ -252,7 +255,7 @@ public class Parser {
                 case STRING:
                     if (chr == '"') {
                         chr = get();
-                        return new Token(loc, TokenType.STRING, value.toString());
+                        return new Token(sl, TokenType.STRING, value.toString());
                     }
                     if (chr == '\\')
                         escape();
@@ -262,7 +265,7 @@ public class Parser {
                 case CHAR:
                     if (chr == '\'') {
                         chr = get();
-                        return new Token(loc, TokenType.CHAR, value.toString());
+                        return new Token(sl, TokenType.CHAR, value.toString());
                     }
                     if (chr == '\\')
                         escape();
@@ -289,21 +292,21 @@ public class Parser {
                         value.append((char) chr);
                         break;
                     }
-                    return new Token(loc, TokenType.DECINT, "0");
+                    return new Token(sl, TokenType.DECINT, "0");
 
                 case NUMBIN:
                     if (isBinDigit(chr) || chr == 'u') {
                         value.append((char) chr);
                         break;
                     }
-                    return new Token(loc, TokenType.BININT, value.toString());
+                    return new Token(sl, TokenType.BININT, value.toString());
 
                 case NUMOCT:
                     if (isOctDigit(chr) || chr == 'u') {
                         value.append((char) chr);
                         break;
                     }
-                    return new Token(loc, TokenType.OCTINT, value.toString());
+                    return new Token(sl, TokenType.OCTINT, value.toString());
 
                 case NUMDEC:
                     if (chr == '.') {
@@ -315,24 +318,24 @@ public class Parser {
                         value.append((char) chr);
                         break;
                     }
-                    return new Token(loc, isfloat ? TokenType.FLOAT : TokenType.DECINT, value.toString());
+                    return new Token(sl, isfloat ? TokenType.FLOAT : TokenType.DECINT, value.toString());
 
                 case NUMHEX:
                     if (isHexDigit(chr) || chr == 'u') {
                         value.append((char) chr);
                         break;
                     }
-                    return new Token(loc, TokenType.HEXINT, value.toString());
+                    return new Token(sl, TokenType.HEXINT, value.toString());
 
                 case ID:
                     if (!isID(chr))
-                        return new Token(loc, TokenType.NAME, value.toString());
+                        return new Token(sl, TokenType.NAME, value.toString());
                     value.append((char) chr);
                     break;
 
                 case OPERATOR:
                     if (!isCompOP(chr))
-                        return new Token(loc, TokenType.OPERATOR, value.toString());
+                        return new Token(sl, TokenType.OPERATOR, value.toString());
                     value.append((char) chr);
                     break;
 
@@ -363,43 +366,39 @@ public class Parser {
         return token != null && token.val().equals(value);
     }
 
-    private Token expectPeek(final TokenType type) throws IOException {
+    private Optional<Token> expectPeek(final TokenType type) throws IOException {
         if (at(type))
-            return token;
-        if (atEOF())
-            throw new QScriptException(new SourceLocation(config.file(), row, column), "expected %s, at EOF", type);
-        throw new QScriptException(
-                token.sl(),
-                "expected %s, at '%s' (%s)",
-                type,
-                token.val(),
-                token.ty());
+            return of(token);
+        if (atEOF()) {
+            QScriptError.print(SourceLocation.UNKNOWN, "expected %s, at EOF", type);
+            return empty();
+        }
+        QScriptError.print(token.sl(), "expected %s, at '%s' (%s)", type, token.val(), token.ty());
+        return empty();
     }
 
-    private Token expect(final TokenType type) throws IOException {
+    private Optional<Token> expect(final TokenType type) throws IOException {
         if (at(type))
-            return skip();
-        if (atEOF())
-            throw new QScriptException(new SourceLocation(config.file(), row, column), "expected %s, at EOF", type);
-        throw new QScriptException(
-                token.sl(),
-                "expected %s, at '%s' (%s)",
-                type,
-                token.val(),
-                token.ty());
+            return of(skip());
+        if (atEOF()) {
+            QScriptError.print(SourceLocation.UNKNOWN, "expected %s, at EOF", type);
+            return empty();
+        }
+        QScriptError.print(token.sl(), "expected %s, at '%s' (%s)", type, token.val(), token.ty());
+        skip();
+        return empty();
     }
 
-    private Token expect(final String value) throws IOException {
+    private Optional<Token> expect(final String value) throws IOException {
         if (at(value))
-            return skip();
-        if (atEOF())
-            throw new QScriptException(new SourceLocation(config.file(), row, column), "expected '%s', at EOF", value);
-        throw new QScriptException(
-                token.sl(),
-                "expected '%s', at '%s' (%s)",
-                value,
-                token.val(),
-                token.ty());
+            return of(skip());
+        if (atEOF()) {
+            QScriptError.print(SourceLocation.UNKNOWN, "expected '%s', at EOF", value);
+            return empty();
+        }
+        QScriptError.print(token.sl(), "expected '%s', at '%s' (%s)", value, token.val(), token.ty());
+        skip();
+        return empty();
     }
 
     private Token skip() throws IOException {
@@ -424,31 +423,35 @@ public class Parser {
         return false;
     }
 
-    private Type nextType() throws IOException {
+    private Optional<Type> nextType() throws IOException {
         return nextType(false);
     }
 
-    private Type nextType(final boolean unsafe) throws IOException {
+    private Optional<Type> nextType(final boolean unsafe) throws IOException {
         if (nextIfAt("struct")) {
             if (!nextIfAt("{"))
-                return nextType(StructType.get(stack));
+                return of(nextType(StructType.get(stack)));
             final List<Type> elements = new ArrayList<>();
             while (!nextIfAt("}")) {
-                final var type = nextType();
+                final var type = nextType().get();
                 nextIfAt(TokenType.NAME);
                 elements.add(type);
                 if (!at("}"))
                     expect(",");
             }
-            return nextType(StructType.get(stack, elements.toArray(Type[]::new)));
+            return of(nextType(StructType.get(stack, elements.toArray(Type[]::new))));
         }
 
-        final var base = expectPeek(TokenType.NAME).val();
+        final var base = expectPeek(TokenType.NAME).get().val();
         if (unsafe && !Type.exists(stack, base))
-            return null;
+            return empty();
 
-        final var loc = skip().sl();
-        return nextType(Type.get(loc, stack, base));
+        final var sl = skip().sl();
+        final var ty = Type.get(sl, stack, base);
+        if (ty.isEmpty())
+            return ty;
+
+        return of(nextType(ty.get()));
     }
 
     private Type nextType(final Type base) throws IOException {
@@ -473,7 +476,7 @@ public class Parser {
                     break;
                 }
 
-                final var arg = nextType();
+                final var arg = nextType().get();
                 nextIfAt(TokenType.NAME);
                 args.add(arg);
                 if (!at(")"))
@@ -485,18 +488,18 @@ public class Parser {
         return base;
     }
 
-    private Stmt nextStatement() throws IOException {
+    private Optional<Stmt> nextStatement() throws IOException {
         if (at("include")) {
             nextInclude();
-            return null;
+            return empty();
         }
         if (at("macro")) {
             nextMacro();
-            return null;
+            return empty();
         }
         if (at("use")) {
             nextUse();
-            return null;
+            return empty();
         }
 
         if (at("{"))
@@ -513,17 +516,30 @@ public class Parser {
         if (at(TokenType.NAME)) {
             final var name = token.val();
             if (stack.existsMacro(name)) {
-                final var loc = skip().sl();
-                return stack.getMacro(loc, name);
+                final var sl = skip().sl();
+                return stack.getMacro(sl, name);
             }
         }
 
-        return nextExpr(null);
+        final var optExpr = nextExpr(null);
+        if (optExpr.isEmpty())
+            return empty();
+
+        return of(optExpr.get());
     }
 
     private void nextInclude() throws IOException {
-        final var loc = expect("include").sl();
-        final var filename = expect(TokenType.STRING).val();
+        final var optInclude = expect("include");
+        if (optInclude.isEmpty())
+            return;
+
+        final var sl = optInclude.get().sl();
+
+        final var optFilename = expect(TokenType.STRING);
+        if (optFilename.isEmpty())
+            return;
+
+        final var filename = optFilename.get().val();
 
         var file = new File(filename);
         if (!file.isAbsolute())
@@ -534,61 +550,97 @@ public class Parser {
         }
 
         if (!file.exists()) {
-            throw new QScriptException(loc, "missing file '%s'", filename);
+            QScriptError.print(sl, "missing file '%s'", filename);
+            return;
         }
 
         parse(new ParserConfig(config, file, new FileInputStream(file)), parsed);
     }
 
     private void nextMacro() throws IOException {
-        expect("macro");
-        final var name = expect(TokenType.NAME).val();
-        final var stmt = nextStatement();
+        if (expect("macro").isEmpty())
+            return;
 
-        stack.putMacro(name, stmt);
+        final var optName = expect(TokenType.NAME);
+        if (optName.isEmpty())
+            return;
+
+        final var optStmt = nextStatement();
+        if (optStmt.isEmpty())
+            return;
+
+        stack.putMacro(optName.get().val(), optStmt.get());
     }
 
     private void nextUse() throws IOException {
-        expect("use");
-        final var id = expect(TokenType.NAME).val();
-        expect("as");
-        final var type = nextType();
+        final var optUse = expect("use");
+        if (optUse.isEmpty())
+            return;
 
-        Type.useAs(stack, id, type);
+        final var optName = expect(TokenType.NAME);
+        if (optName.isEmpty())
+            return;
+
+        if (expect("as").isEmpty())
+            return;
+
+        final var optType = nextType();
+        if (optType.isEmpty())
+            return;
+
+        Type.useAs(stack, optUse.get().sl(), optName.get().val(), optType.get());
     }
 
-    private CompoundStmt nextCompound() throws IOException {
-        final var loc = expect("{").sl();
+    private Optional<Stmt> nextCompound() throws IOException {
+        final var optBrace = expect("{");
+        if (optBrace.isEmpty())
+            return empty();
+
+        final var sl = optBrace.get().sl();
         final List<Stmt> body = new ArrayList<>();
 
         stack = new StackFrame(stack);
         while (!nextIfAt("}")) {
-            final var stmt = nextStatement();
-            body.add(stmt);
+            final var optStmt = nextStatement();
+            if (optStmt.isPresent())
+                body.add(optStmt.get());
         }
         stack = stack.getParent();
 
-        return CompoundStmt.create(loc, body.toArray(Stmt[]::new));
+        return of(CompoundStmt.create(sl, body.toArray(Stmt[]::new)));
     }
 
-    private Stmt nextDefine() throws IOException {
-        final var loc = expect("def").sl();
+    private Optional<Stmt> nextDefine() throws IOException {
+        final var optDef = expect("def");
+        if (optDef.isEmpty())
+            return empty();
 
-        var type = nextType(true);
+        final var sl = optDef.get().sl();
+        final var optType = nextType(true);
+
+        Type type = null;
         final String name;
         if (!at(TokenType.NAME)) {
-            name = type.getId();
-            type = null;
+            name = optType.get().getId();
         } else {
+            if (optType.isPresent())
+                type = optType.get();
             name = skip().val();
         }
 
         if (nextIfAt("=")) {
-            final var init = nextExpr(type);
+            final var optExpr = nextExpr(type);
+            if (optExpr.isEmpty()) {
+                if (type == null)
+                    return empty();
+                return of(DefVariableStmt.create(sl, type, name));
+            }
+
             if (type == null)
-                type = init.getTy();
+                type = optExpr.get().getTy();
+
             stack.declareSymbol(name, type);
-            return DefVariableStmt.create(loc, type, name, init);
+            return of(DefVariableStmt.create(sl, type, name, optExpr.get()));
         }
 
         if (nextIfAt("(")) {
@@ -597,178 +649,259 @@ public class Parser {
             while (!nextIfAt(")")) {
                 if (nextIfAt("?")) {
                     vararg = true;
-                    expect(")");
+                    if (expect(")").isEmpty())
+                        return empty();
                     break;
                 }
-                final var argtype = nextType();
-                final String argname;
+
+                final var optArgType = nextType();
+                if (optArgType.isEmpty())
+                    return empty();
+
+                final String argName;
                 if (at(TokenType.NAME)) {
-                    argname = skip().val();
+                    argName = skip().val();
                 } else {
-                    argname = null;
+                    argName = null;
                 }
-                args.add(new Arg(argtype, argname));
+
+                args.add(new Arg(optArgType.get(), argName));
+
                 if (!at(")"))
-                    expect(",");
+                    if (expect(",").isEmpty())
+                        return empty();
             }
 
-            final var funtype = FunctionType.get(
-                    type,
-                    vararg,
-                    args.stream()
-                            .map(Arg::ty)
-                            .toArray(Type[]::new));
-            stack.declareSymbol(name, funtype);
+            final var ft = FunctionType.get(type, vararg, args.stream().map(Arg::ty).toArray(Type[]::new));
+            stack.declareSymbol(name, ft);
 
             if (at("{")) {
                 stack = new StackFrame(stack);
-
                 for (final var arg : args)
                     stack.declareSymbol(arg.name(), arg.ty());
 
-                final var bkpResult = currentResult;
+                final var bkp = currentResult;
                 currentResult = type;
-                final var body = nextCompound();
-                currentResult = bkpResult;
-
+                final var optBody = nextCompound();
+                currentResult = bkp;
                 stack = stack.getParent();
 
-                return DefFunctionStmt.create(loc, type, name, args.toArray(Arg[]::new), vararg, body);
+                if (optBody.isEmpty())
+                    return of(
+                            DefFunctionStmt.create(
+                                    sl,
+                                    type,
+                                    name,
+                                    args.toArray(Arg[]::new),
+                                    vararg));
+
+                return of(
+                        DefFunctionStmt.create(
+                                sl,
+                                type,
+                                name,
+                                args.toArray(Arg[]::new),
+                                vararg,
+                                optBody.get()));
             }
 
-            return DefFunctionStmt.create(loc, type, name, args.toArray(Arg[]::new), vararg);
+            return of(DefFunctionStmt.create(sl, type, name, args.toArray(Arg[]::new), vararg));
         }
 
         stack.declareSymbol(name, type);
-        return DefVariableStmt.create(loc, type, name);
+        return of(DefVariableStmt.create(sl, type, name));
     }
 
-    private IfStmt nextIf() throws IOException {
-        final var loc = expect("if").sl();
+    private Optional<Stmt> nextIf() throws IOException {
+        final var optIf = expect("if");
+        if (optIf.isEmpty())
+            return empty();
 
-        final var condition = nextExpr(Type.getInt1(stack));
-        final var then = nextStatement();
+        final var sl = optIf.get().sl();
+
+        final var optC = nextExpr(Type.getInt1(stack));
+        if (optC.isEmpty())
+            return empty();
+
+        final var optT = nextStatement();
+        if (optT.isEmpty())
+            return empty();
 
         if (nextIfAt("else")) {
-            final var else_ = nextStatement();
-            return IfStmt.create(loc, condition, then, else_);
+            final var optE = nextStatement();
+            if (optE.isEmpty())
+                return empty();
+
+            return of(IfStmt.create(sl, optC.get(), optT.get(), optE.get()));
         }
 
-        return IfStmt.create(loc, condition, then);
+        return of(IfStmt.create(sl, optC.get(), optT.get()));
     }
 
-    private ReturnStmt nextReturn() throws IOException {
-        final var loc = expect("return").sl();
+    private Optional<Stmt> nextReturn() throws IOException {
+        final var optReturn = expect("return");
+        if (optReturn.isEmpty())
+            return empty();
+
+        final var sl = optReturn.get().sl();
 
         if (nextIfAt("void"))
-            return ReturnStmt.create(loc, currentResult);
+            return of(ReturnStmt.create(sl, currentResult));
 
-        final var expression = nextExpr(currentResult);
-        return ReturnStmt.create(loc, currentResult, expression);
+        final var optVal = nextExpr(currentResult);
+        if (optVal.isEmpty())
+            return empty();
+
+        return of(ReturnStmt.create(sl, currentResult, optVal.get()));
     }
 
-    private WhileStmt nextWhile() throws IOException {
-        final var loc = expect("while").sl();
+    private Optional<Stmt> nextWhile() throws IOException {
+        final var optWhile = expect("while");
+        if (optWhile.isEmpty())
+            return empty();
 
-        final var condition = nextExpr(Type.getInt1(stack));
-        final var loop = nextStatement();
+        final var sl = optWhile.get().sl();
 
-        return WhileStmt.create(loc, condition, loop);
+        final var optC = nextExpr(Type.getInt1(stack));
+        if (optC.isEmpty())
+            return empty();
+
+        final var optL = nextStatement();
+        if (optL.isEmpty())
+            return empty();
+
+        return of(WhileStmt.create(sl, optC.get(), optL.get()));
     }
 
-    private Expr nextExpr(final Type expected) throws IOException {
+    private Optional<Expr> nextExpr(final Type expected) throws IOException {
         return nextBinary(expected);
     }
 
-    private Expr nextBinary(final Type expected) throws IOException {
-        return nextBinary(nextCall(expected), 0);
+    private Optional<Expr> nextBinary(final Type expected) throws IOException {
+        final var optCall = nextCall(expected);
+        if (optCall.isEmpty())
+            return empty();
+        return nextBinary(optCall.get(), 0);
     }
 
-    private Expr nextBinary(Expr lhs, final int minPrecedence) throws IOException {
-        while (at(TokenType.OPERATOR) && precedences.getOrDefault(token.val(), -1) >= minPrecedence) {
+    private Optional<Expr> nextBinary(final Expr lhs, final int minPrecedence) throws IOException {
+        var opt = of(lhs);
+
+        while (opt.isPresent()
+                && at(TokenType.OPERATOR)
+                && precedences.getOrDefault(token.val(), -1) >= minPrecedence) {
             final var tk = skip();
-            final var loc = tk.sl();
-            final var operator = tk.val();
-            final var precedence = precedences.get(operator);
-            final var expected = lhs.getTy();
-            var rhs = nextCall(expected);
-            while (at(TokenType.OPERATOR) && precedences.get(token.val()) > precedence) {
-                final var laPrecedence = precedences.get(token.val());
-                rhs = nextBinary(rhs, precedence + (laPrecedence > precedence ? 1 : 0));
+            final var sl = tk.sl();
+            final var op = tk.val();
+            final var prec = precedences.get(op);
+            final var ty = opt.get().getTy();
+            var rhs = nextCall(ty);
+            while (rhs.isPresent()
+                    && at(TokenType.OPERATOR)
+                    && precedences.get(token.val()) > prec) {
+                final var laprec = precedences.get(token.val());
+                rhs = nextBinary(rhs.get(), prec + (laprec > prec ? 1 : 0));
             }
-            lhs = BinaryExpr.create(loc, operator, lhs, rhs);
+
+            opt = BinaryExpr.create(sl, op, opt.get(), rhs.get());
         }
-        return lhs;
+
+        return opt;
     }
 
-    private Expr nextCall(final Type expected) throws IOException {
-        var expr = nextIndex(expected);
+    private Optional<Expr> nextCall(final Type expected) throws IOException {
+        var opt = nextIndex(expected);
 
-        while (at("(")) {
-            final var loc = skip().sl();
+        while (opt.isPresent() && at("(")) {
+            final var sl = skip().sl();
 
-            final FunctionType calleeType = expr.getTy().asFunction();
+            final var optType = opt.get().getTy().asFunction();
+            if (optType.isEmpty()) {
+                while (!nextIfAt(")"))
+                    skip();
+                return empty();
+            }
 
             final List<Expr> args = new ArrayList<>();
             while (!nextIfAt(")")) {
-                final var arg = nextBinary(calleeType.getArg(args.size()));
-                args.add(arg);
+                final var optArgType = optType.get().getArg(args.size());
+                final var optArg = nextBinary(optArgType.isPresent() ? optArgType.get() : null);
+                if (optArg.isEmpty())
+                    return empty();
+
+                args.add(optArg.get());
                 if (!at(")"))
-                    expect(",");
+                    if (expect(",").isEmpty())
+                        return empty();
             }
 
-            expr = CallExpr.create(loc, calleeType.getResult(), expr, args.toArray(Expr[]::new));
+            opt = of(CallExpr.create(sl, optType.get().getResult(), opt.get(), args.toArray(Expr[]::new)));
         }
 
-        return expr;
+        return opt;
     }
 
-    private Expr nextIndex(final Type expected) throws IOException {
-        var expr = nextUnary(expected);
+    private Optional<Expr> nextIndex(final Type expected) throws IOException {
+        var opt = nextUnary(expected);
 
-        while (at("[")) {
+        while (opt.isPresent() && at("[")) {
             final var sl = skip().sl();
-            final var idx = nextBinary(Type.getInt64(stack));
-            expect("]");
+            final var optIdx = nextBinary(Type.getInt64(stack));
+            if (expect("]").isEmpty())
+                return empty();
 
-            expr = IndexExpr.create(sl, expr, idx);
+            opt = IndexExpr.create(sl, opt.get(), optIdx.get());
         }
 
-        return expr;
+        return opt;
     }
 
-    private Expr nextUnary(final Type expected) throws IOException {
-        var expr = nextPrimary(expected);
+    private Optional<Expr> nextUnary(final Type expected) throws IOException {
+        var opt = nextPrimary(expected);
 
-        if (at("++") || at("--")) {
+        if (opt.isPresent() && (at("++") || at("--"))) {
             final var tk = skip();
-            final var loc = tk.sl();
-            final var operator = tk.val();
-            expr = UnaryExpr.createR(loc, operator, expr);
+            final var sl = tk.sl();
+            final var op = tk.val();
+            opt = of(UnaryExpr.createR(sl, op, opt.get()));
         }
 
-        return expr;
+        return opt;
     }
 
-    private Expr nextPrimary(final Type expected) throws IOException {
-        if (atEOF())
-            throw new QScriptException(new SourceLocation(config.file(), row, column), "reached eof");
+    private Optional<Expr> nextPrimary(final Type expected) throws IOException {
+        if (atEOF()) {
+            QScriptError.print(SourceLocation.UNKNOWN, "reached eof");
+            return empty();
+        }
 
-        final var loc = token.sl();
+        final var sl = token.sl();
 
         if (nextIfAt("$")) {
             expect("(");
-            final var ft = expected
-                    .asPointer()
-                    .getBase()
-                    .asFunction();
+
+            final var optBase = expected.getPointerBase();
+            final Optional<FunctionType> optFt = optBase.isPresent() ? optBase.get().asFunction() : empty();
+
+            if (optFt.isEmpty()) {
+                while (!nextIfAt(")"))
+                    skip();
+                expect("{");
+                while (!nextIfAt("}"))
+                    skip();
+                return empty();
+            }
+
+            final var ft = optFt.get();
+            final List<String> args = new ArrayList<>();
 
             stack = new StackFrame(stack);
-
-            final List<String> args = new ArrayList<>();
             while (!nextIfAt(")")) {
-                final var arg = expect(TokenType.NAME).val();
-                stack.declareSymbol(arg, ft.getArg(args.size()));
+                final var arg = expect(TokenType.NAME).get().val();
+                final var argty = ft.getArg(args.size());
+                if (argty.isEmpty())
+                    return empty();
+                stack.declareSymbol(arg, argty.get());
                 args.add(arg);
                 if (!at(")"))
                     expect(",");
@@ -776,16 +909,11 @@ public class Parser {
 
             final var bkpResult = currentResult;
             currentResult = ft.getResult();
-            final var body = nextCompound();
+            final var body = (CompoundStmt) nextCompound().get();
             currentResult = bkpResult;
-
             stack = stack.getParent();
 
-            return FunctionExpr.create(
-                    loc,
-                    ft,
-                    args.toArray(String[]::new),
-                    body);
+            return of(FunctionExpr.create(sl, ft, args.toArray(String[]::new), body));
         }
 
         if (nextIfAt("(")) {
@@ -801,53 +929,57 @@ public class Parser {
                     return type.getBase();
                 if (expected instanceof StructType type)
                     return type.getElement(i);
-                throw new QScriptException(loc, "not a suitable type");
+                QScriptError.print(sl, "not a suitable type");
+                return null;
             };
 
             final List<Expr> args = new ArrayList<>();
             while (!nextIfAt("}")) {
                 final var i = args.size();
-                final var arg = nextBinary(element.apply(i));
+                final var arg = nextBinary(element.apply(i)).get();
                 args.add(arg);
                 if (!at("}"))
                     expect(",");
             }
 
-            return InitializerExpr.create(loc, expected, args.toArray(Expr[]::new));
+            return of(InitializerExpr.create(sl, expected, args.toArray(Expr[]::new)));
         }
 
         if (at(TokenType.NAME)) {
             final var name = skip().val();
             if (stack.existsMacro(name)) {
-                return stack.getMacro(loc, name);
+                return stack.getMacro(sl, name);
             }
 
             if (stack.existsSymbol(name)) {
-                final var type = stack.getSymbol(loc, name);
-                return SymbolExpr.create(loc, type, name);
+                final var type = stack.getSymbol(sl, name).get();
+                return of(SymbolExpr.create(sl, type, name));
             }
 
-            throw new QScriptException(loc, "no such macro or symbol with name '%s'", name);
+            QScriptError.print(sl, "no such macro or symbol with name '%s'", name);
+            return empty();
         }
 
         if (at(TokenType.BININT, TokenType.OCTINT, TokenType.DECINT, TokenType.HEXINT))
-            return IntExpr.create(loc, Type.getInt64(stack), skip().asLong());
+            return of(IntExpr.create(sl, Type.getInt64(stack), skip().asLong()));
 
         if (at(TokenType.FLOAT))
-            return FloatExpr.create(loc, Type.getFlt64(stack), skip().asDouble());
+            return of(FloatExpr.create(sl, Type.getFlt64(stack), skip().asDouble()));
 
         if (at(TokenType.CHAR))
-            return CharExpr.create(loc, Type.getInt8(stack), skip().asChar());
+            return of(CharExpr.create(sl, Type.getInt8(stack), skip().asChar()));
 
         if (at(TokenType.STRING))
-            return StringExpr.create(loc, Type.getInt8Ptr(stack), skip().val());
+            return of(StringExpr.create(sl, Type.getInt8Ptr(stack), skip().val()));
 
         if (at(TokenType.OPERATOR)) {
             final var operator = skip().val();
-            final var operand = nextCall(expected);
-            return UnaryExpr.createL(loc, operator, operand);
+            final var operand = nextCall(expected).get();
+            return of(UnaryExpr.createL(sl, operator, operand));
         }
 
-        throw new QScriptException(loc, "unhandled token '%s' (%s)", token.val(), token.ty());
+        QScriptError.print(sl, "unhandled token '%s' (%s)", token.val(), token.ty());
+        skip();
+        return empty();
     }
 }

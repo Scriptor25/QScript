@@ -1,6 +1,8 @@
 package io.scriptor.backend;
 
 import static io.scriptor.backend.GenStatement.genStmt;
+import static java.util.Optional.empty;
+import static java.util.Optional.of;
 import static org.bytedeco.llvm.global.LLVM.LLVMBuildAlloca;
 import static org.bytedeco.llvm.global.LLVM.LLVMBuildLoad2;
 import static org.bytedeco.llvm.global.LLVM.LLVMBuildStore;
@@ -36,6 +38,7 @@ import static org.bytedeco.llvm.global.LLVM.LLVMVerifyModule;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Stack;
 
 import org.bytedeco.javacpp.PointerPointer;
@@ -46,9 +49,10 @@ import org.bytedeco.llvm.LLVM.LLVMTargetRef;
 import org.bytedeco.llvm.LLVM.LLVMTypeRef;
 import org.bytedeco.llvm.LLVM.LLVMValueRef;
 
+import io.scriptor.frontend.SourceLocation;
 import io.scriptor.frontend.StackFrame;
 import io.scriptor.frontend.stmt.Stmt;
-import io.scriptor.util.QScriptException;
+import io.scriptor.util.QScriptError;
 
 public class Builder {
 
@@ -132,11 +136,12 @@ public class Builder {
         return false;
     }
 
-    public Value get(final String name) {
+    public Optional<Value> get(final SourceLocation sl, final String name) {
         for (int i = stack.size() - 1; i >= 0; --i)
             if (stack.get(i).containsKey(name))
-                return stack.get(i).get(name);
-        return null;
+                return of(stack.get(i).get(name));
+        QScriptError.print(sl, "undefined symbol '%s'", name);
+        return empty();
     }
 
     public LLVMBuilderRef getBuilder() {
@@ -162,22 +167,22 @@ public class Builder {
         final var srcName = src.name;
         final var error = new PointerPointer<>();
 
-        if (LLVMVerifyModule(srcModule, LLVMPrintMessageAction, error) != 0)
-            throw new QScriptException(
-                    null,
-                    "failed to verify module '%s': %s",
-                    srcName,
+        if (LLVMVerifyModule(srcModule, LLVMPrintMessageAction, error) != 0) {
+            QScriptError.print(SourceLocation.UNKNOWN, "failed to verify module '%s': %s", srcName,
                     !error.isNull() ? error.getString(0) : "no detail");
+            return;
+        }
 
-        if (LLVMLinkModules2(module, srcModule) != 0)
-            throw new QScriptException(null, "failed to link against '%s'", srcName);
+        if (LLVMLinkModules2(module, srcModule) != 0) {
+            QScriptError.print(SourceLocation.UNKNOWN, "failed to link against '%s'", srcName);
+            return;
+        }
 
-        if (LLVMVerifyModule(module, LLVMPrintMessageAction, error) != 0)
-            throw new QScriptException(
-                    null,
-                    "failed to verify module '%s': %s",
-                    name,
+        if (LLVMVerifyModule(module, LLVMPrintMessageAction, error) != 0) {
+            QScriptError.print(SourceLocation.UNKNOWN, "failed to verify module '%s': %s", name,
                     !error.isNull() ? error.getString(0) : "no detail");
+            return;
+        }
 
         src.validModule = false;
     }
@@ -194,11 +199,9 @@ public class Builder {
         final var error = new PointerPointer<>();
         final var target = new LLVMTargetRef();
         if (LLVMGetTargetFromTriple(triple, target, error) != 0) {
-            throw new QScriptException(
-                    null,
-                    "failed to get target from triple '%s': %s",
-                    triple.getString(),
+            QScriptError.print(SourceLocation.UNKNOWN, "failed to get target from triple '%s': %s", triple.getString(),
                     error.getString(0));
+            return;
         }
 
         final var cpu = "generic";
@@ -214,7 +217,8 @@ public class Builder {
                 LLVMCodeModelDefault);
 
         if (LLVMTargetMachineEmitToFile(machine, module, filename, LLVMObjectFile, error.asByteBuffer()) != 0) {
-            throw new QScriptException(null, "failed to emit to file '%s': %s", filename, error.getString(0));
+            QScriptError.print(SourceLocation.UNKNOWN, "failed to emit to file '%s': %s", filename, error.getString(0));
+            return;
         }
     }
 

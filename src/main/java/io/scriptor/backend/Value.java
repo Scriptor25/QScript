@@ -17,7 +17,7 @@ public abstract class Value {
     protected Value(final Builder b, final SourceLocation sl, final Type ty) {
         this.builder = b;
         this.type = ty;
-        this.llvmType = genType(sl, ty);
+        this.llvmType = genType(sl, ty).get();
     }
 
     public Builder getBuilder() {

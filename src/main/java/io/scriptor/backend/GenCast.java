@@ -1,7 +1,7 @@
 package io.scriptor.backend;
 
 import static io.scriptor.backend.GenType.genType;
-import static io.scriptor.backend.RValue.createR;
+import static io.scriptor.backend.RValue.createOptR;
 import static org.bytedeco.llvm.global.LLVM.LLVMBuildFPCast;
 import static org.bytedeco.llvm.global.LLVM.LLVMBuildFPToSI;
 import static org.bytedeco.llvm.global.LLVM.LLVMBuildIntCast2;
@@ -10,9 +10,11 @@ import static org.bytedeco.llvm.global.LLVM.LLVMBuildPointerCast;
 import static org.bytedeco.llvm.global.LLVM.LLVMBuildPtrToInt;
 import static org.bytedeco.llvm.global.LLVM.LLVMBuildSIToFP;
 
+import java.util.Optional;
+
 import io.scriptor.frontend.SourceLocation;
 import io.scriptor.type.Type;
-import io.scriptor.util.QScriptException;
+import io.scriptor.util.QScriptError;
 
 public class GenCast {
 
@@ -21,58 +23,59 @@ public class GenCast {
         assert t != null;
     }
 
-    public static Value genCast(final Builder b, final SourceLocation sl, final Value v, final Type ty) {
+    public static Optional<Value> genCast(final Builder b, final SourceLocation sl, final Value v, final Type ty) {
         assertCast(v, ty);
 
-        final var vtype = v.getType();
-        if (vtype == ty || ty == null)
-            return v;
+        final var vty = v.getType();
+        if (vty == ty)
+            return Optional.of(v);
 
-        final var llvmvalue = v.get();
-        final var llvmtype = genType(sl, ty);
+        final var val = v.get();
+        final var type = genType(sl, ty).get();
 
-        if (vtype.isInt()) {
+        if (vty.isInt()) {
             if (ty.isInt()) {
-                final var result = LLVMBuildIntCast2(b.getBuilder(), llvmvalue, llvmtype, 1, "");
-                return createR(b, sl, ty, result);
+                final var result = LLVMBuildIntCast2(b.getBuilder(), val, type, 1, "");
+                return createOptR(b, sl, ty, result);
             }
 
             if (ty.isFlt()) {
-                final var result = LLVMBuildSIToFP(b.getBuilder(), llvmvalue, llvmtype, "");
-                return createR(b, sl, ty, result);
+                final var result = LLVMBuildSIToFP(b.getBuilder(), val, type, "");
+                return createOptR(b, sl, ty, result);
             }
 
             if (ty.isPointer()) {
-                final var result = LLVMBuildIntToPtr(b.getBuilder(), llvmvalue, llvmtype, "");
-                return createR(b, sl, ty, result);
+                final var result = LLVMBuildIntToPtr(b.getBuilder(), val, type, "");
+                return createOptR(b, sl, ty, result);
             }
         }
 
-        if (vtype.isFlt()) {
+        if (vty.isFlt()) {
             if (ty.isInt()) {
-                final var result = LLVMBuildFPToSI(b.getBuilder(), llvmvalue, llvmtype, "");
-                return createR(b, sl, ty, result);
+                final var result = LLVMBuildFPToSI(b.getBuilder(), val, type, "");
+                return createOptR(b, sl, ty, result);
             }
 
             if (ty.isFlt()) {
-                final var result = LLVMBuildFPCast(b.getBuilder(), llvmvalue, llvmtype, "");
-                return createR(b, sl, ty, result);
+                final var result = LLVMBuildFPCast(b.getBuilder(), val, type, "");
+                return createOptR(b, sl, ty, result);
             }
         }
 
-        if (vtype.isPointer()) {
+        if (vty.isPointer()) {
             if (ty.isInt()) {
-                final var result = LLVMBuildPtrToInt(b.getBuilder(), llvmvalue, llvmtype, "");
-                return createR(b, sl, ty, result);
+                final var result = LLVMBuildPtrToInt(b.getBuilder(), val, type, "");
+                return createOptR(b, sl, ty, result);
             }
 
             if (ty.isPointer()) {
-                final var result = LLVMBuildPointerCast(b.getBuilder(), llvmvalue, llvmtype, "");
-                return createR(b, sl, ty, result);
+                final var result = LLVMBuildPointerCast(b.getBuilder(), val, type, "");
+                return createOptR(b, sl, ty, result);
             }
         }
 
-        throw new QScriptException(sl, "cannot cast from '%s' to '%s'", vtype, ty);
+        QScriptError.print(sl, "cannot cast from '%s' to '%s'", vty, ty);
+        return Optional.empty();
     }
 
     private GenCast() {

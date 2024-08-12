@@ -7,10 +7,12 @@ import io.scriptor.type.Type;
 
 import static io.scriptor.backend.GenType.*;
 
+import java.util.Optional;
+
 public class LValue extends Value {
 
     public static LValue allocaL(final Builder b, final SourceLocation sl, final Type ty) {
-        final var ptr = b.genAlloca(genType(sl, ty));
+        final var ptr = b.genAlloca(genType(sl, ty).get());
         return new LValue(b, sl, ty, ptr);
     }
 
@@ -22,6 +24,14 @@ public class LValue extends Value {
 
     public static LValue copyL(final Builder b, final SourceLocation sl, final Value val) {
         return allocaL(b, sl, val.getType(), val.get());
+    }
+
+    public static Optional<Value> directOptL(
+            final Builder b,
+            final SourceLocation sl,
+            final Type ty,
+            final LLVMValueRef ptr) {
+        return Optional.of(directL(b, sl, ty, ptr));
     }
 
     public static LValue directL(final Builder b, final SourceLocation sl, final Type ty, final LLVMValueRef ptr) {

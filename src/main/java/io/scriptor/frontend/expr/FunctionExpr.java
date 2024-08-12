@@ -3,7 +3,6 @@ package io.scriptor.frontend.expr;
 import io.scriptor.frontend.SourceLocation;
 import io.scriptor.frontend.stmt.CompoundStmt;
 import io.scriptor.type.Type;
-import io.scriptor.util.QScriptException;
 
 public class FunctionExpr extends Expr {
 
@@ -18,15 +17,8 @@ public class FunctionExpr extends Expr {
     private final String[] args;
     private final CompoundStmt body;
 
-    private FunctionExpr(
-            final SourceLocation sl,
-            final Type ty,
-            final String[] args,
-            final CompoundStmt body) {
+    private FunctionExpr(final SourceLocation sl, final Type ty, final String[] args, final CompoundStmt body) {
         super(sl, ty);
-
-        if (ty == null)
-            throw new QScriptException(sl, "function expression must have a promise type");
 
         this.args = args;
         this.body = body;

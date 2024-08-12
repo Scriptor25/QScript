@@ -23,8 +23,10 @@ import static io.scriptor.backend.GenOperation.genRem;
 import static io.scriptor.backend.GenOperation.genSub;
 import static io.scriptor.backend.GenOperation.genXor;
 import static io.scriptor.backend.GenType.genType;
-import static io.scriptor.backend.LValue.directL;
+import static io.scriptor.backend.LValue.directOptL;
+import static io.scriptor.backend.RValue.createOptR;
 import static io.scriptor.backend.RValue.createR;
+import static java.util.Optional.empty;
 import static org.bytedeco.llvm.global.LLVM.LLVMBuildCall2;
 import static org.bytedeco.llvm.global.LLVM.LLVMBuildGEP2;
 import static org.bytedeco.llvm.global.LLVM.LLVMBuildGlobalStringPtr;
@@ -32,6 +34,8 @@ import static org.bytedeco.llvm.global.LLVM.LLVMBuildStructGEP2;
 import static org.bytedeco.llvm.global.LLVM.LLVMConstInt;
 import static org.bytedeco.llvm.global.LLVM.LLVMConstReal;
 import static org.bytedeco.llvm.global.LLVM.LLVMInt32TypeInContext;
+
+import java.util.Optional;
 
 import org.bytedeco.javacpp.PointerPointer;
 import org.bytedeco.llvm.LLVM.LLVMValueRef;
@@ -48,14 +52,15 @@ import io.scriptor.frontend.expr.StringExpr;
 import io.scriptor.frontend.expr.SymbolExpr;
 import io.scriptor.frontend.expr.UnaryExpr;
 import io.scriptor.type.ArrayType;
+import io.scriptor.type.FunctionType;
 import io.scriptor.type.PointerType;
 import io.scriptor.type.StructType;
 import io.scriptor.type.Type;
-import io.scriptor.util.QScriptException;
+import io.scriptor.util.QScriptError;
 
 public class GenExpression {
 
-    public static Value genExpr(final Builder b, final Expr expr) {
+    public static Optional<Value> genExpr(final Builder b, final Expr expr) {
         if (expr instanceof BinaryExpr e)
             return genExpr(b, e);
         if (expr instanceof CallExpr e)
@@ -77,31 +82,49 @@ public class GenExpression {
         if (expr instanceof UnaryExpr e)
             return genExpr(b, e);
 
-        throw new QScriptException(expr.getSl(), "no genIR for class '%s':\n%s", expr.getClass(), expr);
+        QScriptError.print(expr.getSl(), "no genIR for class '%s':\n%s", expr.getClass(), expr);
+        return Optional.empty();
     }
 
-    public static Value genExpr(final Builder b, final BinaryExpr expr) {
+    public static Optional<Value> genExpr(final Builder b, final BinaryExpr expr) {
 
         final var sl = expr.getSl();
+
+        final var l = genExpr(b, expr.getLHS());
+        final var r = genExpr(b, expr.getRHS());
+
+        if (l.isEmpty() || r.isEmpty())
+            return empty();
+
         var op = expr.getOp();
+        var left = l.get();
+        var right = r.get();
 
         if ("=".equals(op)) {
-            final var assignee = (LValue) genExpr(b, expr.getLHS());
-            final var value = genCast(b, sl, genExpr(b, expr.getRHS()), assignee.getType());
-            assignee.setValue(value.get());
-            return assignee;
+            final var a = (LValue) left;
+            final var v = genCast(b, sl, right, a.getType());
+            if (v.isEmpty())
+                return Optional.empty();
+            a.setValue(v.get().get());
+            return l;
         }
-
-        var left = genExpr(b, expr.getLHS());
-        var right = genExpr(b, expr.getRHS());
 
         if (left.getType() != right.getType()) {
             final var higher = Type.getHigherOrder(sl, left.getType(), right.getType());
-            left = genCast(b, sl, left, higher);
-            right = genCast(b, sl, right, higher);
+            if (higher.isEmpty())
+                return Optional.empty();
+
+            final var lc = genCast(b, sl, left, higher.get());
+            final var rc = genCast(b, sl, right, higher.get());
+
+            if (lc.isEmpty() || rc.isEmpty())
+                return empty();
+
+            left = lc.get();
+            right = rc.get();
         }
 
-        Value result = switch (op) {
+        Optional<Value> res = switch (op) {
             case "==" -> genEQ(b, sl, left, right);
             case "!=" -> genNE(b, sl, left, right);
             case "<" -> genLT(b, sl, left, right);
@@ -111,17 +134,17 @@ public class GenExpression {
             case "&&" -> genLAnd(b, sl, left, right);
             case "||" -> genLOr(b, sl, left, right);
             case "^^" -> genLXor(b, sl, left, right);
-            default -> null;
+            default -> empty();
         };
 
-        if (result != null)
-            return result;
+        if (res.isPresent())
+            return res;
 
         final var assign = op.contains("=");
         if (assign)
             op = op.replace("=", "");
 
-        result = switch (op) {
+        res = switch (op) {
             case "+" -> genAdd(b, sl, left, right);
             case "-" -> genSub(b, sl, left, right);
             case "*" -> genMul(b, sl, left, right);
@@ -130,204 +153,253 @@ public class GenExpression {
             case "&" -> genAnd(b, sl, left, right);
             case "|" -> genOr(b, sl, left, right);
             case "^" -> genXor(b, sl, left, right);
-            default -> null;
+            default -> empty();
         };
 
-        if (result != null) {
+        if (res.isPresent()) {
             if (assign) {
-                final var assignee = (LValue) genExpr(b, expr.getLHS());
-                final var value = genCast(b, sl, result, assignee.getType());
-                assignee.setValue(value.get());
-                return assignee;
+                final var a = (LValue) l.get();
+                final var v = genCast(b, sl, res.get(), a.getType());
+                if (v.isEmpty())
+                    return empty();
+                a.setValue(v.get().get());
+                return l;
             }
-            return result;
+            return res;
         }
 
-        throw new QScriptException(
+        QScriptError.print(
                 sl,
                 "no such operator '%s %s %s'",
                 left.getType(),
                 expr.getOp(),
                 right.getType());
+        return empty();
     }
 
-    public static Value genExpr(final Builder b, final CallExpr expr) {
+    public static Optional<Value> genExpr(final Builder b, final CallExpr expr) {
         final var sl = expr.getSl();
 
-        final var callee = genExpr(b, expr.getCallee());
-        final var fnty = callee
-                .getType()
-                .asPointer()
-                .getBase()
-                .asFunction();
+        final var opt = genExpr(b, expr.getCallee());
+        if (opt.isEmpty())
+            return empty();
+
+        final var callee = opt.get();
+
+        final var optbase = callee.getType().getPointerBase();
+        final Optional<FunctionType> optty = optbase.isPresent() ? optbase.get().asFunction() : empty();
+        if (optty.isEmpty())
+            return empty();
+
+        final var ty = optty.get();
 
         final var args = new PointerPointer<LLVMValueRef>(expr.getArgCount());
-        for (int i = 0; i < expr.getArgCount(); ++i)
-            args.put(i, genCast(b, sl, genExpr(b, expr.getArg(i)), fnty.getArg(i)).get());
+        for (int i = 0; i < expr.getArgCount(); ++i) {
+            final var arg = genExpr(b, expr.getArg(i));
+            if (arg.isEmpty()) {
+                args.close();
+                return empty();
+            }
+
+            final var argty = ty.getArg(i);
+            final Optional<Value> cast;
+
+            if (argty.isPresent()) {
+                cast = genCast(b, sl, arg.get(), argty.get());
+                if (cast.isEmpty()) {
+                    args.close();
+                    return empty();
+                }
+            } else {
+                cast = arg;
+            }
+
+            args.put(i, cast.get().get());
+        }
 
         final var result = LLVMBuildCall2(
                 b.getBuilder(),
-                genType(sl, fnty),
+                genType(sl, ty).get(),
                 callee.get(),
                 args,
                 expr.getArgCount(),
                 "");
 
-        return createR(b, sl, expr.getTy(), result);
+        args.close();
+        return createOptR(b, sl, expr.getTy(), result);
     }
 
-    public static Value genExpr(final Builder b, final FloatExpr expr) {
+    public static Optional<Value> genExpr(final Builder b, final FloatExpr expr) {
         final var sl = expr.getSl();
-        final var type = genType(sl, expr.getTy());
+        final var type = genType(sl, expr.getTy()).get();
         final var value = LLVMConstReal(type, expr.getVal());
-        return createR(b, sl, expr.getTy(), value);
+        return createOptR(b, sl, expr.getTy(), value);
     }
 
-    public static Value genExpr(final Builder b, final FunctionExpr expr) {
-        throw new QScriptException(expr.getSl(), "TODO");
+    public static Optional<Value> genExpr(final Builder b, final FunctionExpr expr) {
+        return Optional.empty();
     }
 
-    public static Value genExpr(final Builder b, final IndexExpr expr) {
+    public static Optional<Value> genExpr(final Builder b, final IndexExpr expr) {
 
         final var sl = expr.getSl();
-        final var ptr = genExpr(b, expr.getPtr());
-        final var index = genExpr(b, expr.getIdx());
+
+        final var optp = genExpr(b, expr.getPtr());
+        final var opti = genExpr(b, expr.getIdx());
+
+        if (optp.isEmpty() || opti.isEmpty())
+            return empty();
+
+        final var ptr = optp.get();
+        final var index = opti.get();
 
         final var arraytype = expr.getPtr().getTy();
 
         if (arraytype instanceof PointerType type) {
-            final var llvmbase = genType(sl, type.getBase());
+            final var ty = genType(sl, type.getBase()).get();
 
             final var indices = new PointerPointer<LLVMValueRef>(1);
             indices.put(0, index.get());
 
-            final var gep = LLVMBuildGEP2(b.getBuilder(), llvmbase, ptr.get(), indices, 1, "");
-            return directL(b, sl, type.getBase(), gep);
+            final var gep = LLVMBuildGEP2(b.getBuilder(), ty, ptr.get(), indices, 1, "");
+
+            indices.close();
+            return directOptL(b, sl, type.getBase(), gep);
         }
 
         if (arraytype instanceof ArrayType type) {
-            final var llvmtype = genType(sl, type);
+            final var ty = genType(sl, type).get();
 
             final var indices = new PointerPointer<LLVMValueRef>(2);
             indices.put(0, LLVMConstInt(LLVMInt32TypeInContext(Builder.getContext()), 0, 1));
             indices.put(1, index.get());
-            final var gep = LLVMBuildGEP2(b.getBuilder(), llvmtype, ((LValue) ptr).getPtr(), indices, 2, "");
-            return directL(b, sl, type.getBase(), gep);
+
+            final var gep = LLVMBuildGEP2(b.getBuilder(), ty, ((LValue) ptr).getPtr(), indices, 2, "");
+
+            indices.close();
+            return directOptL(b, sl, type.getBase(), gep);
         }
 
-        throw new QScriptException(
-                sl,
-                "type must be an array or pointer type, but is '%s'",
-                arraytype);
+        QScriptError.print(sl, "type must be an array or pointer type, but is '%s'", arraytype);
+        return empty();
     }
 
-    public static Value genExpr(final Builder b, final InitializerExpr expr) {
+    public static Optional<Value> genExpr(final Builder b, final InitializerExpr expr) {
 
         final var sl = expr.getSl();
 
         if (expr.getTy() instanceof StructType type) {
-            final var llvmtype = genType(sl, type);
-            final var ptr = b.genAlloca(llvmtype);
+            final var ty = genType(sl, type).get();
+            final var ptr = b.genAlloca(ty);
 
             for (int i = 0; i < expr.getArgCount(); ++i) {
-                final var val = genCast(b, sl, genExpr(b, expr.getArg(i)), type.getElement(i)).get();
-                final var gep = LLVMBuildStructGEP2(b.getBuilder(), llvmtype, ptr, i, "");
-                b.genStore(val, gep);
+                final var arg = genExpr(b, expr.getArg(i));
+                if (arg.isEmpty())
+                    return empty();
+
+                final var cast = genCast(b, sl, arg.get(), type.getElement(i));
+                if (cast.isEmpty())
+                    return empty();
+
+                final var gep = LLVMBuildStructGEP2(b.getBuilder(), ty, ptr, i, "");
+                b.genStore(cast.get().get(), gep);
             }
 
-            return directL(b, sl, type, ptr);
+            return directOptL(b, sl, type, ptr);
         }
 
         if (expr.getTy() instanceof ArrayType type) {
-            final var llvmtype = genType(sl, type);
-            final var ptr = b.genAlloca(llvmtype);
+            final var ty = genType(sl, type).get();
+            final var ptr = b.genAlloca(ty);
 
             final var indices = new PointerPointer<LLVMValueRef>(2);
             indices.put(0, LLVMConstInt(LLVMInt32TypeInContext(Builder.getContext()), 0, 1));
             for (int i = 0; i < expr.getArgCount(); ++i) {
-                final var val = genCast(b, sl, genExpr(b, expr.getArg(i)), type.getBase()).get();
+                final var arg = genExpr(b, expr.getArg(i));
+                if (arg.isEmpty())
+                    return empty();
+
+                final var cast = genCast(b, sl, arg.get(), type.getBase());
+                if (cast.isEmpty())
+                    return empty();
+
                 indices.put(1, LLVMConstInt(LLVMInt32TypeInContext(Builder.getContext()), i, 1));
-                final var gep = LLVMBuildGEP2(b.getBuilder(), llvmtype, ptr, indices, 2, "");
-                b.genStore(val, gep);
+
+                final var gep = LLVMBuildGEP2(b.getBuilder(), ty, ptr, indices, 2, "");
+                b.genStore(cast.get().get(), gep);
             }
 
-            return directL(b, sl, type, ptr);
+            return directOptL(b, sl, type, ptr);
         }
 
-        throw new QScriptException(
-                sl,
-                "type must be an array or struct type, but is '%s'",
-                expr.getTy());
+        QScriptError.print(sl, "type must be an array or struct type, but is '%s'", expr.getTy());
+        return empty();
     }
 
-    public static Value genExpr(final Builder b, final IntExpr expr) {
+    public static Optional<Value> genExpr(final Builder b, final IntExpr expr) {
 
         final var sl = expr.getSl();
         final var type = expr.getTy();
 
-        final var llvmtype = genType(sl, type);
-        final var value = LLVMConstInt(llvmtype, expr.getVal(), 1);
-        return createR(b, sl, type, value);
+        final var ty = genType(sl, type).get();
+        final var value = LLVMConstInt(ty, expr.getVal(), 1);
+        return createOptR(b, sl, type, value);
     }
 
-    public static Value genExpr(final Builder b, final StringExpr expr) {
+    public static Optional<Value> genExpr(final Builder b, final StringExpr expr) {
         final var value = LLVMBuildGlobalStringPtr(b.getBuilder(), expr.getVal(), "");
-        return createR(b, expr.getSl(), expr.getTy(), value);
+        return createOptR(b, expr.getSl(), expr.getTy(), value);
     }
 
-    public static Value genExpr(final Builder b, final SymbolExpr expr) {
-        final var name = expr.getName();
-        final var value = b.get(name);
-        if (value == null)
-            throw new QScriptException(expr.getSl(), "undefined symbol '%s'", expr.getName());
-        return value;
+    public static Optional<Value> genExpr(final Builder b, final SymbolExpr expr) {
+        return b.get(expr.getSl(), expr.getName());
     }
 
-    public static Value genExpr(final Builder b, final UnaryExpr expr) {
+    public static Optional<Value> genExpr(final Builder b, final UnaryExpr expr) {
 
         final var sl = expr.getSl();
 
-        final var op = expr.getOp();
-        final var value = genExpr(b, expr.getVal());
+        final var o = expr.getOp();
+        final var opt = genExpr(b, expr.getVal());
+        if (opt.isEmpty())
+            return empty();
 
-        final var llvmtype = value.getLLVMType();
+        final var v = opt.get();
+        final var t = v.getLLVMType();
 
-        final boolean assign;
-        final Value result;
+        final boolean a;
+        final Optional<Value> r;
 
-        if ("++".equals(op)) {
-            assign = true;
-            result = genAdd(b, sl, value, createR(b, sl, value.getType(), LLVMConstInt(llvmtype, 1, 1)));
-        } else if ("--".equals(op)) {
-            assign = true;
-            result = genSub(b, sl, value, createR(b, sl, value.getType(), LLVMConstInt(llvmtype, 1, 1)));
+        if ("++".equals(o)) {
+            a = true;
+            r = genAdd(b, sl, v, createR(b, sl, v.getType(), LLVMConstInt(t, 1, 1)));
+        } else if ("--".equals(o)) {
+            a = true;
+            r = genSub(b, sl, v, createR(b, sl, v.getType(), LLVMConstInt(t, 1, 1)));
         } else {
-            assign = false;
-            result = switch (op) {
-                case "!" -> genNot(b, sl, value);
-                case "-" -> genNeg(b, sl, value);
-                case "~" -> genLNeg(b, sl, value);
-                case "&" -> genRef(b, sl, value);
-                default -> null;
+            a = false;
+            r = switch (o) {
+                case "!" -> genNot(b, sl, v);
+                case "-" -> genNeg(b, sl, v);
+                case "~" -> genLNeg(b, sl, v);
+                case "&" -> genRef(b, sl, v);
+                default -> Optional.empty();
             };
         }
 
-        if (result != null) {
-            final var prev = expr.isRight()
-                    ? value.get()
+        if (r.isPresent()) {
+            final var p = expr.isRight()
+                    ? v.get()
                     : null;
-            if (assign)
-                ((LValue) value).setValue(result.get());
+            if (a)
+                ((LValue) v).setValue(r.get().get());
             if (expr.isRight())
-                return createR(b, sl, value.getType(), prev);
-            return result;
+                return createOptR(b, sl, v.getType(), p);
+            return r;
         }
 
-        throw new QScriptException(
-                sl,
-                "no such operator '%s%s'",
-                op,
-                value.getType());
+        QScriptError.print(sl, "no such operator '%s%s'", o, v.getType());
+        return empty();
     }
 
     private GenExpression() {

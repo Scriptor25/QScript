@@ -4,6 +4,8 @@ import java.io.File;
 
 public record SourceLocation(File f, int r, int c) {
 
+    public static final SourceLocation UNKNOWN = new SourceLocation(null, 0, 0);
+
     @Override
     public String toString() {
         if (f == null)

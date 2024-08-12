@@ -1,8 +1,10 @@
 package io.scriptor.type;
 
+import java.util.Optional;
+
 import io.scriptor.frontend.SourceLocation;
 import io.scriptor.frontend.StackFrame;
-import io.scriptor.util.QScriptException;
+import io.scriptor.util.QScriptError;
 
 public class Type {
 
@@ -14,67 +16,73 @@ public class Type {
     public static final int IS_STRUCT = 32;
     public static final int IS_ARRAY = 64;
 
-    public static void useAs(final StackFrame frame, final String id, final Type type) {
-        frame.putType(id, type);
+    public static void useAs(final StackFrame frame, final SourceLocation sl, final String id, final Type type) {
+        frame.putType(sl, id, type);
     }
 
     public static boolean exists(final StackFrame frame, final String id) {
         return frame.existsType(id);
     }
 
-    public static <T extends Type> T get(final SourceLocation sl, final StackFrame frame, final String id) {
-        return frame.getType(sl, id);
+    public static <T extends Type> Optional<T> get(final SourceLocation sl, final StackFrame frame, final String name) {
+        return frame.getType(sl, name);
     }
 
     public static Type getVoid(final StackFrame frame) {
-        return get(null, frame, "void");
+        return get(null, frame, "void").get();
     }
 
-    public static Type getIntN(final SourceLocation sl, final StackFrame frame, final int size) {
-        return get(sl, frame, switch (size) {
+    public static Optional<Type> getIntN(final SourceLocation sl, final StackFrame frame, final int size) {
+        final var name = switch (size) {
             case 1 -> "i1";
             case 8 -> "i8";
             case 16 -> "i16";
             case 32 -> "i32";
             case 64 -> "i64";
             default -> null;
-        });
+        };
+        if (name == null)
+            return Optional.empty();
+        return get(sl, frame, name);
     }
 
-    public static Type getFltN(final SourceLocation sl, final StackFrame frame, final int size) {
-        return get(sl, frame, switch (size) {
+    public static Optional<Type> getFltN(final SourceLocation sl, final StackFrame frame, final int size) {
+        final var name = switch (size) {
             case 32 -> "f32";
             case 64 -> "f64";
             default -> null;
-        });
+        };
+        if (name == null)
+            return Optional.empty();
+        return get(sl, frame, name);
     }
 
     public static Type getInt1(final StackFrame frame) {
-        return get(null, frame, "i1");
+        return get(null, frame, "i1").get();
     }
 
     public static Type getInt8(final StackFrame frame) {
-        return get(null, frame, "i8");
+        return get(null, frame, "i8").get();
     }
 
     public static Type getInt16(final StackFrame frame) {
-        return get(null, frame, "i16");
+        return get(null, frame, "i16").get();
     }
 
     public static Type getInt32(final StackFrame frame) {
-        return get(null, frame, "i32");
+        return get(null, frame, "i32").get();
     }
 
     public static Type getInt64(final StackFrame frame) {
-        return get(null, frame, "i64");
+        return get(null, frame, "i64").get();
     }
 
     public static Type getFlt32(final StackFrame frame) {
-        return get(null, frame, "f32");
+        return get(null, frame, "f32").get();
     }
 
     public static Type getFlt64(final StackFrame frame) {
-        return get(null, frame, "f64");
+        return get(null, frame, "f64").get();
     }
 
     public static Type getVoidPtr(final StackFrame frame) {
@@ -85,74 +93,77 @@ public class Type {
         return PointerType.get(getInt8(frame));
     }
 
-    public static Type getHigherOrder(final SourceLocation sl, final Type a, final Type b) {
+    public static Optional<Type> getHigherOrder(final SourceLocation sl, final Type a, final Type b) {
         if (a == b)
-            return a;
+            return Optional.of(a);
 
         if (a.isInt()) {
             if (b.isInt()) {
                 if (a.getSize() >= b.getSize())
-                    return a;
-                return b;
+                    return Optional.of(a);
+                return Optional.of(b);
             }
 
             if (b.isFlt())
-                return b;
+                return Optional.of(b);
 
             if (b.isPointer())
-                return a;
+                return Optional.of(a);
         }
 
         if (a.isFlt()) {
             if (b.isInt())
-                return a;
+                return Optional.of(a);
 
             if (b.isFlt()) {
                 if (a.getSize() >= b.getSize())
-                    return a;
-                return b;
+                    return Optional.of(a);
+                return Optional.of(b);
             }
 
             if (b.isPointer())
-                return a;
+                return Optional.of(a);
         }
 
         if (a.isPointer()) {
             if (b.isInt())
-                return b;
+                return Optional.of(b);
 
             if (b.isFlt())
-                return b;
+                return Optional.of(b);
         }
 
-        throw new QScriptException(sl, "cannot determine higher order type from %s and %s", a, b);
+        QScriptError.print(sl, "cannot determine higher order type from %s and %s", a, b);
+        return Optional.empty();
     }
 
-    public static Type getNative(final SourceLocation sl, final StackFrame frame, final Class<?> clazz) {
+    public static Optional<Type> getNative(final SourceLocation sl, final StackFrame frame, final Class<?> clazz) {
         if (clazz.isArray()) {
             final var base = getNative(sl, frame, clazz.getComponentType());
-            return PointerType.get(base);
+            if (base.isPresent())
+                return Optional.of(PointerType.get(base.get()));
+            return Optional.empty();
         }
 
         if (clazz == Void.class || clazz == void.class)
-            return Type.getVoid(frame);
+            return Optional.of(Type.getVoid(frame));
         if (clazz == Boolean.class || clazz == boolean.class)
-            return Type.getInt1(frame);
+            return Optional.of(Type.getInt1(frame));
         if (clazz == Byte.class || clazz == byte.class)
-            return Type.getInt8(frame);
+            return Optional.of(Type.getInt8(frame));
         if (clazz == Short.class || clazz == short.class)
-            return Type.getInt16(frame);
+            return Optional.of(Type.getInt16(frame));
         if (clazz == Integer.class || clazz == int.class)
-            return Type.getInt32(frame);
+            return Optional.of(Type.getInt32(frame));
         if (clazz == Long.class || clazz == long.class)
-            return Type.getInt64(frame);
+            return Optional.of(Type.getInt64(frame));
         if (clazz == Float.class || clazz == float.class)
-            return Type.getFlt32(frame);
+            return Optional.of(Type.getFlt32(frame));
         if (clazz == Double.class || clazz == double.class)
-            return Type.getFlt64(frame);
+            return Optional.of(Type.getFlt64(frame));
 
         if (CharSequence.class.isAssignableFrom(clazz))
-            return Type.getInt8Ptr(frame);
+            return Optional.of(Type.getInt8Ptr(frame));
 
         return Type.get(sl, frame, clazz.getSimpleName());
     }
@@ -162,8 +173,8 @@ public class Type {
     private final int flags;
     private final long size;
 
-    public Type(final StackFrame frame, final String id, final int flags, final long size) {
-        frame.putType(id, this);
+    public Type(final StackFrame frame, final SourceLocation sl, final String id, final int flags, final long size) {
+        frame.putType(sl, id, this);
         this.frame = frame;
         this.id = id;
         this.flags = flags;
@@ -255,27 +266,48 @@ public class Type {
         return (flags & IS_ARRAY) != 0;
     }
 
-    public PointerType asPointer() {
+    public Optional<PointerType> asPointer() {
         if (!isPointer())
-            return null;
-        return (PointerType) this;
+            return Optional.empty();
+        return Optional.of((PointerType) this);
     }
 
-    public FunctionType asFunction() {
+    public Optional<FunctionType> asFunction() {
         if (!isFunction())
-            return null;
-        return (FunctionType) this;
+            return Optional.empty();
+        return Optional.of((FunctionType) this);
     }
 
-    public StructType asStruct() {
+    public Optional<StructType> asStruct() {
         if (!isStruct())
-            return null;
-        return (StructType) this;
+            return Optional.empty();
+        return Optional.of((StructType) this);
     }
 
-    public ArrayType asArray() {
+    public Optional<ArrayType> asArray() {
         if (!isArray())
-            return null;
-        return (ArrayType) this;
+            return Optional.empty();
+        return Optional.of((ArrayType) this);
+    }
+
+    public Optional<Type> getPointerBase() {
+        final var ty = asPointer();
+        if (ty.isEmpty())
+            return Optional.empty();
+        return Optional.of(ty.get().getBase());
+    }
+
+    public Optional<Type> getArrayBase() {
+        final var ty = asArray();
+        if (ty.isEmpty())
+            return Optional.empty();
+        return Optional.of(ty.get().getBase());
+    }
+
+    public long getArrayLength() {
+        final var ty = asArray();
+        if (ty.isEmpty())
+            return -1;
+        return ty.get().getLength();
     }
 }

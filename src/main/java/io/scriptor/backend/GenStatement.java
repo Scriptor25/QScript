@@ -16,6 +16,7 @@ import static org.bytedeco.llvm.global.LLVM.LLVMBuildRet;
 import static org.bytedeco.llvm.global.LLVM.LLVMBuildRetVoid;
 import static org.bytedeco.llvm.global.LLVM.LLVMClearInsertionPosition;
 import static org.bytedeco.llvm.global.LLVM.LLVMCountBasicBlocks;
+import static org.bytedeco.llvm.global.LLVM.LLVMDeleteBasicBlock;
 import static org.bytedeco.llvm.global.LLVM.LLVMGetBasicBlockParent;
 import static org.bytedeco.llvm.global.LLVM.LLVMGetBasicBlockTerminator;
 import static org.bytedeco.llvm.global.LLVM.LLVMGetFirstBasicBlock;
@@ -29,6 +30,8 @@ import static org.bytedeco.llvm.global.LLVM.LLVMSetInitializer;
 import static org.bytedeco.llvm.global.LLVM.LLVMSetValueName;
 import static org.bytedeco.llvm.global.LLVM.LLVMVerifyFunction;
 
+import java.util.Optional;
+
 import io.scriptor.frontend.expr.Expr;
 import io.scriptor.frontend.stmt.CompoundStmt;
 import io.scriptor.frontend.stmt.DefFunctionStmt;
@@ -38,7 +41,7 @@ import io.scriptor.frontend.stmt.ReturnStmt;
 import io.scriptor.frontend.stmt.Stmt;
 import io.scriptor.frontend.stmt.WhileStmt;
 import io.scriptor.type.PointerType;
-import io.scriptor.util.QScriptException;
+import io.scriptor.util.QScriptError;
 
 public class GenStatement {
 
@@ -72,7 +75,7 @@ public class GenStatement {
             return;
         }
 
-        throw new QScriptException(stmt.getSl(), "no genIR for class '%s':\n%s", stmt.getClass(), stmt);
+        QScriptError.print(stmt.getSl(), "no genIR for class '%s':\n%s", stmt.getClass(), stmt);
     }
 
     public static void genStmt(final Builder b, final CompoundStmt stmt) {
@@ -86,28 +89,26 @@ public class GenStatement {
 
     public static void genStmt(final Builder b, final DefFunctionStmt stmt) {
         final var sl = stmt.getSl();
-        final var ft = genType(sl, stmt.getFunctionType());
+        final var ft = genType(sl, stmt.getFunctionType()).get();
 
         var f = LLVMGetNamedFunction(b.getModule(), stmt.getName());
         if (f == null) {
             f = LLVMAddFunction(b.getModule(), stmt.getName(), ft);
-            if (f == null)
-                throw new QScriptException(
-                        sl,
-                        "failed to create function '%s':\n%s",
-                        stmt.getName(),
-                        stmt);
+            if (f == null) {
+                QScriptError.print(sl, "failed to create function '%s':\n%s", stmt.getName(), stmt);
+                return;
+            }
         }
 
-        b.put(
-                stmt.getName(),
-                createR(b, sl, PointerType.get(stmt.getFunctionType()), f));
+        b.put(stmt.getName(), createR(b, sl, PointerType.get(stmt.getFunctionType()), f));
 
         if (stmt.getBody() == null)
             return;
 
-        if (LLVMCountBasicBlocks(f) != 0)
-            throw new QScriptException(sl, "cannot redefine function '%s'", stmt.getName());
+        if (LLVMCountBasicBlocks(f) != 0) {
+            QScriptError.print(sl, "cannot redefine function '%s'", stmt.getName());
+            return;
+        }
 
         final var entry = LLVMAppendBasicBlockInContext(Builder.getContext(), f, "entry");
         LLVMPositionBuilderAtEnd(b.getBuilder(), entry);
@@ -139,11 +140,17 @@ public class GenStatement {
                 continue;
             }
 
-            throw new QScriptException(sl, "not all paths return a value");
+            QScriptError.print(sl, "not all paths return a value");
+            for (var db = LLVMGetFirstBasicBlock(f); db != null; db = LLVMGetNextBasicBlock(db))
+                LLVMDeleteBasicBlock(db);
+            return;
         }
 
         if (LLVMVerifyFunction(f, LLVMPrintMessageAction) != 0) {
-            throw new QScriptException(sl, "failed to verify function");
+            QScriptError.print(sl, "failed to verify function");
+            for (var db = LLVMGetFirstBasicBlock(f); db != null; db = LLVMGetNextBasicBlock(db))
+                LLVMDeleteBasicBlock(db);
+            return;
         }
     }
 
@@ -152,7 +159,7 @@ public class GenStatement {
         final var name = stmt.getName();
 
         if (b.isGlobal()) {
-            final var vt = genType(sl, stmt.getTy());
+            final var vt = genType(sl, stmt.getTy()).get();
 
             final var ptr = LLVMAddGlobal(b.getModule(), vt, name);
             final var value = directL(b, sl, stmt.getTy(), ptr);
@@ -160,9 +167,11 @@ public class GenStatement {
             if (stmt.hasInit()) {
                 if (stmt.getInit().isConst()) {
                     final var init = genExpr(b, stmt.getInit());
-                    LLVMSetInitializer(ptr, init.get());
+                    if (init.isPresent())
+                        LLVMSetInitializer(ptr, init.get().get());
                 } else {
-                    throw new QScriptException(sl, "global initializer must be constant");
+                    QScriptError.print(sl, "global initializer must be constant");
+                    return;
                 }
             }
 
@@ -172,8 +181,13 @@ public class GenStatement {
 
         final Value value;
         if (stmt.hasInit()) {
-            final var init = genCast(b, sl, genExpr(b, stmt.getInit()), stmt.getTy());
-            value = copyL(b, sl, init);
+            final var init = genExpr(b, stmt.getInit());
+            final var cast = init.isPresent() ? genCast(b, sl, init.get(), stmt.getTy()) : Optional.<Value>empty();
+            if (init.isPresent() && cast.isPresent()) {
+                value = copyL(b, sl, cast.get());
+            } else {
+                value = allocaL(b, sl, stmt.getTy());
+            }
         } else {
             value = allocaL(b, sl, stmt.getTy());
         }
@@ -183,7 +197,8 @@ public class GenStatement {
 
     public static void genStmt(final Builder b, final IfStmt stmt) {
 
-        final var f = LLVMGetBasicBlockParent(LLVMGetInsertBlock(b.getBuilder()));
+        final var bb = LLVMGetInsertBlock(b.getBuilder());
+        final var f = LLVMGetBasicBlockParent(bb);
         final var headbb = LLVMAppendBasicBlockInContext(Builder.getContext(), f, "head");
         final var thenbb = LLVMAppendBasicBlockInContext(Builder.getContext(), f, "then");
         final var elsebb = LLVMAppendBasicBlockInContext(Builder.getContext(), f, stmt.hasE() ? "else" : "end");
@@ -193,7 +208,17 @@ public class GenStatement {
 
         LLVMPositionBuilderAtEnd(b.getBuilder(), headbb);
         final var condition = genExpr(b, stmt.getC());
-        LLVMBuildCondBr(b.getBuilder(), condition.get(), thenbb, elsebb);
+        if (condition.isEmpty()) {
+            LLVMPositionBuilderAtEnd(b.getBuilder(), bb);
+            LLVMDeleteBasicBlock(headbb);
+            LLVMDeleteBasicBlock(thenbb);
+            LLVMDeleteBasicBlock(elsebb);
+            if (stmt.hasE())
+                LLVMDeleteBasicBlock(endbb);
+            return;
+        }
+
+        LLVMBuildCondBr(b.getBuilder(), condition.get().get(), thenbb, elsebb);
 
         LLVMPositionBuilderAtEnd(b.getBuilder(), thenbb);
         genStmt(b, stmt.getT());
@@ -216,14 +241,22 @@ public class GenStatement {
             return;
         }
 
-        final var value = genCast(b, stmt.getSl(), genExpr(b, stmt.getVal()), stmt.getRes());
-        LLVMBuildRet(b.getBuilder(), value.get());
+        final var val = genExpr(b, stmt.getVal());
+        if (val.isEmpty())
+            return;
+
+        final var cast = genCast(b, stmt.getSl(), val.get(), stmt.getRes());
+        if (cast.isEmpty())
+            return;
+
+        LLVMBuildRet(b.getBuilder(), cast.get().get());
         return;
     }
 
     public static void genStmt(final Builder b, final WhileStmt stmt) {
 
-        final var f = LLVMGetBasicBlockParent(LLVMGetInsertBlock(b.getBuilder()));
+        final var bb = LLVMGetInsertBlock(b.getBuilder());
+        final var f = LLVMGetBasicBlockParent(bb);
         final var head = LLVMAppendBasicBlockInContext(Builder.getContext(), f, "head");
         final var loop = LLVMAppendBasicBlockInContext(Builder.getContext(), f, "loop");
         final var end = LLVMAppendBasicBlockInContext(Builder.getContext(), f, "end");
@@ -231,8 +264,17 @@ public class GenStatement {
         LLVMBuildBr(b.getBuilder(), head);
 
         LLVMPositionBuilderAtEnd(b.getBuilder(), head);
+
         final var condition = genExpr(b, stmt.getC());
-        LLVMBuildCondBr(b.getBuilder(), condition.get(), loop, end);
+        if (condition.isEmpty()) {
+            LLVMPositionBuilderAtEnd(b.getBuilder(), bb);
+            LLVMDeleteBasicBlock(head);
+            LLVMDeleteBasicBlock(loop);
+            LLVMDeleteBasicBlock(end);
+            return;
+        }
+
+        LLVMBuildCondBr(b.getBuilder(), condition.get().get(), loop, end);
 
         LLVMPositionBuilderAtEnd(b.getBuilder(), loop);
         genStmt(b, stmt.getL());

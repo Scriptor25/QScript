@@ -1,10 +1,12 @@
 package io.scriptor.type;
 
+import java.util.Optional;
+
 import io.scriptor.frontend.StackFrame;
 
 public class StructType extends Type {
 
-    private static String makeId(final Type[] elements) {
+    private static String getName(final Type[] elements) {
         if (elements.length == 0)
             return "{}";
 
@@ -23,21 +25,26 @@ public class StructType extends Type {
     }
 
     public static StructType get(final StackFrame frame, final Type... elements) {
-        final var id = makeId(elements);
-        if (Type.exists(frame, id))
-            return Type.get(null, frame, id);
+        final var name = getName(elements);
+        final Optional<StructType> ty = Type.get(null, frame, name);
+        if (ty.isPresent())
+            return ty.get();
 
         int size = 0;
         for (final var element : elements)
             size += element.getSize();
 
-        return new StructType(frame, id, size, elements);
+        return new StructType(frame, name, size, elements);
     }
 
     private final Type[] elements;
 
-    protected StructType(final StackFrame frame, final String id, final int size, final Type[] elements) {
-        super(frame, id, IS_STRUCT, size);
+    protected StructType(
+            final StackFrame frame,
+            final String name,
+            final int size,
+            final Type[] elements) {
+        super(frame, null, name, IS_STRUCT, size);
         this.elements = elements;
     }
 

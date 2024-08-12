@@ -15,7 +15,7 @@ public class DefFunctionStmt extends Stmt {
             final String name,
             final Arg[] args,
             final boolean va) {
-        return create(sl, res, name, args, va, null);
+        return new DefFunctionStmt(sl, res, name, args, va, null);
     }
 
     public static DefFunctionStmt create(
@@ -24,7 +24,7 @@ public class DefFunctionStmt extends Stmt {
             final String name,
             final Arg[] args,
             final boolean va,
-            final CompoundStmt body) {
+            final Stmt body) {
         return new DefFunctionStmt(sl, res, name, args, va, body);
     }
 
@@ -32,7 +32,7 @@ public class DefFunctionStmt extends Stmt {
     private final String name;
     private final Arg[] args;
     private final boolean va;
-    private final CompoundStmt body;
+    private final Stmt body;
 
     private DefFunctionStmt(
             final SourceLocation sl,
@@ -40,7 +40,7 @@ public class DefFunctionStmt extends Stmt {
             final String name,
             final Arg[] args,
             final boolean va,
-            final CompoundStmt body) {
+            final Stmt body) {
         super(sl);
         this.res = res;
         this.name = name;
@@ -69,7 +69,7 @@ public class DefFunctionStmt extends Stmt {
         return va;
     }
 
-    public CompoundStmt getBody() {
+    public Stmt getBody() {
         return body;
     }
 

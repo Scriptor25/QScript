@@ -1,36 +1,31 @@
 package io.scriptor.frontend.expr;
 
+import java.util.Optional;
+
 import io.scriptor.frontend.SourceLocation;
 import io.scriptor.type.ArrayType;
 import io.scriptor.type.PointerType;
 import io.scriptor.type.Type;
-import io.scriptor.util.QScriptException;
 
 public class IndexExpr extends Expr {
 
-    public static IndexExpr create(
-            final SourceLocation sl,
-            final Expr ptr,
-            final Expr idx) {
+    public static Optional<Expr> create(final SourceLocation sl, final Expr ptr, final Expr idx) {
         final Type ty;
-        if (ptr.getTy() instanceof PointerType type)
+        if (ptr.getTy() instanceof PointerType type) {
             ty = type.getBase();
-        else if (ptr.getTy() instanceof ArrayType type)
+        } else if (ptr.getTy() instanceof ArrayType type) {
             ty = type.getBase();
-        else
-            throw new QScriptException(sl, "not a suitable type");
+        } else {
+            return Optional.empty();
+        }
 
-        return new IndexExpr(sl, ty, ptr, idx);
+        return Optional.of(new IndexExpr(sl, ty, ptr, idx));
     }
 
     private final Expr ptr;
     private final Expr idx;
 
-    private IndexExpr(
-            final SourceLocation sl,
-            final Type ty,
-            final Expr ptr,
-            final Expr idx) {
+    private IndexExpr(final SourceLocation sl, final Type ty, final Expr ptr, final Expr idx) {
         super(sl, ty);
         this.ptr = ptr;
         this.idx = idx;

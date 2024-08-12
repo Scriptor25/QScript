@@ -1,13 +1,14 @@
 package io.scriptor.type;
 
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import io.scriptor.frontend.StackFrame;
 
 public class FunctionType extends Type {
 
-    private static String makeId(final Type result, final boolean vararg, final Type... args) {
+    private static String getName(final Type result, final boolean vararg, final Type... args) {
         final var builder = new StringBuilder()
                 .append(result.getId())
                 .append('(');
@@ -31,11 +32,13 @@ public class FunctionType extends Type {
 
     public static FunctionType get(final Type result, final boolean vararg, final Type... args) {
         final var state = result.getFrame();
-        final var id = makeId(result, vararg, args);
-        if (Type.exists(state, id))
-            return Type.get(null, state, id);
+        final var name = getName(result, vararg, args);
 
-        return new FunctionType(state, id, result, vararg, args);
+        final Optional<FunctionType> ty = Type.get(null, state, name);
+        if (ty.isPresent())
+            return ty.get();
+
+        return new FunctionType(state, name, result, vararg, args);
     }
 
     private final Type result;
@@ -48,7 +51,7 @@ public class FunctionType extends Type {
             final Type result,
             final boolean vararg,
             final Type... args) {
-        super(frame, id, Type.IS_FUNCTION, 64);
+        super(frame, null, id, Type.IS_FUNCTION, 64);
         this.result = result;
         this.vararg = vararg;
         this.args = args;
@@ -66,11 +69,11 @@ public class FunctionType extends Type {
         return args.length;
     }
 
-    public Type getArg(final int i) {
+    public Optional<Type> getArg(final int i) {
         if (vararg && i >= args.length)
-            return null;
+            return Optional.empty();
 
-        return args[i];
+        return Optional.of(args[i]);
     }
 
     public Stream<Type> getArgs() {

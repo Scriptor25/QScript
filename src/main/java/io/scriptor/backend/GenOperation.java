@@ -1,7 +1,7 @@
 package io.scriptor.backend;
 
-import static io.scriptor.backend.LValue.directL;
-import static io.scriptor.backend.RValue.createR;
+import static io.scriptor.backend.LValue.directOptL;
+import static io.scriptor.backend.RValue.createOptR;
 import static org.bytedeco.llvm.global.LLVM.LLVMBuildAdd;
 import static org.bytedeco.llvm.global.LLVM.LLVMBuildAnd;
 import static org.bytedeco.llvm.global.LLVM.LLVMBuildFAdd;
@@ -22,6 +22,8 @@ import static org.bytedeco.llvm.global.LLVM.LLVMRealOEQ;
 import static org.bytedeco.llvm.global.LLVM.LLVMRealOLT;
 import static org.bytedeco.llvm.global.LLVM.LLVMRealONE;
 
+import java.util.Optional;
+
 import io.scriptor.frontend.SourceLocation;
 import io.scriptor.type.PointerType;
 import io.scriptor.type.Type;
@@ -38,219 +40,221 @@ public class GenOperation {
         assert v != null;
     }
 
-    public static Value genEQ(final Builder b, final SourceLocation sl, final Value left, final Value right) {
-        assertBinary(left, right);
-        final var type = left.getType();
+    public static Optional<Value> genEQ(final Builder b, final SourceLocation sl, final Value l, final Value r) {
+        assertBinary(l, r);
+        final var type = l.getType();
 
         if (type.isInt()) {
-            final var result = LLVMBuildICmp(b.getBuilder(), LLVMIntEQ, left.get(), right.get(), "");
-            return createR(b, sl, Type.getInt1(b.getFrame()), result);
+            final var result = LLVMBuildICmp(b.getBuilder(), LLVMIntEQ, l.get(), r.get(), "");
+            return createOptR(b, sl, Type.getInt1(b.getFrame()), result);
         }
 
         if (type.isFlt()) {
-            final var result = LLVMBuildFCmp(b.getBuilder(), LLVMRealOEQ, left.get(), right.get(), "");
-            return createR(b, sl, Type.getInt1(b.getFrame()), result);
+            final var result = LLVMBuildFCmp(b.getBuilder(), LLVMRealOEQ, l.get(), r.get(), "");
+            return createOptR(b, sl, Type.getInt1(b.getFrame()), result);
         }
 
-        return null;
+        return Optional.empty();
     }
 
-    public static Value genNE(final Builder b, final SourceLocation sl, final Value left, final Value right) {
-        assertBinary(left, right);
-        final var type = left.getType();
+    public static Optional<Value> genNE(final Builder b, final SourceLocation sl, final Value l, final Value r) {
+        assertBinary(l, r);
+        final var type = l.getType();
 
         if (type.isInt()) {
-            final var result = LLVMBuildICmp(b.getBuilder(), LLVMIntNE, left.get(), right.get(), "");
-            return createR(b, sl, Type.getInt1(b.getFrame()), result);
+            final var result = LLVMBuildICmp(b.getBuilder(), LLVMIntNE, l.get(), r.get(), "");
+            return createOptR(b, sl, Type.getInt1(b.getFrame()), result);
         }
 
         if (type.isFlt()) {
-            final var result = LLVMBuildFCmp(b.getBuilder(), LLVMRealONE, left.get(), right.get(), "");
-            return createR(b, sl, Type.getInt1(b.getFrame()), result);
+            final var result = LLVMBuildFCmp(b.getBuilder(), LLVMRealONE, l.get(), r.get(), "");
+            return createOptR(b, sl, Type.getInt1(b.getFrame()), result);
         }
 
-        return null;
+        return Optional.empty();
     }
 
-    public static Value genLT(final Builder b, final SourceLocation sl, final Value left, final Value right) {
-        assertBinary(left, right);
-        final var type = left.getType();
+    public static Optional<Value> genLT(final Builder b, final SourceLocation sl, final Value l, final Value r) {
+        assertBinary(l, r);
+        final var type = l.getType();
 
         if (type.isInt()) {
-            final var result = LLVMBuildICmp(b.getBuilder(), LLVMIntSLT, left.get(), right.get(), "");
-            return createR(b, sl, Type.getInt1(b.getFrame()), result);
+            final var result = LLVMBuildICmp(b.getBuilder(), LLVMIntSLT, l.get(), r.get(), "");
+            return createOptR(b, sl, Type.getInt1(b.getFrame()), result);
         }
 
         if (type.isFlt()) {
-            final var result = LLVMBuildFCmp(b.getBuilder(), LLVMRealOLT, left.get(), right.get(), "");
-            return createR(b, sl, Type.getInt1(b.getFrame()), result);
+            final var result = LLVMBuildFCmp(b.getBuilder(), LLVMRealOLT, l.get(), r.get(), "");
+            return createOptR(b, sl, Type.getInt1(b.getFrame()), result);
         }
 
-        return null;
+        return Optional.empty();
     }
 
-    public static Value genGT(final Builder b, final SourceLocation sl, final Value left, final Value right) {
-        assertBinary(left, right);
-        return null;
+    public static Optional<Value> genGT(final Builder b, final SourceLocation sl, final Value l, final Value r) {
+        assertBinary(l, r);
+        return Optional.empty();
     }
 
-    public static Value genLE(final Builder b, final SourceLocation sl, final Value left, final Value right) {
-        assertBinary(left, right);
-        return null;
+    public static Optional<Value> genLE(final Builder b, final SourceLocation sl, final Value l, final Value r) {
+        assertBinary(l, r);
+        return Optional.empty();
     }
 
-    public static Value genGE(final Builder b, final SourceLocation sl, final Value left, final Value right) {
-        assertBinary(left, right);
-        return null;
+    public static Optional<Value> genGE(final Builder b, final SourceLocation sl, final Value l, final Value r) {
+        assertBinary(l, r);
+        return Optional.empty();
     }
 
-    public static Value genLAnd(final Builder b, final SourceLocation sl, final Value left,
-            final Value right) {
-        assertBinary(left, right);
+    public static Optional<Value> genLAnd(final Builder b, final SourceLocation sl, final Value l, final Value r) {
+        assertBinary(l, r);
 
-        final var lb = LLVMBuildIsNotNull(b.getBuilder(), left.get(), "");
-        final var rb = LLVMBuildIsNotNull(b.getBuilder(), right.get(), "");
+        final var lb = LLVMBuildIsNotNull(b.getBuilder(), l.get(), "");
+        final var rb = LLVMBuildIsNotNull(b.getBuilder(), r.get(), "");
 
         final var result = LLVMBuildAnd(b.getBuilder(), lb, rb, "");
-        return createR(b, sl, Type.getInt1(b.getFrame()), result);
+        return createOptR(b, sl, Type.getInt1(b.getFrame()), result);
     }
 
-    public static Value genLOr(final Builder b, final SourceLocation sl, final Value left, final Value right) {
-        assertBinary(left, right);
-        return null;
+    public static Optional<Value> genLOr(final Builder b, final SourceLocation sl, final Value l, final Value r) {
+        assertBinary(l, r);
+        return Optional.empty();
     }
 
-    public static Value genLXor(final Builder b, final SourceLocation sl, final Value left, final Value right) {
-        assertBinary(left, right);
-        return null;
+    public static Optional<Value> genLXor(final Builder b, final SourceLocation sl, final Value l, final Value r) {
+        assertBinary(l, r);
+        return Optional.empty();
     }
 
-    public static Value genAdd(final Builder b, final SourceLocation sl, final Value left, final Value right) {
-        assertBinary(left, right);
-        final var type = left.getType();
+    public static Optional<Value> genAdd(final Builder b, final SourceLocation sl, final Value l, final Value r) {
+        assertBinary(l, r);
+        final var type = l.getType();
 
         if (type.isInt()) {
-            final var result = LLVMBuildAdd(b.getBuilder(), left.get(), right.get(), "");
-            return createR(b, sl, type, result);
+            final var result = LLVMBuildAdd(b.getBuilder(), l.get(), r.get(), "");
+            return createOptR(b, sl, type, result);
         }
 
         if (type.isFlt()) {
-            final var result = LLVMBuildFAdd(b.getBuilder(), left.get(), right.get(), "");
-            return createR(b, sl, type, result);
+            final var result = LLVMBuildFAdd(b.getBuilder(), l.get(), r.get(), "");
+            return createOptR(b, sl, type, result);
         }
 
-        return null;
+        return Optional.empty();
     }
 
-    public static Value genSub(final Builder b, final SourceLocation sl, final Value left, final Value right) {
-        assertBinary(left, right);
-        final var type = left.getType();
+    public static Optional<Value> genSub(final Builder b, final SourceLocation sl, final Value l,
+            final Value r) {
+        assertBinary(l, r);
+        final var type = l.getType();
 
         if (type.isInt()) {
-            final var result = LLVMBuildSub(b.getBuilder(), left.get(), right.get(), "");
-            return createR(b, sl, type, result);
+            final var result = LLVMBuildSub(b.getBuilder(), l.get(), r.get(), "");
+            return createOptR(b, sl, type, result);
         }
 
         if (type.isFlt()) {
-            final var result = LLVMBuildFSub(b.getBuilder(), left.get(), right.get(), "");
-            return createR(b, sl, type, result);
+            final var result = LLVMBuildFSub(b.getBuilder(), l.get(), r.get(), "");
+            return createOptR(b, sl, type, result);
         }
 
-        return null;
+        return Optional.empty();
     }
 
-    public static Value genMul(final Builder b, final SourceLocation sl, final Value left, final Value right) {
-        assertBinary(left, right);
-        final var type = left.getType();
+    public static Optional<Value> genMul(final Builder b, final SourceLocation sl, final Value l,
+            final Value r) {
+        assertBinary(l, r);
+        final var type = l.getType();
 
         if (type.isInt()) {
-            final var result = LLVMBuildMul(b.getBuilder(), left.get(), right.get(), "");
-            return createR(b, sl, type, result);
+            final var result = LLVMBuildMul(b.getBuilder(), l.get(), r.get(), "");
+            return createOptR(b, sl, type, result);
         }
 
         if (type.isFlt()) {
-            final var result = LLVMBuildFMul(b.getBuilder(), left.get(), right.get(), "");
-            return createR(b, sl, type, result);
+            final var result = LLVMBuildFMul(b.getBuilder(), l.get(), r.get(), "");
+            return createOptR(b, sl, type, result);
         }
 
-        return null;
+        return Optional.empty();
     }
 
-    public static Value genDiv(final Builder b, final SourceLocation sl, final Value left, final Value right) {
-        assertBinary(left, right);
-        final var type = left.getType();
+    public static Optional<Value> genDiv(final Builder b, final SourceLocation sl, final Value l,
+            final Value r) {
+        assertBinary(l, r);
+        final var type = l.getType();
 
         if (type.isInt()) {
-            final var result = LLVMBuildSDiv(b.getBuilder(), left.get(), right.get(), "");
-            return createR(b, sl, type, result);
+            final var result = LLVMBuildSDiv(b.getBuilder(), l.get(), r.get(), "");
+            return createOptR(b, sl, type, result);
         }
 
         if (type.isFlt()) {
-            final var result = LLVMBuildFDiv(b.getBuilder(), left.get(), right.get(), "");
-            return createR(b, sl, type, result);
+            final var result = LLVMBuildFDiv(b.getBuilder(), l.get(), r.get(), "");
+            return createOptR(b, sl, type, result);
         }
 
-        return null;
+        return Optional.empty();
     }
 
-    public static Value genRem(final Builder b, final SourceLocation sl, final Value left, final Value right) {
-        assertBinary(left, right);
-        return null;
+    public static Optional<Value> genRem(final Builder b, final SourceLocation sl, final Value l, final Value r) {
+        assertBinary(l, r);
+        return Optional.empty();
     }
 
-    public static Value genAnd(final Builder b, final SourceLocation sl, final Value left, final Value right) {
-        assertBinary(left, right);
-        return null;
+    public static Optional<Value> genAnd(final Builder b, final SourceLocation sl, final Value l, final Value r) {
+        assertBinary(l, r);
+        return Optional.empty();
     }
 
-    public static Value genOr(final Builder b, final SourceLocation sl, final Value left, final Value right) {
-        assertBinary(left, right);
-        return null;
+    public static Optional<Value> genOr(final Builder b, final SourceLocation sl, final Value l, final Value r) {
+        assertBinary(l, r);
+        return Optional.empty();
     }
 
-    public static Value genXor(final Builder b, final SourceLocation sl, final Value left, final Value right) {
-        assertBinary(left, right);
-        return null;
+    public static Optional<Value> genXor(final Builder b, final SourceLocation sl, final Value l, final Value r) {
+        assertBinary(l, r);
+        return Optional.empty();
     }
 
-    public static Value genNot(final Builder b, final SourceLocation sl, final Value value) {
-        assertUnary(value);
+    public static Optional<Value> genNot(final Builder b, final SourceLocation sl, final Value v) {
+        assertUnary(v);
 
-        final var val = value.get();
+        final var val = v.get();
         final var boolval = LLVMBuildIsNotNull(b.getBuilder(), val, "");
         final var result = LLVMBuildNot(b.getBuilder(), boolval, "");
 
-        return createR(b, sl, Type.getInt1(b.getFrame()), result);
+        return createOptR(b, sl, Type.getInt1(b.getFrame()), result);
     }
 
-    public static Value genNeg(final Builder b, final SourceLocation sl, final Value value) {
-        assertUnary(value);
-        return null;
+    public static Optional<Value> genNeg(final Builder b, final SourceLocation sl, final Value v) {
+        assertUnary(v);
+        return Optional.empty();
     }
 
-    public static Value genLNeg(final Builder b, final SourceLocation sl, final Value value) {
-        assertUnary(value);
-        return null;
+    public static Optional<Value> genLNeg(final Builder b, final SourceLocation sl, final Value v) {
+        assertUnary(v);
+        return Optional.empty();
     }
 
-    public static Value genRef(final Builder b, final SourceLocation sl, final Value value) {
-        assertUnary(value);
+    public static Optional<Value> genRef(final Builder b, final SourceLocation sl, final Value v) {
+        assertUnary(v);
 
-        if (value instanceof LValue l) {
-            return createR(b, sl, PointerType.get(l.getType()), l.getPtr());
+        if (v instanceof LValue l) {
+            return createOptR(b, sl, PointerType.get(l.getType()), l.getPtr());
         }
 
-        return null;
+        return Optional.empty();
     }
 
-    public static Value genDeref(final Builder b, final SourceLocation sl, final Value value) {
-        assertUnary(value);
+    public static Optional<Value> genDeref(final Builder b, final SourceLocation sl, final Value v) {
+        assertUnary(v);
 
-        final var ty = value
-                .getType()
-                .asPointer()
-                .getBase();
-        return directL(b, sl, ty, value.get());
+        final var optty = v.getType().getPointerBase();
+        if (optty.isEmpty())
+            return Optional.empty();
+
+        return directOptL(b, sl, optty.get(), v.get());
     }
 
     private GenOperation() {

@@ -2,10 +2,11 @@ package io.scriptor.frontend;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import io.scriptor.frontend.stmt.Stmt;
 import io.scriptor.type.Type;
-import io.scriptor.util.QScriptException;
+import io.scriptor.util.QScriptError;
 
 public class StackFrame {
 
@@ -21,14 +22,14 @@ public class StackFrame {
         this.parent = null;
         this.types = new HashMap<>();
 
-        new Type(this, "void", Type.IS_VOID, 0);
-        new Type(this, "i1", Type.IS_INTEGER, 1);
-        new Type(this, "i8", Type.IS_INTEGER, 8);
-        new Type(this, "i16", Type.IS_INTEGER, 16);
-        new Type(this, "i32", Type.IS_INTEGER, 32);
-        new Type(this, "i64", Type.IS_INTEGER, 64);
-        new Type(this, "f32", Type.IS_FLOAT, 32);
-        new Type(this, "f64", Type.IS_FLOAT, 64);
+        new Type(this, null, "void", Type.IS_VOID, 0);
+        new Type(this, null, "i1", Type.IS_INTEGER, 1);
+        new Type(this, null, "i8", Type.IS_INTEGER, 8);
+        new Type(this, null, "i16", Type.IS_INTEGER, 16);
+        new Type(this, null, "i32", Type.IS_INTEGER, 32);
+        new Type(this, null, "i64", Type.IS_INTEGER, 64);
+        new Type(this, null, "f32", Type.IS_FLOAT, 32);
+        new Type(this, null, "f64", Type.IS_FLOAT, 64);
     }
 
     public StackFrame(final StackFrame parent) {
@@ -41,8 +42,12 @@ public class StackFrame {
         return parent;
     }
 
-    public void putType(final String name, final Type type) {
-        types.put(name, type);
+    public void putType(final SourceLocation sl, final String name, final Type type) {
+        if (!existsType(name)) {
+            types.put(name, type);
+            return;
+        }
+        QScriptError.print(sl, "cannot override type '%s' with '%s'", name, type);
     }
 
     public boolean existsType(final String name) {
@@ -50,10 +55,12 @@ public class StackFrame {
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends Type> T getType(final SourceLocation sl, final String name) {
-        if (!existsType(name))
-            throw new QScriptException(sl, "no such type '%s'", name);
-        return (T) types.get(name);
+    public <T extends Type> Optional<T> getType(final SourceLocation sl, final String name) {
+        if (!existsType(name)) {
+            QScriptError.print(sl, "no such type '%s'", name);
+            return Optional.empty();
+        }
+        return Optional.of((T) types.get(name));
     }
 
     public void putMacro(final String name, final Stmt stmt) {
@@ -62,7 +69,7 @@ public class StackFrame {
                     "warning: overriding macro '%s' at %s, first defined at %s\n",
                     name,
                     stmt.getSl(),
-                    getMacro(stmt.getSl(), name).getSl());
+                    getMacro(stmt.getSl(), name).get().getSl());
         marcos.put(name, stmt);
     }
 
@@ -75,11 +82,13 @@ public class StackFrame {
     }
 
     @SuppressWarnings("unchecked")
-    public <S extends Stmt> S getMacro(final SourceLocation sl, final String name) {
+    public <S extends Stmt> Optional<S> getMacro(final SourceLocation sl, final String name) {
         if (marcos.containsKey(name))
-            return (S) marcos.get(name);
-        if (parent == null)
-            throw new QScriptException(sl, "undefined macro '%s'", name);
+            return Optional.of((S) marcos.get(name));
+        if (parent == null) {
+            QScriptError.print(sl, "undefined macro '%s'", name);
+            return Optional.empty();
+        }
         return parent.getMacro(sl, name);
     }
 
@@ -95,11 +104,13 @@ public class StackFrame {
         return symbols.computeIfAbsent(name, key -> ty);
     }
 
-    public Type getSymbol(final SourceLocation sl, final String name) {
+    public Optional<Type> getSymbol(final SourceLocation sl, final String name) {
         if (symbols.containsKey(name))
-            return symbols.get(name);
-        if (parent == null)
-            throw new QScriptException(sl, "undefined symbol '%s'", name);
+            return Optional.of(symbols.get(name));
+        if (parent == null) {
+            QScriptError.print(sl, "undefined symbol '%s'", name);
+            return Optional.empty();
+        }
         return parent.getSymbol(sl, name);
     }
 }

@@ -2,7 +2,7 @@ package io.scriptor.frontend;
 
 import static io.scriptor.util.Util.unescape;
 
-import io.scriptor.util.QScriptException;
+import io.scriptor.util.QScriptError;
 
 public record Token(SourceLocation sl, TokenType ty, String val) {
 
@@ -22,12 +22,13 @@ public record Token(SourceLocation sl, TokenType ty, String val) {
             case OCTINT -> 8;
             case DECINT -> 10;
             case HEXINT -> 16;
-            default -> throw new QScriptException(
-                    sl,
-                    "trying to get integer value from non-integer token: '%s' (%s)",
-                    val,
-                    ty);
+            default -> 0;
         };
+
+        if (radix == 0) {
+            QScriptError.print(sl, "trying to get integer value from non-integer token: '%s' (%s)", val, ty);
+            return 0;
+        }
 
         return u
                 ? Long.parseUnsignedLong(value, radix)
