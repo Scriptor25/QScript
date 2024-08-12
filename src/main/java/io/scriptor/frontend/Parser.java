@@ -631,8 +631,10 @@ public class Parser {
         if (nextIfAt("=")) {
             final var optExpr = nextExpr(type);
             if (optExpr.isEmpty()) {
-                if (type == null)
+                if (type == null) {
+                    QScriptError.print(sl, "def requires a valid type");
                     return empty();
+                }
                 return of(DefVariableStmt.create(sl, type, name));
             }
 
@@ -673,7 +675,7 @@ public class Parser {
             }
 
             final var ft = FunctionType.get(type, vararg, args.stream().map(Arg::ty).toArray(Type[]::new));
-            stack.declareSymbol(name, ft);
+            stack.declareSymbol(name, PointerType.get(ft));
 
             if (at("{")) {
                 stack = new StackFrame(stack);
@@ -803,6 +805,9 @@ public class Parser {
                 rhs = nextBinary(rhs.get(), prec + (laprec > prec ? 1 : 0));
             }
 
+            if (rhs.isEmpty())
+                return empty();
+
             opt = BinaryExpr.create(sl, op, opt.get(), rhs.get());
         }
 
@@ -815,10 +820,10 @@ public class Parser {
         while (opt.isPresent() && at("(")) {
             final var sl = skip().sl();
 
-            final var optType = opt.get().getTy().asFunction();
+            final var optBase = opt.get().getTy().getPointerBase();
+            final Optional<FunctionType> optType = optBase.isPresent() ? optBase.get().asFunction() : empty();
             if (optType.isEmpty()) {
-                while (!nextIfAt(")"))
-                    skip();
+                QScriptError.print(sl, "invalid callee type '%s'", opt.get().getTy());
                 return empty();
             }
 
