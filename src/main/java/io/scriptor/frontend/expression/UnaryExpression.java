@@ -7,50 +7,50 @@ import io.scriptor.frontend.SourceLocation;
 public class UnaryExpression extends Expression {
 
     public static UnaryExpression createR(
-            final SourceLocation location,
-            final String operator,
-            final Expression operand) {
-        return new UnaryExpression(location, true, operator, operand);
+            final SourceLocation sl,
+            final String op,
+            final Expression val) {
+        return new UnaryExpression(sl, true, op, val);
     }
 
     public static UnaryExpression createL(
-            final SourceLocation location,
-            final String operator,
-            final Expression operand) {
-        return new UnaryExpression(location, false, operator, operand);
+            final SourceLocation sl,
+            final String op,
+            final Expression val) {
+        return new UnaryExpression(sl, false, op, val);
     }
 
     private final boolean right;
-    private final String operator;
-    private final Expression operand;
+    private final String op;
+    private final Expression val;
 
     private UnaryExpression(
-            final SourceLocation location,
+            final SourceLocation sl,
             final boolean right,
-            final String operator,
-            final Expression operand) {
-        super(location, getUnOpResult(operator, operand.getType()));
+            final String op,
+            final Expression val) {
+        super(sl, getUnOpResult(op, val.getTy()));
         this.right = right;
-        this.operator = operator;
-        this.operand = operand;
+        this.op = op;
+        this.val = val;
     }
 
     public boolean isRight() {
         return right;
     }
 
-    public String getOperator() {
-        return operator;
+    public String getOp() {
+        return op;
     }
 
-    public Expression getOperand() {
-        return operand;
+    public Expression getVal() {
+        return val;
     }
 
     @Override
     public String toString() {
         if (right)
-            return "%s%s".formatted(operand, operator);
-        return "%s%s".formatted(operator, operand);
+            return "%s%s".formatted(val, op);
+        return "%s%s".formatted(op, val);
     }
 }

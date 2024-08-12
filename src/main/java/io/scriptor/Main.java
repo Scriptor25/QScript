@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.scriptor.backend.Builder;
-import io.scriptor.frontend.Context;
+import io.scriptor.frontend.State;
 import io.scriptor.frontend.Parser;
 import io.scriptor.frontend.ParserConfig;
 
@@ -18,23 +18,30 @@ public class Main {
             final String[] includeDirs,
             final String outputFilename)
             throws IOException {
+        Builder.createContext();
 
-        final var builders = new Builder[inputFilenames.length];
-
-        final var ctx = new Context();
+        Builder main = null;
         for (int i = 0; i < inputFilenames.length; ++i) {
-            ctx.clear();
+            final var ctx = new State();
+            final var filename = inputFilenames[i];
+            final var builder = new Builder(ctx, filename);
 
-            final var inputFilename = inputFilenames[i];
-            final var builder = new Builder(ctx, inputFilename);
-            final var file = new File(inputFilename);
+            final var file = new File(filename);
             final var config = new ParserConfig(ctx, builder::genIR, file, includeDirs, new FileInputStream(file));
             Parser.parse(config);
 
-            builders[i] = builder;
+            if (i == 0) {
+                main = builder;
+            } else {
+                main.link(builder);
+                builder.dispose();
+            }
         }
 
-        Builder.mergeAndEmitToFile(builders, outputFilename);
+        main.emitToFile(outputFilename);
+        main.dispose();
+
+        Builder.disposeContext();
     }
 
     public static void main(final String[] args) throws IOException {

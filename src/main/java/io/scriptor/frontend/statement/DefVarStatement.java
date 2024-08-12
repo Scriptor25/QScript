@@ -7,37 +7,37 @@ import io.scriptor.type.Type;
 public class DefVarStatement extends Statement {
 
     public static DefVarStatement create(
-            final SourceLocation location,
-            final Type type,
+            final SourceLocation sl,
+            final Type ty,
             final String name) {
-        return new DefVarStatement(location, type, name, null);
+        return new DefVarStatement(sl, ty, name, null);
     }
 
     public static DefVarStatement create(
-            final SourceLocation location,
-            final Type type,
+            final SourceLocation sl,
+            final Type ty,
             final String name,
             final Expression init) {
-        return new DefVarStatement(location, type, name, init);
+        return new DefVarStatement(sl, ty, name, init);
     }
 
-    private final Type type;
+    private final Type ty;
     private final String name;
     private final Expression init;
 
     private DefVarStatement(
-            final SourceLocation location,
-            final Type type,
+            final SourceLocation sl,
+            final Type ty,
             final String name,
             final Expression init) {
-        super(location);
-        this.type = type;
+        super(sl);
+        this.ty = ty;
         this.name = name;
         this.init = init;
     }
 
-    public Type getType() {
-        return type;
+    public Type getTy() {
+        return ty;
     }
 
     public String getName() {
@@ -55,7 +55,7 @@ public class DefVarStatement extends Statement {
     @Override
     public String toString() {
         if (init == null)
-            return "def %s %s".formatted(type, name);
-        return "def %s %s = %s".formatted(type, name, init);
+            return "def %s %s".formatted(ty, name);
+        return "def %s %s = %s".formatted(ty, name, init);
     }
 }

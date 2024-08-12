@@ -1,5 +1,7 @@
 package io.scriptor.backend;
 
+import static io.scriptor.backend.GenType.genType;
+
 import org.bytedeco.llvm.LLVM.LLVMTypeRef;
 import org.bytedeco.llvm.LLVM.LLVMValueRef;
 
@@ -12,10 +14,10 @@ public abstract class Value {
     private final Type type;
     private final LLVMTypeRef llvmType;
 
-    protected Value(final SourceLocation sl, final Builder builder, final Type type) {
-        this.builder = builder;
-        this.type = type;
-        this.llvmType = builder.genIR(sl, type);
+    protected Value(final Builder b, final SourceLocation sl, final Type ty) {
+        this.builder = b;
+        this.type = ty;
+        this.llvmType = genType(sl, ty);
     }
 
     public Builder getBuilder() {

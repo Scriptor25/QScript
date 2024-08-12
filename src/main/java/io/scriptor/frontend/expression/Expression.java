@@ -6,15 +6,15 @@ import io.scriptor.type.Type;
 
 public abstract class Expression extends Statement {
 
-    private final Type type;
+    private final Type ty;
 
-    protected Expression(final SourceLocation location, final Type type) {
-        super(location);
-        this.type = type;
+    protected Expression(final SourceLocation sl, final Type ty) {
+        super(sl);
+        this.ty = ty;
     }
 
-    public Type getType() {
-        return type;
+    public Type getTy() {
+        return ty;
     }
 
     public boolean isConst() {

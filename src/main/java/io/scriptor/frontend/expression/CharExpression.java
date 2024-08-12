@@ -6,19 +6,23 @@ import io.scriptor.util.Util;
 
 public class CharExpression extends Expression {
 
-    public static CharExpression create(final SourceLocation location, final Type type, final char value) {
-        return new CharExpression(location, type, value);
+    public static CharExpression create(final SourceLocation sl, final Type ty, final char val) {
+        return new CharExpression(sl, ty, val);
     }
 
-    private final char value;
+    private final char val;
 
-    private CharExpression(final SourceLocation location, final Type type, final char value) {
-        super(location, type);
-        this.value = value;
+    private CharExpression(final SourceLocation sl, final Type ty, final char val) {
+        super(sl, ty);
+        this.val = val;
+    }
+
+    public char getVal() {
+        return val;
     }
 
     @Override
     public String toString() {
-        return Util.unescape("'" + value + "'");
+        return Util.unescape("'" + val + "'");
     }
 }

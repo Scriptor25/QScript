@@ -9,43 +9,43 @@ import io.scriptor.util.QScriptException;
 public class IndexExpression extends Expression {
 
     public static IndexExpression create(
-            final SourceLocation location,
+            final SourceLocation sl,
             final Expression ptr,
-            final Expression index) {
-        final Type base;
-        if (ptr.getType() instanceof PointerType type)
-            base = type.getBase();
-        else if (ptr.getType() instanceof ArrayType type)
-            base = type.getBase();
+            final Expression idx) {
+        final Type ty;
+        if (ptr.getTy() instanceof PointerType type)
+            ty = type.getBase();
+        else if (ptr.getTy() instanceof ArrayType type)
+            ty = type.getBase();
         else
-            throw new QScriptException(location, "not a suitable type");
+            throw new QScriptException(sl, "not a suitable type");
 
-        return new IndexExpression(location, base, ptr, index);
+        return new IndexExpression(sl, ty, ptr, idx);
     }
 
     private final Expression ptr;
-    private final Expression index;
+    private final Expression idx;
 
     private IndexExpression(
-            final SourceLocation location,
-            final Type type,
+            final SourceLocation sl,
+            final Type ty,
             final Expression ptr,
-            final Expression index) {
-        super(location, type);
+            final Expression idx) {
+        super(sl, ty);
         this.ptr = ptr;
-        this.index = index;
+        this.idx = idx;
     }
 
     public Expression getPtr() {
         return ptr;
     }
 
-    public Expression getIndex() {
-        return index;
+    public Expression getIdx() {
+        return idx;
     }
 
     @Override
     public String toString() {
-        return "%s[%s]".formatted(ptr, index);
+        return "%s[%s]".formatted(ptr, idx);
     }
 }

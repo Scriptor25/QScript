@@ -10,47 +10,47 @@ import io.scriptor.type.Type;
 public class DefFunStatement extends Statement {
 
     public static DefFunStatement create(
-            final SourceLocation location,
-            final Type result,
+            final SourceLocation sl,
+            final Type res,
             final String name,
             final Arg[] args,
-            final boolean vararg) {
-        return create(location, result, name, args, vararg, null);
+            final boolean va) {
+        return create(sl, res, name, args, va, null);
     }
 
     public static DefFunStatement create(
-            final SourceLocation location,
-            final Type result,
+            final SourceLocation sl,
+            final Type res,
             final String name,
             final Arg[] args,
-            final boolean vararg,
+            final boolean va,
             final CompoundStatement body) {
-        return new DefFunStatement(location, result, name, args, vararg, body);
+        return new DefFunStatement(sl, res, name, args, va, body);
     }
 
-    private final Type result;
+    private final Type res;
     private final String name;
     private final Arg[] args;
-    private final boolean vararg;
+    private final boolean va;
     private final CompoundStatement body;
 
     private DefFunStatement(
-            final SourceLocation location,
-            final Type result,
+            final SourceLocation sl,
+            final Type res,
             final String name,
             final Arg[] args,
-            final boolean vararg,
+            final boolean va,
             final CompoundStatement body) {
-        super(location);
-        this.result = result;
+        super(sl);
+        this.res = res;
         this.name = name;
         this.args = args;
-        this.vararg = vararg;
+        this.va = va;
         this.body = body;
     }
 
-    public Type getResult() {
-        return result;
+    public Type getRes() {
+        return res;
     }
 
     public String getName() {
@@ -66,7 +66,7 @@ public class DefFunStatement extends Statement {
     }
 
     public boolean isVarArg() {
-        return vararg;
+        return va;
     }
 
     public CompoundStatement getBody() {
@@ -74,7 +74,7 @@ public class DefFunStatement extends Statement {
     }
 
     public FunctionType getFunctionType() {
-        return FunctionType.get(result, vararg, Arrays.stream(args).map(Arg::type).toArray(Type[]::new));
+        return FunctionType.get(res, va, Arrays.stream(args).map(Arg::ty).toArray(Type[]::new));
     }
 
     @Override
@@ -86,14 +86,14 @@ public class DefFunStatement extends Statement {
             builder.append(args[i]);
         }
 
-        if (vararg) {
+        if (va) {
             if (args.length > 0)
                 builder.append(", ");
             builder.append('?');
         }
 
         if (body == null)
-            return "def %s %s(%s)".formatted(result, name, builder);
-        return "def %s %s(%s) %s".formatted(result, name, builder, body);
+            return "def %s %s(%s)".formatted(res, name, builder);
+        return "def %s %s(%s) %s".formatted(res, name, builder, body);
     }
 }

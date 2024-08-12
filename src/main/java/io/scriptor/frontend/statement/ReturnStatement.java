@@ -7,44 +7,44 @@ import io.scriptor.type.Type;
 public class ReturnStatement extends Statement {
 
     public static ReturnStatement create(
-            final SourceLocation location,
-            final Type result,
-            final Expression expression) {
-        return new ReturnStatement(location, result, expression);
+            final SourceLocation sl,
+            final Type res,
+            final Expression val) {
+        return new ReturnStatement(sl, res, val);
     }
 
     public static ReturnStatement create(
-            final SourceLocation location,
-            final Type result) {
-        return new ReturnStatement(location, result, null);
+            final SourceLocation sl,
+            final Type res) {
+        return new ReturnStatement(sl, res, null);
     }
 
-    private final Type result;
-    private final Expression expression;
+    private final Type res;
+    private final Expression val;
 
     private ReturnStatement(
-            final SourceLocation location,
-            final Type result,
-            final Expression expression) {
-        super(location);
-        this.result = result;
-        this.expression = expression;
+            final SourceLocation sl,
+            final Type res,
+            final Expression val) {
+        super(sl);
+        this.res = res;
+        this.val = val;
     }
 
-    public Type getResult() {
-        return result;
+    public Type getRes() {
+        return res;
     }
 
-    public Expression getExpr() {
-        return expression;
+    public Expression getVal() {
+        return val;
     }
 
-    public boolean hasExpr() {
-        return expression != null;
+    public boolean hasVal() {
+        return val != null;
     }
 
     @Override
     public String toString() {
-        return "return %s".formatted(expression);
+        return "return %s".formatted(val);
     }
 }

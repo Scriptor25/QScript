@@ -7,19 +7,19 @@ import io.scriptor.type.Type;
 
 public class StringExpression extends Expression {
 
-    public static StringExpression create(final SourceLocation location, final Type type, final String value) {
-        return new StringExpression(location, type, value);
+    public static StringExpression create(final SourceLocation sl, final Type ty, final String val) {
+        return new StringExpression(sl, ty, val);
     }
 
-    private final String value;
+    private final String val;
 
-    private StringExpression(final SourceLocation location, final Type type, final String value) {
-        super(location, type);
-        this.value = value;
+    private StringExpression(final SourceLocation sl, final Type ty, final String val) {
+        super(sl, ty);
+        this.val = val;
     }
 
-    public String getValue() {
-        return value;
+    public String getVal() {
+        return val;
     }
 
     @Override
@@ -29,6 +29,6 @@ public class StringExpression extends Expression {
 
     @Override
     public String toString() {
-        return "\"%s\"".formatted(unescape(value));
+        return "\"%s\"".formatted(unescape(val));
     }
 }

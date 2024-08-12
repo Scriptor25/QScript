@@ -6,32 +6,32 @@ import io.scriptor.type.Type;
 public class BinaryExpression extends Expression {
 
     public static BinaryExpression create(
-            final SourceLocation location,
-            final String operator,
+            final SourceLocation sl,
+            final String op,
             final Expression lhs,
             final Expression rhs) {
-        final var type = Type.getHigherOrder(location, lhs.getType(), rhs.getType());
-        return new BinaryExpression(location, type, operator, lhs, rhs);
+        final var ty = Type.getHigherOrder(sl, lhs.getTy(), rhs.getTy());
+        return new BinaryExpression(sl, ty, op, lhs, rhs);
     }
 
-    private final String operator;
+    private final String op;
     private final Expression lhs;
     private final Expression rhs;
 
     private BinaryExpression(
-            final SourceLocation location,
-            final Type type,
-            final String operator,
+            final SourceLocation sl,
+            final Type ty,
+            final String op,
             final Expression lhs,
             final Expression rhs) {
-        super(location, type);
-        this.operator = operator;
+        super(sl, ty);
+        this.op = op;
         this.lhs = lhs;
         this.rhs = rhs;
     }
 
-    public String getOperator() {
-        return operator;
+    public String getOp() {
+        return op;
     }
 
     public Expression getLHS() {
@@ -44,6 +44,6 @@ public class BinaryExpression extends Expression {
 
     @Override
     public String toString() {
-        return "%s %s %s".formatted(lhs, operator, rhs);
+        return "%s %s %s".formatted(lhs, op, rhs);
     }
 }

@@ -5,14 +5,14 @@ import io.scriptor.type.Type;
 
 public class InitListExpression extends Expression {
 
-    public static InitListExpression create(final SourceLocation location, final Type type, final Expression... args) {
-        return new InitListExpression(location, type, args);
+    public static InitListExpression create(final SourceLocation sl, final Type ty, final Expression... args) {
+        return new InitListExpression(sl, ty, args);
     }
 
     private final Expression[] args;
 
-    private InitListExpression(final SourceLocation location, final Type type, final Expression[] args) {
-        super(location, type);
+    private InitListExpression(final SourceLocation sl, final Type ty, final Expression[] args) {
+        super(sl, ty);
         this.args = args;
     }
 

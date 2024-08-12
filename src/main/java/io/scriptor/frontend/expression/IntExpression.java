@@ -5,19 +5,19 @@ import io.scriptor.type.Type;
 
 public class IntExpression extends Expression {
 
-    public static IntExpression create(final SourceLocation location, final Type type, final long value) {
-        return new IntExpression(location, type, value);
+    public static IntExpression create(final SourceLocation sl, final Type ty, final long val) {
+        return new IntExpression(sl, ty, val);
     }
 
-    private final long value;
+    private final long val;
 
-    private IntExpression(final SourceLocation location, final Type type, final long value) {
-        super(location, type);
-        this.value = value;
+    private IntExpression(final SourceLocation sl, final Type ty, final long val) {
+        super(sl, ty);
+        this.val = val;
     }
 
-    public long getValue() {
-        return value;
+    public long getVal() {
+        return val;
     }
 
     @Override
@@ -27,6 +27,6 @@ public class IntExpression extends Expression {
 
     @Override
     public String toString() {
-        return Long.toString(value);
+        return Long.toString(val);
     }
 }

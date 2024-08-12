@@ -4,8 +4,8 @@ import io.scriptor.frontend.SourceLocation;
 
 public class CompoundStatement extends Statement {
 
-    public static CompoundStatement create(final SourceLocation location, final Statement[] body) {
-        return new CompoundStatement(location, body);
+    public static CompoundStatement create(final SourceLocation sl, final Statement[] body) {
+        return new CompoundStatement(sl, body);
     }
 
     private static int depth = 0;
@@ -29,8 +29,8 @@ public class CompoundStatement extends Statement {
 
     private final Statement[] body;
 
-    private CompoundStatement(final SourceLocation location, final Statement[] body) {
-        super(location);
+    private CompoundStatement(final SourceLocation sl, final Statement[] body) {
+        super(sl);
         this.body = body;
     }
 

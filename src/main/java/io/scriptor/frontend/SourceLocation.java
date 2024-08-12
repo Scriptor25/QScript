@@ -2,12 +2,12 @@ package io.scriptor.frontend;
 
 import java.io.File;
 
-public record SourceLocation(File file, int row, int column) {
+public record SourceLocation(File f, int r, int c) {
 
     @Override
     public String toString() {
-        if (file == null)
-            return "(%d,%d)".formatted(row, column);
-        return "%s(%d,%d)".formatted(file, row, column);
+        if (f == null)
+            return "(%d,%d)".formatted(r, c);
+        return "%s(%d,%d)".formatted(f, r, c);
     }
 }

@@ -82,11 +82,11 @@ public class Util {
     private Util() {
     }
 
-    public static Type getUnOpResult(final String operator, final Type operand) {
-        final var ctx = operand.getCtx();
-        return switch (operator) {
-            case "++", "--", "-", "~" -> operand;
-            case "!" -> Type.getInt1(ctx);
+    public static Type getUnOpResult(final String op, final Type value) {
+        final var state = value.getState();
+        return switch (op) {
+            case "++", "--", "-", "~" -> value;
+            case "!" -> Type.getInt1(state);
             default -> null;
         };
     }

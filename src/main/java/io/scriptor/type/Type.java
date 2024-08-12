@@ -1,7 +1,7 @@
 package io.scriptor.type;
 
-import io.scriptor.frontend.Context;
 import io.scriptor.frontend.SourceLocation;
+import io.scriptor.frontend.State;
 import io.scriptor.util.QScriptException;
 
 public class Type {
@@ -14,24 +14,24 @@ public class Type {
     public static final int IS_STRUCT = 32;
     public static final int IS_ARRAY = 64;
 
-    public static void useAs(final Context ctx, final String id, final Type type) {
-        ctx.putType(id, type);
+    public static void useAs(final State state, final String id, final Type type) {
+        state.putType(id, type);
     }
 
-    public static boolean exists(final Context ctx, final String id) {
-        return ctx.existsType(id);
+    public static boolean exists(final State state, final String id) {
+        return state.existsType(id);
     }
 
-    public static <T extends Type> T get(final SourceLocation sl, final Context ctx, final String id) {
-        return ctx.getType(sl, id);
+    public static <T extends Type> T get(final SourceLocation sl, final State state, final String id) {
+        return state.getType(sl, id);
     }
 
-    public static Type getVoid(final Context ctx) {
-        return get(null, ctx, "void");
+    public static Type getVoid(final State state) {
+        return get(null, state, "void");
     }
 
-    public static Type getIntN(final SourceLocation sl, final Context ctx, final int size) {
-        return get(sl, ctx, switch (size) {
+    public static Type getIntN(final SourceLocation sl, final State state, final int size) {
+        return get(sl, state, switch (size) {
             case 1 -> "i1";
             case 8 -> "i8";
             case 16 -> "i16";
@@ -41,48 +41,48 @@ public class Type {
         });
     }
 
-    public static Type getFltN(final SourceLocation sl, final Context ctx, final int size) {
-        return get(sl, ctx, switch (size) {
+    public static Type getFltN(final SourceLocation sl, final State state, final int size) {
+        return get(sl, state, switch (size) {
             case 32 -> "f32";
             case 64 -> "f64";
             default -> null;
         });
     }
 
-    public static Type getInt1(final Context ctx) {
-        return get(null, ctx, "i1");
+    public static Type getInt1(final State state) {
+        return get(null, state, "i1");
     }
 
-    public static Type getInt8(final Context ctx) {
-        return get(null, ctx, "i8");
+    public static Type getInt8(final State state) {
+        return get(null, state, "i8");
     }
 
-    public static Type getInt16(final Context ctx) {
-        return get(null, ctx, "i16");
+    public static Type getInt16(final State state) {
+        return get(null, state, "i16");
     }
 
-    public static Type getInt32(final Context ctx) {
-        return get(null, ctx, "i32");
+    public static Type getInt32(final State state) {
+        return get(null, state, "i32");
     }
 
-    public static Type getInt64(final Context ctx) {
-        return get(null, ctx, "i64");
+    public static Type getInt64(final State state) {
+        return get(null, state, "i64");
     }
 
-    public static Type getFlt32(final Context ctx) {
-        return get(null, ctx, "f32");
+    public static Type getFlt32(final State state) {
+        return get(null, state, "f32");
     }
 
-    public static Type getFlt64(final Context ctx) {
-        return get(null, ctx, "f64");
+    public static Type getFlt64(final State state) {
+        return get(null, state, "f64");
     }
 
-    public static Type getVoidPtr(final Context ctx) {
-        return PointerType.get(getVoid(ctx));
+    public static Type getVoidPtr(final State state) {
+        return PointerType.get(getVoid(state));
     }
 
-    public static Type getInt8Ptr(final Context ctx) {
-        return PointerType.get(getInt8(ctx));
+    public static Type getInt8Ptr(final State state) {
+        return PointerType.get(getInt8(state));
     }
 
     public static Type getHigherOrder(final SourceLocation sl, final Type a, final Type b) {
@@ -128,43 +128,43 @@ public class Type {
         throw new QScriptException(sl, "cannot determine higher order type from %s and %s", a, b);
     }
 
-    public static Type getNative(final SourceLocation sl, final Context ctx, final Class<?> clazz) {
+    public static Type getNative(final SourceLocation sl, final State state, final Class<?> clazz) {
         if (clazz.isArray()) {
-            final var base = getNative(sl, ctx, clazz.getComponentType());
+            final var base = getNative(sl, state, clazz.getComponentType());
             return PointerType.get(base);
         }
 
         if (clazz == Void.class || clazz == void.class)
-            return Type.getVoid(ctx);
+            return Type.getVoid(state);
         if (clazz == Boolean.class || clazz == boolean.class)
-            return Type.getInt1(ctx);
+            return Type.getInt1(state);
         if (clazz == Byte.class || clazz == byte.class)
-            return Type.getInt8(ctx);
+            return Type.getInt8(state);
         if (clazz == Short.class || clazz == short.class)
-            return Type.getInt16(ctx);
+            return Type.getInt16(state);
         if (clazz == Integer.class || clazz == int.class)
-            return Type.getInt32(ctx);
+            return Type.getInt32(state);
         if (clazz == Long.class || clazz == long.class)
-            return Type.getInt64(ctx);
+            return Type.getInt64(state);
         if (clazz == Float.class || clazz == float.class)
-            return Type.getFlt32(ctx);
+            return Type.getFlt32(state);
         if (clazz == Double.class || clazz == double.class)
-            return Type.getFlt64(ctx);
+            return Type.getFlt64(state);
 
         if (CharSequence.class.isAssignableFrom(clazz))
-            return Type.getInt8Ptr(ctx);
+            return Type.getInt8Ptr(state);
 
-        return Type.get(sl, ctx, clazz.getSimpleName());
+        return Type.get(sl, state, clazz.getSimpleName());
     }
 
-    private final Context ctx;
+    private final State state;
     private final String id;
     private final int flags;
     private final long size;
 
-    public Type(final Context ctx, final String id, final int flags, final long size) {
-        ctx.putType(id, this);
-        this.ctx = ctx;
+    public Type(final State state, final String id, final int flags, final long size) {
+        state.putType(id, this);
+        this.state = state;
         this.id = id;
         this.flags = flags;
         this.size = size;
@@ -175,8 +175,8 @@ public class Type {
         return id;
     }
 
-    public Context getCtx() {
-        return ctx;
+    public State getState() {
+        return state;
     }
 
     public String getId() {

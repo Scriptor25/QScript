@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Stack;
 import java.util.function.Function;
 
 import io.scriptor.frontend.expression.BinaryExpression;
@@ -111,13 +110,13 @@ public class Parser {
     private int row = 1;
     private int column = 0;
 
-    private final Stack<Context> stack = new Stack<>();
+    private State stack;
     private Type currentResult;
 
     private Parser(final ParserConfig config, final List<File> parsed) {
         this.config = config;
         this.parsed = parsed;
-        stack.push(config.ctx());
+        stack = config.state();
     }
 
     private int get() throws IOException {
@@ -355,13 +354,13 @@ public class Parser {
         if (token == null)
             return false;
         for (final var type : types)
-            if (token.type() == type)
+            if (token.ty() == type)
                 return true;
         return false;
     }
 
     private boolean at(final String value) {
-        return token != null && token.value().equals(value);
+        return token != null && token.val().equals(value);
     }
 
     private Token expectPeek(final TokenType type) throws IOException {
@@ -370,11 +369,11 @@ public class Parser {
         if (atEOF())
             throw new QScriptException(new SourceLocation(config.file(), row, column), "expected %s, at EOF", type);
         throw new QScriptException(
-                token.location(),
+                token.sl(),
                 "expected %s, at '%s' (%s)",
                 type,
-                token.value(),
-                token.type());
+                token.val(),
+                token.ty());
     }
 
     private Token expect(final TokenType type) throws IOException {
@@ -383,11 +382,11 @@ public class Parser {
         if (atEOF())
             throw new QScriptException(new SourceLocation(config.file(), row, column), "expected %s, at EOF", type);
         throw new QScriptException(
-                token.location(),
+                token.sl(),
                 "expected %s, at '%s' (%s)",
                 type,
-                token.value(),
-                token.type());
+                token.val(),
+                token.ty());
     }
 
     private Token expect(final String value) throws IOException {
@@ -396,11 +395,11 @@ public class Parser {
         if (atEOF())
             throw new QScriptException(new SourceLocation(config.file(), row, column), "expected '%s', at EOF", value);
         throw new QScriptException(
-                token.location(),
+                token.sl(),
                 "expected '%s', at '%s' (%s)",
                 value,
-                token.value(),
-                token.type());
+                token.val(),
+                token.ty());
     }
 
     private Token skip() throws IOException {
@@ -432,7 +431,7 @@ public class Parser {
     private Type nextType(final boolean unsafe) throws IOException {
         if (nextIfAt("struct")) {
             if (!nextIfAt("{"))
-                return nextType(StructType.get(stack.peek()));
+                return nextType(StructType.get(stack));
             final List<Type> elements = new ArrayList<>();
             while (!nextIfAt("}")) {
                 final var type = nextType();
@@ -441,15 +440,15 @@ public class Parser {
                 if (!at("}"))
                     expect(",");
             }
-            return nextType(StructType.get(stack.peek(), elements.toArray(Type[]::new)));
+            return nextType(StructType.get(stack, elements.toArray(Type[]::new)));
         }
 
-        final var base = expectPeek(TokenType.ID).value();
-        if (unsafe && !Type.exists(stack.peek(), base))
+        final var base = expectPeek(TokenType.ID).val();
+        if (unsafe && !Type.exists(stack, base))
             return null;
 
-        final var loc = skip().location();
-        return nextType(Type.get(loc, stack.peek(), base));
+        final var loc = skip().sl();
+        return nextType(Type.get(loc, stack, base));
     }
 
     private Type nextType(final Type base) throws IOException {
@@ -459,7 +458,7 @@ public class Parser {
         if (nextIfAt("[")) {
             if (nextIfAt("]"))
                 return nextType(ArrayType.get(base, -1));
-            final var length = skip().longValue();
+            final var length = skip().asLong();
             expect("]");
             return nextType(ArrayType.get(base, length));
         }
@@ -512,10 +511,10 @@ public class Parser {
             return nextWhile();
 
         if (at(TokenType.ID)) {
-            final var name = token.value();
-            if (stack.peek().existsMacro(name)) {
-                final var loc = skip().location();
-                return stack.peek().getMacro(loc, name);
+            final var name = token.val();
+            if (stack.existsMacro(name)) {
+                final var loc = skip().sl();
+                return stack.getMacro(loc, name);
             }
         }
 
@@ -523,8 +522,8 @@ public class Parser {
     }
 
     private void nextInclude() throws IOException {
-        final var loc = expect("include").location();
-        final var filename = expect(TokenType.STRING).value();
+        final var loc = expect("include").sl();
+        final var filename = expect(TokenType.STRING).val();
 
         var file = new File(filename);
         if (!file.isAbsolute())
@@ -543,37 +542,37 @@ public class Parser {
 
     private void nextMacro() throws IOException {
         expect("macro");
-        final var name = expect(TokenType.ID).value();
+        final var name = expect(TokenType.ID).val();
         final var stmt = nextStatement();
 
-        stack.peek().putMacro(name, stmt);
+        stack.putMacro(name, stmt);
     }
 
     private void nextUse() throws IOException {
         expect("use");
-        final var id = expect(TokenType.ID).value();
+        final var id = expect(TokenType.ID).val();
         expect("as");
         final var type = nextType();
 
-        Type.useAs(stack.peek(), id, type);
+        Type.useAs(stack, id, type);
     }
 
     private CompoundStatement nextCompound() throws IOException {
-        final var loc = expect("{").location();
+        final var loc = expect("{").sl();
         final List<Statement> body = new ArrayList<>();
 
-        stack.push(new Context(stack.peek()));
+        stack = new State(stack);
         while (!nextIfAt("}")) {
             final var stmt = nextStatement();
             body.add(stmt);
         }
-        stack.pop();
+        stack = stack.getParent();
 
         return CompoundStatement.create(loc, body.toArray(Statement[]::new));
     }
 
     private Statement nextDefine() throws IOException {
-        final var loc = expect("def").location();
+        final var loc = expect("def").sl();
 
         var type = nextType(true);
         final String name;
@@ -581,14 +580,14 @@ public class Parser {
             name = type.getId();
             type = null;
         } else {
-            name = skip().value();
+            name = skip().val();
         }
 
         if (nextIfAt("=")) {
             final var init = nextExpr(type);
             if (type == null)
-                type = init.getType();
-            stack.peek().declareSymbol(type, name);
+                type = init.getTy();
+            stack.declareSymbol(type, name);
             return DefVarStatement.create(loc, type, name, init);
         }
 
@@ -604,7 +603,7 @@ public class Parser {
                 final var argtype = nextType();
                 final String argname;
                 if (at(TokenType.ID)) {
-                    argname = skip().value();
+                    argname = skip().val();
                 } else {
                     argname = null;
                 }
@@ -617,22 +616,22 @@ public class Parser {
                     type,
                     vararg,
                     args.stream()
-                            .map(Arg::type)
+                            .map(Arg::ty)
                             .toArray(Type[]::new));
-            stack.peek().declareSymbol(funtype, name);
+            stack.declareSymbol(funtype, name);
 
             if (at("{")) {
-                stack.push(new Context(stack.peek()));
+                stack = new State(stack);
 
                 for (final var arg : args)
-                    stack.peek().declareSymbol(arg.type(), arg.name());
+                    stack.declareSymbol(arg.ty(), arg.name());
 
                 final var bkpResult = currentResult;
                 currentResult = type;
                 final var body = nextCompound();
                 currentResult = bkpResult;
 
-                stack.pop();
+                stack = stack.getParent();
 
                 return DefFunStatement.create(loc, type, name, args.toArray(Arg[]::new), vararg, body);
             }
@@ -640,14 +639,14 @@ public class Parser {
             return DefFunStatement.create(loc, type, name, args.toArray(Arg[]::new), vararg);
         }
 
-        stack.peek().declareSymbol(type, name);
+        stack.declareSymbol(type, name);
         return DefVarStatement.create(loc, type, name);
     }
 
     private IfStatement nextIf() throws IOException {
-        final var loc = expect("if").location();
+        final var loc = expect("if").sl();
 
-        final var condition = nextExpr(Type.getInt1(stack.peek()));
+        final var condition = nextExpr(Type.getInt1(stack));
         final var then = nextStatement();
 
         if (nextIfAt("else")) {
@@ -659,7 +658,7 @@ public class Parser {
     }
 
     private ReturnStatement nextReturn() throws IOException {
-        final var loc = expect("return").location();
+        final var loc = expect("return").sl();
 
         if (nextIfAt("void"))
             return ReturnStatement.create(loc, currentResult);
@@ -669,9 +668,9 @@ public class Parser {
     }
 
     private WhileStatement nextWhile() throws IOException {
-        final var loc = expect("while").location();
+        final var loc = expect("while").sl();
 
-        final var condition = nextExpr(Type.getInt1(stack.peek()));
+        final var condition = nextExpr(Type.getInt1(stack));
         final var loop = nextStatement();
 
         return WhileStatement.create(loc, condition, loop);
@@ -686,15 +685,15 @@ public class Parser {
     }
 
     private Expression nextBinary(Expression lhs, final int minPrecedence) throws IOException {
-        while (at(TokenType.OPERATOR) && precedences.getOrDefault(token.value(), -1) >= minPrecedence) {
+        while (at(TokenType.OPERATOR) && precedences.getOrDefault(token.val(), -1) >= minPrecedence) {
             final var tk = skip();
-            final var loc = tk.location();
-            final var operator = tk.value();
+            final var loc = tk.sl();
+            final var operator = tk.val();
             final var precedence = precedences.get(operator);
-            final var expected = lhs.getType();
+            final var expected = lhs.getTy();
             var rhs = nextCall(expected);
-            while (at(TokenType.OPERATOR) && precedences.get(token.value()) > precedence) {
-                final var laPrecedence = precedences.get(token.value());
+            while (at(TokenType.OPERATOR) && precedences.get(token.val()) > precedence) {
+                final var laPrecedence = precedences.get(token.val());
                 rhs = nextBinary(rhs, precedence + (laPrecedence > precedence ? 1 : 0));
             }
             lhs = BinaryExpression.create(loc, operator, lhs, rhs);
@@ -706,9 +705,9 @@ public class Parser {
         var expr = nextIndex(expected);
 
         while (at("(")) {
-            final var loc = skip().location();
+            final var loc = skip().sl();
 
-            final FunctionType calleeType = (FunctionType) expr.getType();
+            final FunctionType calleeType = (FunctionType) expr.getTy();
 
             final List<Expression> args = new ArrayList<>();
             while (!nextIfAt(")")) {
@@ -728,11 +727,11 @@ public class Parser {
         var expr = nextUnary(expected);
 
         while (at("[")) {
-            final var loc = skip().location();
-            final var index = nextBinary(Type.getInt64(stack.peek()));
+            final var sl = skip().sl();
+            final var idx = nextBinary(Type.getInt64(stack));
             expect("]");
 
-            expr = IndexExpression.create(loc, expr, index);
+            expr = IndexExpression.create(sl, expr, idx);
         }
 
         return expr;
@@ -743,8 +742,8 @@ public class Parser {
 
         if (at("++") || at("--")) {
             final var tk = skip();
-            final var loc = tk.location();
-            final var operator = tk.value();
+            final var loc = tk.sl();
+            final var operator = tk.val();
             expr = UnaryExpression.createR(loc, operator, expr);
         }
 
@@ -755,18 +754,18 @@ public class Parser {
         if (atEOF())
             throw new QScriptException(new SourceLocation(config.file(), row, column), "reached eof");
 
-        final var loc = token.location();
+        final var loc = token.sl();
 
         if (nextIfAt("$")) {
             expect("(");
             final var fntype = (FunctionType) ((PointerType) expected).getBase();
 
-            stack.push(new Context(stack.peek()));
+            stack = new State(stack);
 
             final List<String> argnames = new ArrayList<>();
             while (!nextIfAt(")")) {
-                final var argname = expect(TokenType.ID).value();
-                stack.peek().declareSymbol(fntype.getArg(argnames.size()), argname);
+                final var argname = expect(TokenType.ID).val();
+                stack.declareSymbol(fntype.getArg(argnames.size()), argname);
                 argnames.add(argname);
                 if (!at(")"))
                     expect(",");
@@ -777,7 +776,7 @@ public class Parser {
             final var body = nextCompound();
             currentResult = bkpResult;
 
-            stack.pop();
+            stack = stack.getParent();
 
             return FunctionExpression.create(
                     loc,
@@ -815,37 +814,37 @@ public class Parser {
         }
 
         if (at(TokenType.ID)) {
-            final var name = skip().value();
-            if (stack.peek().existsMacro(name)) {
-                return stack.peek().getMacro(loc, name);
+            final var name = skip().val();
+            if (stack.existsMacro(name)) {
+                return stack.getMacro(loc, name);
             }
 
-            if (stack.peek().existsSymbol(name)) {
-                final var sym = stack.peek().getSymbol(loc, name);
-                return SymbolExpression.create(loc, sym.type(), sym.name());
+            if (stack.existsSymbol(name)) {
+                final var sym = stack.getSymbol(loc, name);
+                return SymbolExpression.create(loc, sym.ty(), sym.name());
             }
 
             throw new QScriptException(loc, "no such macro or symbol with name '%s'", name);
         }
 
         if (at(TokenType.BININT, TokenType.OCTINT, TokenType.DECINT, TokenType.HEXINT))
-            return IntExpression.create(loc, Type.getInt64(stack.peek()), skip().longValue());
+            return IntExpression.create(loc, Type.getInt64(stack), skip().asLong());
 
         if (at(TokenType.FLOAT))
-            return FloatExpression.create(loc, Type.getFlt64(stack.peek()), skip().doubleValue());
+            return FloatExpression.create(loc, Type.getFlt64(stack), skip().asDouble());
 
         if (at(TokenType.CHAR))
-            return CharExpression.create(loc, Type.getInt8(stack.peek()), skip().charValue());
+            return CharExpression.create(loc, Type.getInt8(stack), skip().asChar());
 
         if (at(TokenType.STRING))
-            return StringExpression.create(loc, Type.getInt8Ptr(stack.peek()), skip().value());
+            return StringExpression.create(loc, Type.getInt8Ptr(stack), skip().val());
 
         if (at(TokenType.OPERATOR)) {
-            final var operator = skip().value();
+            final var operator = skip().val();
             final var operand = nextCall(expected);
             return UnaryExpression.createL(loc, operator, operand);
         }
 
-        throw new QScriptException(loc, "unhandled token '%s' (%s)", token.value(), token.type());
+        throw new QScriptException(loc, "unhandled token '%s' (%s)", token.val(), token.ty());
     }
 }

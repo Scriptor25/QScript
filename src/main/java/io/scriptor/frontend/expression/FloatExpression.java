@@ -5,19 +5,19 @@ import io.scriptor.type.Type;
 
 public class FloatExpression extends Expression {
 
-    public static FloatExpression create(final SourceLocation location, final Type type, final double value) {
-        return new FloatExpression(location, type, value);
+    public static FloatExpression create(final SourceLocation sl, final Type ty, final double val) {
+        return new FloatExpression(sl, ty, val);
     }
 
-    private final double value;
+    private final double val;
 
-    private FloatExpression(final SourceLocation location, final Type type, final double value) {
-        super(location, type);
-        this.value = value;
+    private FloatExpression(final SourceLocation sl, final Type ty, final double val) {
+        super(sl, ty);
+        this.val = val;
     }
 
-    public double getValue() {
-        return value;
+    public double getVal() {
+        return val;
     }
 
     @Override
@@ -27,6 +27,6 @@ public class FloatExpression extends Expression {
 
     @Override
     public String toString() {
-        return Double.toString(value);
+        return Double.toString(val);
     }
 }

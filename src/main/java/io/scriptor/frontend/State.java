@@ -1,52 +1,26 @@
 package io.scriptor.frontend;
 
-import static org.bytedeco.llvm.global.LLVM.LLVMContextCreate;
-import static org.bytedeco.llvm.global.LLVM.LLVMContextDispose;
-
 import java.util.HashMap;
 import java.util.Map;
-
-import org.bytedeco.llvm.LLVM.LLVMContextRef;
 
 import io.scriptor.frontend.statement.Statement;
 import io.scriptor.type.Type;
 import io.scriptor.util.QScriptException;
 
-public class Context {
+public class State {
 
-    private final LLVMContextRef llvm;
-    private final Context global;
-    private final Context parent;
+    private final State global;
+    private final State parent;
 
     private final Map<String, Type> types;
     private final Map<String, Symbol> symbols = new HashMap<>();
     private final Map<String, Statement> marcos = new HashMap<>();
 
-    public Context() {
-        this.llvm = LLVMContextCreate();
+    public State() {
         this.global = this;
         this.parent = null;
         this.types = new HashMap<>();
-    }
 
-    public Context(final Context parent) {
-        this.llvm = parent.llvm;
-        this.global = parent.global;
-        this.parent = parent;
-        this.types = parent.types;
-    }
-
-    public void dispose() {
-        if (global == this)
-            LLVMContextDispose(llvm);
-    }
-
-    public LLVMContextRef getLLVM() {
-        return llvm;
-    }
-
-    public void clear() {
-        types.clear();
         new Type(this, "void", Type.IS_VOID, 0);
         new Type(this, "i1", Type.IS_INTEGER, 1);
         new Type(this, "i8", Type.IS_INTEGER, 8);
@@ -55,9 +29,16 @@ public class Context {
         new Type(this, "i64", Type.IS_INTEGER, 64);
         new Type(this, "f32", Type.IS_FLOAT, 32);
         new Type(this, "f64", Type.IS_FLOAT, 64);
+    }
 
-        symbols.clear();
-        marcos.clear();
+    public State(final State parent) {
+        this.global = parent.global;
+        this.parent = parent;
+        this.types = parent.types;
+    }
+
+    public State getParent() {
+        return parent;
     }
 
     public void putType(final String name, final Type type) {
@@ -100,8 +81,8 @@ public class Context {
             System.err.printf(
                     "warning: overriding macro '%s' at %s, first defined at %s\n",
                     name,
-                    stmt.getLocation(),
-                    getMacro(stmt.getLocation(), name).getLocation());
+                    stmt.getSl(),
+                    getMacro(stmt.getSl(), name).getSl());
         marcos.put(name, stmt);
     }
 

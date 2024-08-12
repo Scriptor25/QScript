@@ -1,22 +1,22 @@
 package io.scriptor.type;
 
-import io.scriptor.frontend.Context;
+import io.scriptor.frontend.State;
 
 public class PointerType extends Type {
 
     public static PointerType get(final Type base) {
-        final var ctx = base.getCtx();
+        final var state = base.getState();
         final var id = base.getId() + '*';
-        if (Type.exists(ctx, id))
-            return Type.get(null, ctx, id);
+        if (Type.exists(state, id))
+            return Type.get(null, state, id);
 
-        return new PointerType(ctx, id, base);
+        return new PointerType(state, id, base);
     }
 
     private final Type base;
 
-    protected PointerType(final Context ctx, final String id, final Type base) {
-        super(ctx, id, Type.IS_POINTER, 64);
+    protected PointerType(final State state, final String id, final Type base) {
+        super(state, id, Type.IS_POINTER, 64);
         this.base = base;
     }
 

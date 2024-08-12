@@ -5,23 +5,23 @@ import io.scriptor.type.Type;
 
 public class SymbolExpression extends Expression {
 
-    public static SymbolExpression create(final SourceLocation location, final Type type, final String name) {
-        return new SymbolExpression(location, type, name);
+    public static SymbolExpression create(final SourceLocation sl, final Type ty, final String name) {
+        return new SymbolExpression(sl, ty, name);
     }
 
-    private final String id;
+    private final String name;
 
-    private SymbolExpression(final SourceLocation location, final Type type, final String name) {
-        super(location, type);
-        this.id = name;
+    private SymbolExpression(final SourceLocation sl, final Type ty, final String name) {
+        super(sl, ty);
+        this.name = name;
     }
 
-    public String getId() {
-        return id;
+    public String getName() {
+        return name;
     }
 
     @Override
     public String toString() {
-        return id;
+        return name;
     }
 }

@@ -6,22 +6,22 @@ import io.scriptor.type.Type;
 public class CallExpression extends Expression {
 
     public static CallExpression create(
-            final SourceLocation location,
-            final Type type,
+            final SourceLocation sl,
+            final Type ty,
             final Expression callee,
             final Expression[] args) {
-        return new CallExpression(location, type, callee, args);
+        return new CallExpression(sl, ty, callee, args);
     }
 
     private final Expression callee;
     private final Expression[] args;
 
     private CallExpression(
-            final SourceLocation location,
-            final Type type,
+            final SourceLocation sl,
+            final Type ty,
             final Expression callee,
             final Expression[] args) {
-        super(location, type);
+        super(sl, ty);
         this.callee = callee;
         this.args = args;
     }

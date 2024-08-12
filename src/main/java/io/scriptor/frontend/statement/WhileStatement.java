@@ -6,34 +6,34 @@ import io.scriptor.frontend.expression.Expression;
 public class WhileStatement extends Statement {
 
     public static WhileStatement create(
-            final SourceLocation location,
-            final Expression condition,
-            final Statement loop) {
-        return new WhileStatement(location, condition, loop);
+            final SourceLocation sl,
+            final Expression c,
+            final Statement l) {
+        return new WhileStatement(sl, c, l);
     }
 
-    private final Expression condition;
-    private final Statement loop;
+    private final Expression c;
+    private final Statement l;
 
     private WhileStatement(
-            final SourceLocation location,
-            final Expression condition,
-            final Statement loop) {
-        super(location);
-        this.condition = condition;
-        this.loop = loop;
+            final SourceLocation sl,
+            final Expression c,
+            final Statement l) {
+        super(sl);
+        this.c = c;
+        this.l = l;
     }
 
-    public Expression getCondition() {
-        return condition;
+    public Expression getC() {
+        return c;
     }
 
-    public Statement getLoop() {
-        return loop;
+    public Statement getL() {
+        return l;
     }
 
     @Override
     public String toString() {
-        return "while %s %s".formatted(condition, loop);
+        return "while %s %s".formatted(c, l);
     }
 }

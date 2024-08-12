@@ -4,41 +4,41 @@ import static io.scriptor.util.Util.unescape;
 
 import io.scriptor.util.QScriptException;
 
-public record Token(SourceLocation location, TokenType type, String value) {
+public record Token(SourceLocation sl, TokenType ty, String val) {
 
     @Override
     public String toString() {
-        return "%s: '%s' (%s)".formatted(location, unescape(value), type);
+        return "%s: '%s' (%s)".formatted(sl, unescape(val), ty);
     }
 
-    public long longValue() {
-        var val = value;
+    public long asLong() {
         final var u = val.endsWith("u");
-        if (u)
-            val = val.substring(0, val.length() - 1);
+        final var value = u
+                ? val.substring(0, val.length() - 1)
+                : val;
 
-        final var radix = switch (type) {
+        final var radix = switch (ty) {
             case BININT -> 2;
             case OCTINT -> 8;
             case DECINT -> 10;
             case HEXINT -> 16;
             default -> throw new QScriptException(
-                    location,
+                    sl,
                     "trying to get integer value from non-integer token: '%s' (%s)",
-                    value,
-                    type);
+                    val,
+                    ty);
         };
 
         return u
-                ? Long.parseUnsignedLong(val, radix)
+                ? Long.parseUnsignedLong(value, radix)
                 : Long.parseLong(value, radix);
     }
 
-    public double doubleValue() {
-        return Double.parseDouble(value);
+    public double asDouble() {
+        return Double.parseDouble(val);
     }
 
-    public char charValue() {
-        return value.charAt(0);
+    public char asChar() {
+        return val.charAt(0);
     }
 }

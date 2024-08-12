@@ -8,25 +8,25 @@ import io.scriptor.util.QScriptException;
 public class FunctionExpression extends Expression {
 
     public static FunctionExpression create(
-            final SourceLocation location,
-            final Type type,
+            final SourceLocation sl,
+            final Type ty,
             final String[] args,
             final CompoundStatement body) {
-        return new FunctionExpression(location, type, args, body);
+        return new FunctionExpression(sl, ty, args, body);
     }
 
     private final String[] args;
     private final CompoundStatement body;
 
     private FunctionExpression(
-            final SourceLocation location,
-            final Type type,
+            final SourceLocation sl,
+            final Type ty,
             final String[] args,
             final CompoundStatement body) {
-        super(location, type);
+        super(sl, ty);
 
-        if (type == null)
-            throw new QScriptException(location, "function expression must have a promise type");
+        if (ty == null)
+            throw new QScriptException(sl, "function expression must have a promise type");
 
         this.args = args;
         this.body = body;
@@ -36,8 +36,8 @@ public class FunctionExpression extends Expression {
         return args.length;
     }
 
-    public String getArg(final int index) {
-        return args[index];
+    public String getArg(final int i) {
+        return args[i];
     }
 
     public CompoundStatement getBody() {

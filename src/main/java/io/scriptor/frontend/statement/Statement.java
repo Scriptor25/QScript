@@ -4,14 +4,14 @@ import io.scriptor.frontend.SourceLocation;
 
 public abstract class Statement {
 
-    private final SourceLocation location;
+    private final SourceLocation sl;
 
-    protected Statement(final SourceLocation location) {
-        this.location = location;
+    protected Statement(final SourceLocation sl) {
+        this.sl = sl;
     }
 
-    public SourceLocation getLocation() {
-        return location;
+    public SourceLocation getSl() {
+        return sl;
     }
 
     public abstract String toString();
