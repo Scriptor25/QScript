@@ -9,7 +9,7 @@ import static io.scriptor.backend.GenOperation.genGE;
 import static io.scriptor.backend.GenOperation.genGT;
 import static io.scriptor.backend.GenOperation.genLAnd;
 import static io.scriptor.backend.GenOperation.genLE;
-import static io.scriptor.backend.GenOperation.genLNeg;
+import static io.scriptor.backend.GenOperation.genInv;
 import static io.scriptor.backend.GenOperation.genLOr;
 import static io.scriptor.backend.GenOperation.genLT;
 import static io.scriptor.backend.GenOperation.genLXor;
@@ -381,7 +381,7 @@ public class GenExpression {
             r = switch (o) {
                 case "!" -> genNot(b, sl, v);
                 case "-" -> genNeg(b, sl, v);
-                case "~" -> genLNeg(b, sl, v);
+                case "~" -> genInv(b, sl, v);
                 case "&" -> genRef(b, sl, v);
                 default -> Optional.empty();
             };

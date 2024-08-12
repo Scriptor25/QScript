@@ -936,8 +936,9 @@ public class Parser {
             final List<Expr> args = new ArrayList<>();
             while (!nextIfAt("}")) {
                 final var i = args.size();
-                final var arg = nextBinary(element.apply(i)).get();
-                args.add(arg);
+                final var optArg = nextBinary(element.apply(i));
+                if (optArg.isPresent())
+                    args.add(optArg.get());
                 if (!at("}"))
                     expect(",");
             }
